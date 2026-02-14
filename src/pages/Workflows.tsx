@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -353,6 +354,7 @@ function WorkflowCard({
   currentUserId?: string;
   onRefresh?: () => void;
 }) {
+  const navigate = useNavigate();
   const progress = (() => {
     if (w.etapas.length === 0) return 0;
     const done = w.etapas.filter((e) => e.status === "concluido").length;
@@ -368,7 +370,7 @@ function WorkflowCard({
   const prazoVencido = w.prazo_final && isPast(new Date(w.prazo_final)) && !isToday(new Date(w.prazo_final));
 
   return (
-    <Card className={cn("p-5 transition-shadow hover:shadow-md", isMyAction && "ring-2 ring-primary/30")}>
+    <Card className={cn("p-5 transition-shadow hover:shadow-md cursor-pointer", isMyAction && "ring-2 ring-primary/30")} onClick={() => navigate(`/workflows/${w.id}`)}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-3">
           {/* Title row */}
@@ -466,7 +468,7 @@ function WorkflowCard({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Abrir</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/workflows/${w.id}`)}>Abrir</DropdownMenuItem>
             <DropdownMenuItem>Ver histórico</DropdownMenuItem>
             <DropdownMenuItem>Duplicar</DropdownMenuItem>
             <DropdownMenuItem className="text-destructive">Cancelar</DropdownMenuItem>
