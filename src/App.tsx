@@ -11,7 +11,7 @@ import Cadastro from "./pages/Cadastro";
 import Index from "./pages/Index";
 import Processos from "./pages/Processos";
 import Prazos from "./pages/Prazos";
-import Tarefas from "./pages/Tarefas";
+
 import Clientes from "./pages/Clientes";
 import Utilitarios from "./pages/Utilitarios";
 import Relatorios from "./pages/Relatorios";
@@ -40,7 +40,7 @@ const App = () => (
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
               <Route path="/prazos" element={<ProtectedRoute><Prazos /></ProtectedRoute>} />
-              <Route path="/tarefas" element={<ProtectedRoute><Tarefas /></ProtectedRoute>} />
+              
               <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
               <Route path="/utilitarios" element={<ProtectedRoute><Utilitarios /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
