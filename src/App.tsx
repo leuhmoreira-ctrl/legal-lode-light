@@ -16,6 +16,7 @@ import Clientes from "./pages/Clientes";
 import Utilitarios from "./pages/Utilitarios";
 import Relatorios from "./pages/Relatorios";
 import Kanban from "./pages/Kanban";
+import MinhasTarefas from "./pages/MinhasTarefas";
 import Auditoria from "./pages/Auditoria";
 import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/utilitarios" element={<ProtectedRoute><Utilitarios /></ProtectedRoute>} />
               <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
               <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+              <Route path="/minhas-tarefas" element={<ProtectedRoute><MinhasTarefas /></ProtectedRoute>} />
               <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
               <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
               <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
