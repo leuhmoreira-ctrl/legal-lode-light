@@ -15,6 +15,8 @@ import Tarefas from "./pages/Tarefas";
 import Clientes from "./pages/Clientes";
 import Utilitarios from "./pages/Utilitarios";
 import Relatorios from "./pages/Relatorios";
+import Kanban from "./pages/Kanban";
+import Auditoria from "./pages/Auditoria";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
