@@ -15,8 +15,10 @@ import {
   LogOut,
   User,
   Shield,
+  Settings,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -63,6 +65,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
   const { profile, role, isAdmin, isSenior } = usePermissions();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -190,6 +193,10 @@ export function AppSidebar() {
               <div className="text-muted-foreground font-normal truncate">{user?.email}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
+              <Settings className="w-4 h-4 mr-2" />
+              Configurações
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               Sair

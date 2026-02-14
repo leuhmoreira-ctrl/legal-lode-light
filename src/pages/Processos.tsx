@@ -31,6 +31,7 @@ import {
   FolderOpen,
   Calendar,
   Paperclip,
+  Trash2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
@@ -45,7 +46,9 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { NovoProcessoForm } from "@/components/NovoProcessoForm";
+import { DeleteProcessDialog } from "@/components/DeleteProcessDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -94,11 +97,13 @@ interface UltimaMovimentacao {
 
 export default function Processos() {
   const { user } = useAuth();
+  const { isSenior } = usePermissions();
   const [search, setSearch] = useState("");
   const [faseFilter, setFaseFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
   const [docsDialogOpen, setDocsDialogOpen] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Processo | null>(null);
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -535,11 +540,37 @@ export default function Processos() {
                         </Tabs>
                       </DialogContent>
                     </Dialog>
+
+                    {/* Delete button - only for admin/senior */}
+                    {isSenior && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteTarget(proc)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Deletar
+                      </Button>
+                    )}
                   </div>
                 </Card>
               );
             })}
           </div>
+        )}
+
+        {/* Delete process dialog */}
+        {deleteTarget && (
+          <DeleteProcessDialog
+            processo={deleteTarget}
+            open={!!deleteTarget}
+            onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+            onDeleted={() => {
+              setDeleteTarget(null);
+              carregarProcessos();
+            }}
+          />
         )}
       </div>
     </AppLayout>

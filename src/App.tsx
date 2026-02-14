@@ -20,6 +20,7 @@ import MinhasTarefas from "./pages/MinhasTarefas";
 import Auditoria from "./pages/Auditoria";
 import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
               <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
               <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
+              <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
