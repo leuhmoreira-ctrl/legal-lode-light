@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   Loader2,
   FolderOpen,
+  Calendar,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect, useCallback } from "react";
@@ -36,7 +37,6 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   generateDeepLink,
   detectarSistema,
-  TRIBUNAIS,
 } from "@/utils/tribunalLinks";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -88,16 +88,22 @@ interface Processo {
   sistema_tribunal: string | null;
 }
 
+interface UltimaMovimentacao {
+  data_movimento: string;
+  descricao: string;
+  complemento: string | null;
+}
+
 export default function Processos() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [faseFilter, setFaseFilter] = useState("all");
   const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({});
-  const [tribunalMap, setTribunalMap] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ultimasMovs, setUltimasMovs] = useState<Record<string, UltimaMovimentacao>>({});
   const { toast } = useToast();
 
   const carregarProcessos = useCallback(async () => {
@@ -123,20 +129,38 @@ export default function Processos() {
     }
   }, [user, toast]);
 
+  const carregarUltimasMovimentacoes = useCallback(async (processoIds: string[]) => {
+    if (processoIds.length === 0) return;
+    
+    const results: Record<string, UltimaMovimentacao> = {};
+    
+    // Fetch latest movimentacao for each processo
+    for (const pid of processoIds) {
+      const { data } = await supabase
+        .from("movimentacoes")
+        .select("data_movimento, descricao, complemento")
+        .eq("processo_id", pid)
+        .order("data_movimento", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (data) {
+        results[pid] = data;
+      }
+    }
+    
+    setUltimasMovs(results);
+  }, []);
+
   useEffect(() => {
     carregarProcessos();
   }, [carregarProcessos]);
 
-  // Initialize tribunalMap from saved data
   useEffect(() => {
-    const map: Record<string, string> = {};
-    processos.forEach((p) => {
-      if (p.sigla_tribunal) {
-        map[p.id] = p.sigla_tribunal;
-      }
-    });
-    setTribunalMap((prev) => ({ ...prev, ...map }));
-  }, [processos]);
+    if (processos.length > 0) {
+      carregarUltimasMovimentacoes(processos.map((p) => p.id));
+    }
+  }, [processos, carregarUltimasMovimentacoes]);
 
   const filtered = processos.filter((p) => {
     const matchSearch =
@@ -147,12 +171,11 @@ export default function Processos() {
     return matchSearch && matchFase;
   });
 
-  const sincronizarProcesso = async (processoId: string, numero: string) => {
-    const tribunal = tribunalMap[processoId];
+  const sincronizarProcesso = async (processoId: string, numero: string, tribunal: string) => {
     if (!tribunal) {
       toast({
-        title: "Selecione o tribunal",
-        description: "Escolha o tribunal antes de sincronizar.",
+        title: "Tribunal não definido",
+        description: "Este processo não possui tribunal cadastrado.",
         variant: "destructive",
       });
       return;
@@ -176,6 +199,9 @@ export default function Processos() {
         [processoId]: { loading: false, error: null, result: data },
       }));
 
+      // Reload movimentacoes for this processo
+      await carregarUltimasMovimentacoes([processoId]);
+
       toast({
         title: "✅ Sincronização concluída!",
         description: `${data.movimentacoes?.length || 0} movimentações encontradas`,
@@ -194,11 +220,10 @@ export default function Processos() {
     }
   };
 
-  const getPortalLink = (processoId: string, numero: string) => {
-    const tribunal = tribunalMap[processoId];
-    if (!tribunal) return null;
-    const sistema = detectarSistema(tribunal);
-    return generateDeepLink(numero, tribunal, sistema);
+  const getPortalLink = (proc: Processo) => {
+    if (!proc.sigla_tribunal) return null;
+    const sistema = detectarSistema(proc.sigla_tribunal);
+    return generateDeepLink(proc.numero, proc.sigla_tribunal, sistema);
   };
 
   return (
@@ -297,13 +322,15 @@ export default function Processos() {
           <div className="space-y-3">
             {filtered.map((proc) => {
               const syncState = syncStates[proc.id];
-              const portalLink = getPortalLink(proc.id, proc.numero);
+              const portalLink = getPortalLink(proc);
+              const ultimaMov = ultimasMovs[proc.id];
 
               return (
                 <Card
                   key={proc.id}
                   className="p-4 hover:shadow-md transition-shadow"
                 >
+                  {/* Header */}
                   <div className="flex flex-col md:flex-row md:items-center gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="p-2 rounded-lg bg-primary/5">
@@ -340,15 +367,18 @@ export default function Processos() {
                           {proc.fase}
                         </Badge>
                       )}
-                      {proc.valor_causa != null && (
+                      {proc.valor_causa != null && proc.valor_causa > 0 && (
                         <span className="text-xs text-muted-foreground">
-                          R$ {proc.valor_causa.toLocaleString("pt-BR")}
+                          {new Intl.NumberFormat("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          }).format(proc.valor_causa)}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  {/* Tags + última movimentação */}
+                  {/* Tags + Tribunal badge */}
                   <div className="flex items-center gap-2 mt-3 ml-12 flex-wrap">
                     {proc.tags?.map((tag) => (
                       <Badge
@@ -359,184 +389,186 @@ export default function Processos() {
                         {tag}
                       </Badge>
                     ))}
-                    {proc.ultima_movimentacao && (
-                      <span className="text-[10px] text-muted-foreground ml-auto">
-                        Última mov:{" "}
-                        {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}
-                        {proc.descricao_movimentacao &&
-                          ` — ${proc.descricao_movimentacao}`}
-                      </span>
+                    {proc.sigla_tribunal && (
+                      <Badge variant="outline" className="text-[10px] ml-auto">
+                        {proc.sistema_tribunal && `${proc.sistema_tribunal} — `}
+                        {proc.sigla_tribunal.toUpperCase()}
+                      </Badge>
                     )}
                   </div>
 
-                  {/* Integração CNJ / Portal */}
+                  {/* Footer — Última movimentação */}
                   <div className="mt-3 ml-12 pt-3 border-t border-border/50">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                      <Select
-                        value={tribunalMap[proc.id] || ""}
-                        onValueChange={(val) =>
-                          setTribunalMap((prev) => ({
-                            ...prev,
-                            [proc.id]: val,
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="w-full sm:w-[220px] h-8 text-xs">
-                          <SelectValue placeholder="Selecione o tribunal..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {TRIBUNAIS.map((t) => (
-                            <SelectItem key={t.sigla} value={t.sigla}>
-                              {t.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs gap-1.5"
-                          disabled={
-                            !tribunalMap[proc.id] || syncState?.loading
-                          }
-                          onClick={() =>
-                            sincronizarProcesso(proc.id, proc.numero)
-                          }
-                        >
-                          <RefreshCw
-                            className={`w-3.5 h-3.5 ${
-                              syncState?.loading ? "animate-spin" : ""
-                            }`}
-                          />
-                          {syncState?.loading
-                            ? "Sincronizando..."
-                            : "Buscar no DataJud"}
-                        </Button>
-
-                        {portalLink && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs gap-1.5"
-                            asChild
-                          >
-                            <a
-                              href={portalLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              Abrir no Portal
-                            </a>
-                          </Button>
-                        )}
-
-                        {syncState?.result && (
-                          <Dialog
-                            open={dialogOpen === proc.id}
-                            onOpenChange={(open) =>
-                              setDialogOpen(open ? proc.id : null)
-                            }
-                          >
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="h-8 text-xs gap-1.5"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                Ver Movimentações
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle className="text-lg">
-                                  Movimentações — {proc.numero}
-                                </DialogTitle>
-                              </DialogHeader>
-                              <div className="space-y-2 mt-4">
-                                <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                                  <div>
-                                    <span className="text-muted-foreground">
-                                      Classe:{" "}
-                                    </span>
-                                    <span className="font-medium">
-                                      {syncState.result.classe}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-muted-foreground">
-                                      Assunto:{" "}
-                                    </span>
-                                    <span className="font-medium">
-                                      {syncState.result.assunto}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="space-y-2">
-                                  {syncState.result.movimentacoes.map(
-                                    (mov, i) => (
-                                      <div
-                                        key={i}
-                                        className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm"
-                                      >
-                                        <div className="flex flex-col items-center">
-                                          <Clock className="w-4 h-4 text-primary" />
-                                          <div className="w-px h-full bg-border mt-1" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-xs text-muted-foreground">
-                                            {mov.data
-                                              ? format(
-                                                  parseISO(mov.data),
-                                                  "dd/MM/yyyy HH:mm"
-                                                )
-                                              : "Data não informada"}
-                                          </p>
-                                          <p className="font-medium mt-0.5">
-                                            {mov.descricao}
-                                          </p>
-                                          {mov.complemento && (
-                                            <p className="text-xs text-muted-foreground mt-0.5">
-                                              {mov.complemento}
-                                            </p>
-                                          )}
-                                        </div>
-                                      </div>
-                                    )
-                                  )}
-                                  {syncState.result.movimentacoes.length ===
-                                    0 && (
-                                    <p className="text-sm text-muted-foreground text-center py-4">
-                                      Nenhuma movimentação encontrada.
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                        )}
-                      </div>
-                    </div>
-
-                    {syncState?.error && (
-                      <Alert variant="destructive" className="mt-2">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          {syncState.error}
-                          {portalLink && (
-                            <span>
-                              {" "}
-                              — Use o botão "Abrir no Portal" para consulta
-                              manual.
+                    {ultimaMov ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>
+                            Última movimentação:{" "}
+                            {format(parseISO(ultimaMov.data_movimento), "dd/MM/yyyy")}
+                          </span>
+                        </div>
+                        <p className="text-xs text-foreground">
+                          {ultimaMov.descricao}
+                          {ultimaMov.complemento && (
+                            <span className="text-muted-foreground">
+                              {" "}— {ultimaMov.complemento}
                             </span>
                           )}
-                        </AlertDescription>
-                      </Alert>
+                        </p>
+                      </div>
+                    ) : proc.ultima_movimentacao ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <Calendar className="w-3.5 h-3.5" />
+                          <span>
+                            Última movimentação:{" "}
+                            {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}
+                          </span>
+                        </div>
+                        {proc.descricao_movimentacao && (
+                          <p className="text-xs text-foreground">
+                            {proc.descricao_movimentacao}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Nenhuma movimentação registrada. Sincronize para buscar dados.
+                      </p>
                     )}
                   </div>
+
+                  {/* Action buttons */}
+                  <div className="mt-3 ml-12 flex flex-wrap gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      disabled={!proc.sigla_tribunal || syncState?.loading}
+                      onClick={() =>
+                        sincronizarProcesso(proc.id, proc.numero, proc.sigla_tribunal || "")
+                      }
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 ${
+                          syncState?.loading ? "animate-spin" : ""
+                        }`}
+                      />
+                      {syncState?.loading
+                        ? "Sincronizando..."
+                        : "Buscar no DataJud"}
+                    </Button>
+
+                    {portalLink && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs gap-1.5"
+                        asChild
+                      >
+                        <a
+                          href={portalLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Abrir no Portal
+                        </a>
+                      </Button>
+                    )}
+
+                    {syncState?.result && (
+                      <Dialog
+                        open={dialogOpen === proc.id}
+                        onOpenChange={(open) =>
+                          setDialogOpen(open ? proc.id : null)
+                        }
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-8 text-xs gap-1.5"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Ver Movimentações
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle className="text-lg">
+                              Movimentações — {proc.numero}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-2 mt-4">
+                            <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                              <div>
+                                <span className="text-muted-foreground">Classe: </span>
+                                <span className="font-medium">
+                                  {syncState.result.classe}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Assunto: </span>
+                                <span className="font-medium">
+                                  {syncState.result.assunto}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              {syncState.result.movimentacoes.map((mov, i) => (
+                                <div
+                                  key={i}
+                                  className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm"
+                                >
+                                  <div className="flex flex-col items-center">
+                                    <Clock className="w-4 h-4 text-primary" />
+                                    <div className="w-px h-full bg-border mt-1" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-muted-foreground">
+                                      {mov.data
+                                        ? format(parseISO(mov.data), "dd/MM/yyyy HH:mm")
+                                        : "Data não informada"}
+                                    </p>
+                                    <p className="font-medium mt-0.5">
+                                      {mov.descricao}
+                                    </p>
+                                    {mov.complemento && (
+                                      <p className="text-xs text-muted-foreground mt-0.5">
+                                        {mov.complemento}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                              {syncState.result.movimentacoes.length === 0 && (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                  Nenhuma movimentação encontrada.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
+                  </div>
+
+                  {/* Error message */}
+                  {syncState?.error && (
+                    <Alert variant="destructive" className="mt-2 ml-12">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        {syncState.error}
+                        {portalLink && (
+                          <span>
+                            {" "}— Use o botão "Abrir no Portal" para consulta manual.
+                          </span>
+                        )}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </Card>
               );
             })}
