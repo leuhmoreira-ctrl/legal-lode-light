@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Scale,
   CalendarClock,
-  Columns3,
   ClipboardList,
   Users,
   Wrench,
@@ -11,14 +10,16 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Gavel,
   LogOut,
   User,
   Shield,
   Settings,
+  Building2,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -34,15 +35,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const navItems = [
+const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Processos", url: "/processos", icon: Scale },
-  { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
-  { title: "Escritório", url: "/kanban", icon: Columns3 },
-  { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
+];
+
+const escritorioItems = [
+  { title: "Processos", url: "/processos", icon: Scale },
+  { title: "Clientes", url: "/clientes", icon: Users },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+  { title: "Kanban", url: "/kanban", icon: LayoutDashboard },
 ];
 
 const roleLabels: Record<UserRole, string> = {
@@ -63,9 +67,30 @@ const roleColors: Record<UserRole, string> = {
 
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
+  const [escritorioOpen, setEscritorioOpen] = useState(() => {
+    const saved = localStorage.getItem("escritorio_expanded");
+    return saved ? JSON.parse(saved) : false;
+  });
   const { user, signOut } = useAuth();
   const { profile, role, isAdmin, isSenior } = usePermissions();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    localStorage.setItem("escritorio_expanded", JSON.stringify(escritorioOpen));
+  }, [escritorioOpen]);
+
+  // Auto-expand if current route is inside Escritório
+  useEffect(() => {
+    const allEscritorioUrls = [
+      ...escritorioItems.map((i) => i.url),
+      "/equipe",
+      "/auditoria",
+    ];
+    if (allEscritorioUrls.some((u) => location.pathname === u)) {
+      setEscritorioOpen(true);
+    }
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -74,6 +99,11 @@ export function AppSidebar() {
       console.error("Erro ao sair:", error);
     }
   };
+
+  const linkClass = cn(
+    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+    collapsed && "justify-center px-0"
+  );
 
   return (
     <aside
@@ -115,15 +145,13 @@ export function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-        {navItems.map((item) => (
+        {/* Main items */}
+        {mainNavItems.map((item) => (
           <NavLink
             key={item.url}
             to={item.url}
             end={item.url === "/"}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
-              collapsed && "justify-center px-0"
-            )}
+            className={linkClass}
             activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
           >
             <item.icon className="w-4 h-4 shrink-0" />
@@ -131,35 +159,70 @@ export function AppSidebar() {
           </NavLink>
         ))}
 
-        {/* Admin-only links */}
-        {isAdmin && (
-          <NavLink
-            to="/equipe"
+        {/* Escritório group */}
+        <div className="pt-1">
+          <button
+            onClick={() => setEscritorioOpen(!escritorioOpen)}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
-              collapsed && "justify-center px-0"
+              linkClass,
+              "w-full",
+              escritorioOpen && "text-sidebar-accent-foreground"
             )}
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
           >
-            <Users className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>Equipe</span>}
-          </NavLink>
-        )}
+            <Building2 className="w-4 h-4 shrink-0" />
+            {!collapsed && (
+              <>
+                <span className="flex-1 text-left">Escritório</span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-200",
+                    escritorioOpen && "rotate-180"
+                  )}
+                />
+              </>
+            )}
+          </button>
 
-        {/* Audit - only for admin/senior */}
-        {isSenior && (
-          <NavLink
-            to="/auditoria"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
-              collapsed && "justify-center px-0"
-            )}
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-          >
-            <Shield className="w-4 h-4 shrink-0" />
-            {!collapsed && <span>Auditoria</span>}
-          </NavLink>
-        )}
+          {escritorioOpen && (
+            <div className={cn("space-y-0.5", !collapsed && "ml-3 pl-3 border-l border-sidebar-border/50")}>
+              {escritorioItems.map((item) => (
+                <NavLink
+                  key={item.url}
+                  to={item.url}
+                  className={linkClass}
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                >
+                  <item.icon className="w-4 h-4 shrink-0" />
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+              ))}
+
+              {/* Admin-only: Equipe */}
+              {isAdmin && (
+                <NavLink
+                  to="/equipe"
+                  className={linkClass}
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                >
+                  <Users className="w-4 h-4 shrink-0" />
+                  {!collapsed && <span>Equipe</span>}
+                </NavLink>
+              )}
+
+              {/* Admin/Senior: Auditoria */}
+              {isSenior && (
+                <NavLink
+                  to="/auditoria"
+                  className={linkClass}
+                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                >
+                  <Shield className="w-4 h-4 shrink-0" />
+                  {!collapsed && <span>Auditoria</span>}
+                </NavLink>
+              )}
+            </div>
+          )}
+        </div>
       </nav>
 
       {/* User menu */}
