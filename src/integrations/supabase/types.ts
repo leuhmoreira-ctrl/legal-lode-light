@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      kanban_tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          position_index: number
+          priority: string
+          processo_id: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          position_index?: number
+          priority?: string
+          processo_id?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          position_index?: number
+          priority?: string
+          processo_id?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       movimentacoes: {
         Row: {
           complemento: string | null
@@ -49,30 +91,43 @@ export type Database = {
           },
         ]
       }
-      perfis: {
+      notifications: {
         Row: {
           created_at: string
-          email: string
           id: string
-          nome_escritorio: string
+          is_read: boolean
+          link: string | null
+          message: string
+          title: string
+          type: string
+          user_id: string
         }
         Insert: {
           created_at?: string
-          email: string
-          id: string
-          nome_escritorio: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          message: string
+          title: string
+          type?: string
+          user_id: string
         }
         Update: {
           created_at?: string
-          email?: string
           id?: string
-          nome_escritorio?: string
+          is_read?: boolean
+          link?: string | null
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: []
       }
       processos: {
         Row: {
           advogado: string
+          advogado_id: string | null
           cliente: string
           comarca: string
           created_at: string | null
@@ -95,6 +150,7 @@ export type Database = {
         }
         Insert: {
           advogado: string
+          advogado_id?: string | null
           cliente: string
           comarca: string
           created_at?: string | null
@@ -117,6 +173,7 @@ export type Database = {
         }
         Update: {
           advogado?: string
+          advogado_id?: string | null
           cliente?: string
           comarca?: string
           created_at?: string | null
@@ -139,15 +196,65 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_senior: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "senior" | "junior" | "intern" | "secretary"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -274,6 +381,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "senior", "junior", "intern", "secretary"],
+    },
   },
 } as const
