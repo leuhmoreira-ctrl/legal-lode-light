@@ -1,13 +1,9 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
-import { Calculator, FileText, DollarSign, Repeat, Receipt } from "lucide-react";
+import { FileText, DollarSign, Repeat, Receipt } from "lucide-react";
+import { CalculadoraPrazos } from "@/components/CalculadoraPrazos";
 
 const tools = [
-  {
-    icon: Calculator,
-    title: "Calculadora de Prazos",
-    description: "Calcule prazos processuais considerando feriados e suspensões",
-  },
   {
     icon: FileText,
     title: "Gerador de Petições",
@@ -42,6 +38,7 @@ export default function Utilitarios() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <CalculadoraPrazos />
           {tools.map((tool) => (
             <Card
               key={tool.title}
