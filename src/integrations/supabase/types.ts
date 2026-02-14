@@ -49,6 +49,27 @@ export type Database = {
           },
         ]
       }
+      perfis: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nome_escritorio: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          nome_escritorio: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nome_escritorio?: string
+        }
+        Relationships: []
+      }
       processos: {
         Row: {
           advogado: string
