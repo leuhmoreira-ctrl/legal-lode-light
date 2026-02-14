@@ -240,6 +240,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_audit_logs: {
+        Args: never
+        Returns: {
+          id: number
+          old_record: Json
+          op: string
+          record: Json
+          record_id: string
+          table_name: string
+          ts: string
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
