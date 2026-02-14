@@ -25,24 +25,23 @@ import {
 } from "@/components/ui/select";
 import {
   CheckSquare,
-  Paperclip,
   MessageSquare,
   Clock,
   User,
   Plus,
   Send,
-  Download,
   Calendar,
   Loader2,
   Edit2,
   Check,
   X,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ProcessInfoCard } from "@/components/task-detail/ProcessInfoCard";
+import { AttachmentSection, type AttachmentItem } from "@/components/task-detail/AttachmentSection";
 
 interface TaskComment {
   id: string;
@@ -50,17 +49,6 @@ interface TaskComment {
   user_id: string;
   created_at: string;
   user_name?: string;
-}
-
-interface TaskAttachment {
-  id: string;
-  file_name: string;
-  file_size: number;
-  mime_type: string | null;
-  storage_path: string;
-  uploaded_by: string;
-  created_at: string;
-  uploader_name?: string;
 }
 
 interface TaskCheckItem {
@@ -125,19 +113,17 @@ export function TaskDetailModal({
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
-  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentItem[]>([]);
   const [checklist, setChecklist] = useState<TaskCheckItem[]>([]);
   const [activities, setActivities] = useState<TaskActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [newComment, setNewComment] = useState("");
   const [newCheckItem, setNewCheckItem] = useState("");
-  const [uploading, setUploading] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDesc, setEditDesc] = useState("");
-  const [processoNumero, setProcessoNumero] = useState<string | null>(null);
 
   const getMemberName = useCallback(
     (id: string | null) => teamMembers.find((m) => m.id === id)?.full_name || "—",
@@ -150,63 +136,46 @@ export function TaskDetailModal({
     try {
       const [taskRes, commentsRes, attachRes, checkRes, actRes] = await Promise.all([
         supabase.from("kanban_tasks").select("*").eq("id", taskId).single(),
-        supabase
-          .from("task_comments")
-          .select("*")
-          .eq("task_id", taskId)
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("task_attachments")
-          .select("*")
-          .eq("task_id", taskId)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("task_checklist")
-          .select("*")
-          .eq("task_id", taskId)
-          .order("position_index", { ascending: true }),
-        supabase
-          .from("task_activities")
-          .select("*")
-          .eq("task_id", taskId)
-          .order("created_at", { ascending: false })
-          .limit(30),
+        supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at", { ascending: true }),
+        supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
+        supabase.from("task_checklist").select("*").eq("task_id", taskId).order("position_index", { ascending: true }),
+        supabase.from("task_activities").select("*").eq("task_id", taskId).order("created_at", { ascending: false }).limit(30),
       ]);
 
       if (taskRes.data) {
         setTask(taskRes.data);
         setEditTitle(taskRes.data.title);
         setEditDesc(taskRes.data.description || "");
-        if (taskRes.data.processo_id) {
-          const { data: proc } = await supabase
-            .from("processos")
-            .select("numero")
-            .eq("id", taskRes.data.processo_id)
-            .single();
-          setProcessoNumero(proc?.numero || null);
-        } else {
-          setProcessoNumero(null);
-        }
+      }
+
+      // Enrich attachments with category from document_metadata
+      const rawAttachments = attachRes.data || [];
+      if (rawAttachments.length > 0) {
+        const paths = rawAttachments.map((a) => a.storage_path);
+        const { data: docMeta } = await supabase
+          .from("document_metadata")
+          .select("storage_path, category")
+          .in("storage_path", paths);
+        const catMap: Record<string, string> = {};
+        docMeta?.forEach((d) => { catMap[d.storage_path] = d.category; });
+
+        setAttachments(
+          rawAttachments.map((a) => ({
+            ...a,
+            uploader_name: getMemberName(a.uploaded_by),
+            category: catMap[a.storage_path] || undefined,
+          }))
+        );
+      } else {
+        setAttachments([]);
       }
 
       setComments(
-        (commentsRes.data || []).map((c) => ({
-          ...c,
-          user_name: getMemberName(c.user_id),
-        }))
-      );
-      setAttachments(
-        (attachRes.data || []).map((a) => ({
-          ...a,
-          uploader_name: getMemberName(a.uploaded_by),
-        }))
+        (commentsRes.data || []).map((c) => ({ ...c, user_name: getMemberName(c.user_id) }))
       );
       setChecklist(checkRes.data || []);
       setActivities(
-        (actRes.data || []).map((a) => ({
-          ...a,
-          user_name: getMemberName(a.user_id),
-        }))
+        (actRes.data || []).map((a) => ({ ...a, user_name: getMemberName(a.user_id) }))
       );
     } catch (err) {
       console.error("Erro ao carregar detalhes:", err);
@@ -216,9 +185,7 @@ export function TaskDetailModal({
   }, [taskId, getMemberName]);
 
   useEffect(() => {
-    if (taskId && open) {
-      loadTaskDetails();
-    }
+    if (taskId && open) loadTaskDetails();
     if (!open) {
       setTask(null);
       setEditingTitle(false);
@@ -226,7 +193,6 @@ export function TaskDetailModal({
     }
   }, [taskId, open, loadTaskDetails]);
 
-  // Realtime subscriptions
   useEffect(() => {
     if (!taskId || !open) return;
     const ch1 = supabase
@@ -263,7 +229,7 @@ export function TaskDetailModal({
     await supabase.from("kanban_tasks").update({ status }).eq("id", task.id);
     setTask((prev) => prev && { ...prev, status });
     onUpdate?.();
-    loadTaskDetails(); // reload activities
+    loadTaskDetails();
   };
 
   const handlePriorityChange = async (priority: string) => {
@@ -307,70 +273,11 @@ export function TaskDetailModal({
   };
 
   const handleToggleCheck = async (item: TaskCheckItem) => {
-    await supabase
-      .from("task_checklist")
-      .update({ completed: !item.completed })
-      .eq("id", item.id);
+    await supabase.from("task_checklist").update({ completed: !item.completed }).eq("id", item.id);
   };
 
   const handleDeleteCheckItem = async (id: string) => {
     await supabase.from("task_checklist").delete().eq("id", id);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !taskId) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: "Arquivo muito grande", description: "Máximo 10MB", variant: "destructive" });
-      return;
-    }
-    setUploading(true);
-    try {
-      const ext = file.name.split(".").pop();
-      const path = `${taskId}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
-      if (upErr) throw upErr;
-      await supabase.from("task_attachments").insert({
-        task_id: taskId,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type,
-        storage_path: path,
-        uploaded_by: user!.id,
-      });
-
-      // Also insert into document_metadata if the task is linked to a process
-      if (task?.processo_id) {
-        await supabase.from("document_metadata").insert({
-          process_id: task.processo_id,
-          storage_path: path,
-          original_name: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-          category: "other",
-          uploaded_by: user!.id,
-          task_id: taskId,
-        });
-      }
-
-      toast({ title: "✅ Arquivo anexado" });
-      loadTaskDetails();
-    } catch (err: any) {
-      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDownload = async (att: TaskAttachment) => {
-    const { data } = await supabase.storage.from("task-attachments").download(att.storage_path);
-    if (!data) return;
-    const url = URL.createObjectURL(data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = att.file_name;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const checklistProgress =
@@ -421,10 +328,14 @@ export function TaskDetailModal({
                   <Edit2 className="w-4 h-4 text-muted-foreground" />
                 </DialogTitle>
               )}
-              {processoNumero && (
-                <p className="text-sm text-muted-foreground mt-1">📋 Processo: {processoNumero}</p>
-              )}
             </DialogHeader>
+
+            {/* Process Info Card */}
+            {task.processo_id && (
+              <div className="px-6 pt-3">
+                <ProcessInfoCard processoId={task.processo_id} />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6 p-6 pt-4">
               {/* Main column */}
@@ -436,12 +347,7 @@ export function TaskDetailModal({
                   </h3>
                   {editingDesc ? (
                     <div className="space-y-2">
-                      <Textarea
-                        value={editDesc}
-                        onChange={(e) => setEditDesc(e.target.value)}
-                        rows={4}
-                        autoFocus
-                      />
+                      <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={4} autoFocus />
                       <div className="flex gap-2">
                         <Button size="sm" onClick={handleSaveDesc}>Salvar</Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditingDesc(false); setEditDesc(task.description || ""); }}>Cancelar</Button>
@@ -464,42 +370,24 @@ export function TaskDetailModal({
                   <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                     <CheckSquare className="w-4 h-4" />
                     Checklist
-                    {checklist.length > 0 && (
-                      <span className="text-xs text-muted-foreground">({checklistProgress}%)</span>
-                    )}
+                    {checklist.length > 0 && <span className="text-xs text-muted-foreground">({checklistProgress}%)</span>}
                   </h3>
-                  {checklist.length > 0 && (
-                    <Progress value={checklistProgress} className="h-2 mb-3" />
-                  )}
+                  {checklist.length > 0 && <Progress value={checklistProgress} className="h-2 mb-3" />}
                   <div className="space-y-2 mb-3">
                     {checklist.map((item) => (
                       <div key={item.id} className="flex items-center gap-2 group">
-                        <Checkbox
-                          checked={item.completed}
-                          onCheckedChange={() => handleToggleCheck(item)}
-                        />
+                        <Checkbox checked={item.completed} onCheckedChange={() => handleToggleCheck(item)} />
                         <span className={`flex-1 text-sm ${item.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
                           {item.title}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleDeleteCheckItem(item.id)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteCheckItem(item.id)}>
                           <Trash2 className="w-3 h-3 text-destructive" />
                         </Button>
                       </div>
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <Input
-                      placeholder="Adicionar item..."
-                      value={newCheckItem}
-                      onChange={(e) => setNewCheckItem(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddCheckItem()}
-                      className="text-sm"
-                    />
+                    <Input placeholder="Adicionar item..." value={newCheckItem} onChange={(e) => setNewCheckItem(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAddCheckItem()} className="text-sm" />
                     <Button size="sm" variant="outline" onClick={handleAddCheckItem} disabled={!newCheckItem.trim()}>
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -509,39 +397,12 @@ export function TaskDetailModal({
                 <Separator />
 
                 {/* Attachments */}
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                    <Paperclip className="w-4 h-4" />
-                    Anexos ({attachments.length})
-                  </h3>
-                  <div className="space-y-2 mb-3">
-                    {attachments.map((att) => (
-                      <div key={att.id} className="flex items-center justify-between p-2.5 rounded-lg border border-border bg-muted/30">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Paperclip className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{att.file_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {(att.file_size / 1024).toFixed(1)} KB · {att.uploader_name}
-                            </p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => handleDownload(att)}>
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                  <label>
-                    <Button variant="outline" size="sm" className="gap-1.5" disabled={uploading} asChild>
-                      <span>
-                        {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                        {uploading ? "Enviando..." : "Adicionar Anexo"}
-                      </span>
-                    </Button>
-                    <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} />
-                  </label>
-                </div>
+                <AttachmentSection
+                  attachments={attachments}
+                  taskId={taskId!}
+                  processoId={task.processo_id}
+                  onReload={loadTaskDetails}
+                />
 
                 <Separator />
 
@@ -555,9 +416,7 @@ export function TaskDetailModal({
                     {comments.map((comment) => (
                       <div key={comment.id} className="flex gap-2.5">
                         <Avatar className="h-7 w-7 shrink-0">
-                          <AvatarFallback className="text-[10px]">
-                            {comment.user_name?.charAt(0)?.toUpperCase() || "?"}
-                          </AvatarFallback>
+                          <AvatarFallback className="text-[10px]">{comment.user_name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <div className="bg-muted/50 rounded-lg p-2.5">
@@ -572,18 +431,10 @@ export function TaskDetailModal({
                         </div>
                       </div>
                     ))}
-                    {comments.length === 0 && (
-                      <p className="text-sm text-muted-foreground text-center py-3">Nenhum comentário ainda</p>
-                    )}
+                    {comments.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">Nenhum comentário ainda</p>}
                   </div>
                   <div className="flex gap-2">
-                    <Input
-                      placeholder="Escrever comentário..."
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()}
-                      className="text-sm"
-                    />
+                    <Input placeholder="Escrever comentário..." value={newComment} onChange={(e) => setNewComment(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()} className="text-sm" />
                     <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
                       <Send className="w-4 h-4" />
                     </Button>
@@ -593,7 +444,6 @@ export function TaskDetailModal({
 
               {/* Sidebar */}
               <div className="space-y-5 lg:border-l lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0">
-                {/* Status */}
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</h4>
                   <Select value={task.status} onValueChange={handleStatusChange}>
@@ -606,7 +456,6 @@ export function TaskDetailModal({
                   </Select>
                 </div>
 
-                {/* Priority */}
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Prioridade</h4>
                   <Select value={task.priority} onValueChange={handlePriorityChange}>
@@ -621,7 +470,6 @@ export function TaskDetailModal({
 
                 <Separator />
 
-                {/* Assignee */}
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5" /> Responsável
@@ -637,15 +485,12 @@ export function TaskDetailModal({
                   </Select>
                 </div>
 
-                {/* Due date */}
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5" /> Prazo
                   </h4>
                   {task.due_date ? (
-                    <Badge variant="outline" className="text-xs">
-                      {format(new Date(task.due_date), "dd/MM/yyyy")}
-                    </Badge>
+                    <Badge variant="outline" className="text-xs">{format(new Date(task.due_date), "dd/MM/yyyy")}</Badge>
                   ) : (
                     <span className="text-xs text-muted-foreground">Sem prazo definido</span>
                   )}
@@ -653,7 +498,6 @@ export function TaskDetailModal({
 
                 <Separator />
 
-                {/* Activities */}
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5" /> Atividades
@@ -668,13 +512,10 @@ export function TaskDetailModal({
                         </div>
                       </div>
                     ))}
-                    {activities.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Nenhuma atividade</p>
-                    )}
+                    {activities.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma atividade</p>}
                   </div>
                 </div>
 
-                {/* Created at */}
                 <div className="text-xs text-muted-foreground pt-2">
                   Criada em {format(new Date(task.created_at), "dd/MM/yyyy 'às' HH:mm")}
                 </div>
