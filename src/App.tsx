@@ -17,6 +17,8 @@ import Utilitarios from "./pages/Utilitarios";
 import Relatorios from "./pages/Relatorios";
 import Kanban from "./pages/Kanban";
 import Auditoria from "./pages/Auditoria";
+import Equipe from "./pages/Equipe";
+import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +46,8 @@ const App = () => (
               <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
               <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
               <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
+              <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+              <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
