@@ -13,11 +13,15 @@ import {
   Gavel,
   LogOut,
   User,
+  Shield,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions, type UserRole } from "@/contexts/PermissionsContext";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,9 +41,26 @@ const navItems = [
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
 ];
 
+const roleLabels: Record<UserRole, string> = {
+  admin: "Admin",
+  senior: "Sênior",
+  junior: "Júnior",
+  intern: "Estagiário",
+  secretary: "Secretário",
+};
+
+const roleColors: Record<UserRole, string> = {
+  admin: "bg-destructive/10 text-destructive border-destructive/20",
+  senior: "bg-primary/10 text-primary border-primary/20",
+  junior: "bg-accent/10 text-accent-foreground border-accent/20",
+  intern: "bg-muted text-muted-foreground border-border",
+  secretary: "bg-secondary text-secondary-foreground border-secondary",
+};
+
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user, signOut } = useAuth();
+  const { profile, role, isSenior } = usePermissions();
 
   const handleLogout = async () => {
     try {
@@ -62,7 +83,7 @@ export function AppSidebar() {
           <Gavel className="w-4 h-4 text-sidebar-accent-foreground" />
         </div>
         {!collapsed && (
-          <div className="animate-fade-up">
+          <div className="animate-fade-up flex-1 min-w-0">
             <h1 className="text-sm font-bold text-sidebar-primary-foreground tracking-tight">
               JurisControl
             </h1>
@@ -71,6 +92,7 @@ export function AppSidebar() {
             </p>
           </div>
         )}
+        {!collapsed && <NotificationBell />}
       </div>
 
       {/* Search */}
@@ -103,6 +125,21 @@ export function AppSidebar() {
             {!collapsed && <span>{item.title}</span>}
           </NavLink>
         ))}
+
+        {/* Audit - only for admin/senior */}
+        {isSenior && (
+          <NavLink
+            to="/auditoria"
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+              collapsed && "justify-center px-0"
+            )}
+            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          >
+            <Shield className="w-4 h-4 shrink-0" />
+            {!collapsed && <span>Auditoria</span>}
+          </NavLink>
+        )}
       </nav>
 
       {/* User menu */}
@@ -117,13 +154,23 @@ export function AppSidebar() {
             >
               <User className="w-4 h-4 shrink-0" />
               {!collapsed && (
-                <span className="truncate text-xs">{user?.email}</span>
+                <div className="flex flex-col items-start flex-1 min-w-0">
+                  <span className="truncate text-xs font-medium">
+                    {profile?.full_name || user?.email}
+                  </span>
+                  {role && (
+                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 mt-0.5 ${roleColors[role]}`}>
+                      {roleLabels[role]}
+                    </Badge>
+                  )}
+                </div>
               )}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-56">
-            <DropdownMenuLabel className="text-xs truncate">
-              {user?.email}
+            <DropdownMenuLabel className="text-xs">
+              <div>{profile?.full_name || "Usuário"}</div>
+              <div className="text-muted-foreground font-normal truncate">{user?.email}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive">

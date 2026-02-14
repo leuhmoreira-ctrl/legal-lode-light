@@ -42,23 +42,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, nome: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { nome_escritorio: nome },
+        data: { nome_escritorio: nome, full_name: nome },
       },
     });
     if (error) throw error;
-
-    if (data.user) {
-      await supabase.from("perfis").insert({
-        id: data.user.id,
-        nome_escritorio: nome,
-        email: email,
-      });
-    }
+    // Profile and role are auto-created by the database trigger
   };
 
   const signOut = async () => {
