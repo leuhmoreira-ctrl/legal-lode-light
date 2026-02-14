@@ -7,13 +7,18 @@ import { ConversationList } from "./ConversationList";
 import { ChatMessageArea } from "./ChatMessageArea";
 import { NewConversationDialog } from "./NewConversationDialog";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
   const { conversations, loading, createDirectConversation } = useChat();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hide widget on process detail pages (already has integrated chat)
+  const isProcessDetailPage = /^\/processos\/[^/]+$/.test(location.pathname);
+  if (isProcessDetailPage) return null;
 
   const totalUnread = conversations.reduce((sum, c) => sum + c.unread_count, 0);
 
