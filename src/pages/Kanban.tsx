@@ -53,7 +53,11 @@ interface ProcessoMap {
   [id: string]: { id: string; numero: string; cliente: string };
 }
 
-export default function Kanban() {
+interface KanbanProps {
+  personalOnly?: boolean;
+}
+
+export default function Kanban({ personalOnly = false }: KanbanProps) {
   const { user } = useAuth();
   const { teamMembers } = usePermissions();
   const { toast } = useToast();
@@ -77,10 +81,16 @@ export default function Kanban() {
   }, []);
 
   const loadTasks = useCallback(async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from("kanban_tasks")
       .select("*")
       .order("position_index", { ascending: true });
+
+    if (personalOnly && user) {
+      query = query.or(`assigned_to.eq.${user.id},user_id.eq.${user.id}`);
+    }
+
+    const { data, error } = await query;
     if (!error && data) {
       setTasks(data.map((t) => ({
         ...t,
@@ -88,7 +98,7 @@ export default function Kanban() {
       })) as KanbanTask[]);
     }
     setLoading(false);
-  }, [processoMap]);
+  }, [processoMap, personalOnly, user]);
 
   useEffect(() => {
     loadProcessos();
@@ -134,9 +144,12 @@ export default function Kanban() {
       <div className="space-y-6 animate-fade-up">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Kanban</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              {personalOnly ? "Minhas Tarefas" : "Tarefas do Escritório"}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {tasks.filter((t) => t.status !== "done").length} tarefas pendentes
+              {personalOnly ? " atribuídas a você" : " no total"}
             </p>
           </div>
           <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
