@@ -14,6 +14,7 @@ import { GripVertical, User, Calendar, Loader2, Link2, X, Filter } from "lucide-
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 
 const COLUMNS = [
   { id: "todo", title: "A Fazer", color: "bg-muted-foreground" },
@@ -66,6 +67,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [filtroProcesso, setFiltroProcesso] = useState("");
   const [processos, setProcessos] = useState<{ id: string; numero: string }[]>([]);
   const [processoMap, setProcessoMap] = useState<ProcessoMap>({});
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -199,7 +201,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                           <Draggable key={task.id} draggableId={task.id} index={index}>
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.draggableProps}>
-                                <Card className="p-3.5 hover:shadow-md transition-shadow">
+                                <Card className="p-3.5 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedTaskId(task.id)}>
                                   <div className="flex items-start gap-2">
                                     <div {...provided.dragHandleProps}>
                                       <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5" />
@@ -250,6 +252,13 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
             </div>
           </DragDropContext>
         )}
+
+        <TaskDetailModal
+          taskId={selectedTaskId}
+          open={!!selectedTaskId}
+          onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
+          onUpdate={loadTasks}
+        />
       </div>
     </AppLayout>
   );
