@@ -30,7 +30,11 @@ import {
   Loader2,
   FolderOpen,
   Calendar,
+  Paperclip,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DocumentUploader } from "@/components/DocumentUploader";
+import { DocumentList } from "@/components/DocumentList";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -94,6 +98,8 @@ export default function Processos() {
   const [faseFilter, setFaseFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
+  const [docsDialogOpen, setDocsDialogOpen] = useState<string | null>(null);
+  const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncingAll, setSyncingAll] = useState(false);
@@ -496,6 +502,39 @@ export default function Processos() {
                         </DialogContent>
                       </Dialog>
                     )}
+
+                    {/* Documents button */}
+                    <Dialog
+                      open={docsDialogOpen === proc.id}
+                      onOpenChange={(open) => setDocsDialogOpen(open ? proc.id : null)}
+                    >
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                          <Paperclip className="w-3.5 h-3.5" />
+                          Documentos
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Documentos — {proc.numero}</DialogTitle>
+                        </DialogHeader>
+                        <Tabs defaultValue="list" className="mt-4">
+                          <TabsList>
+                            <TabsTrigger value="list">Documentos</TabsTrigger>
+                            <TabsTrigger value="upload">Upload</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="list" className="mt-4">
+                            <DocumentList processId={proc.id} refreshKey={docsRefreshKey} />
+                          </TabsContent>
+                          <TabsContent value="upload" className="mt-4">
+                            <DocumentUploader
+                              processId={proc.id}
+                              onUploadComplete={() => setDocsRefreshKey(k => k + 1)}
+                            />
+                          </TabsContent>
+                        </Tabs>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </Card>
               );

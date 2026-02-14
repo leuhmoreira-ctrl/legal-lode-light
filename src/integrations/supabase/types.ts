@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      document_metadata: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          mime_type: string
+          original_name: string
+          process_id: string
+          size_bytes: number
+          storage_path: string
+          tags: string[] | null
+          uploaded_by: string
+          version: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          mime_type: string
+          original_name: string
+          process_id: string
+          size_bytes: number
+          storage_path: string
+          tags?: string[] | null
+          uploaded_by: string
+          version?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          mime_type?: string
+          original_name?: string
+          process_id?: string
+          size_bytes?: number
+          storage_path?: string
+          tags?: string[] | null
+          uploaded_by?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_metadata_process_id_fkey"
+            columns: ["process_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kanban_tasks: {
         Row: {
           assigned_to: string | null
