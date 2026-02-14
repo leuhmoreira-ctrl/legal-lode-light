@@ -157,12 +157,31 @@ export default function Processos() {
         });
 
         if (error || data?.error) {
+          console.warn(`⚠️ Erro sync ${proc.numero}:`, error || data?.error);
           erros++;
           continue;
         }
 
         if (data) {
           setSyncResults((prev) => ({ ...prev, [proc.id]: data }));
+        }
+
+        // Save movimentações to database
+        if (data?.movimentacoes && data.movimentacoes.length > 0) {
+          const movsToInsert = data.movimentacoes.map((mov: any) => ({
+            processo_id: proc.id,
+            data_movimento: mov.data,
+            descricao: mov.descricao,
+            complemento: mov.complemento || null,
+          }));
+
+          const { error: insertError } = await supabase
+            .from("movimentacoes")
+            .insert(movsToInsert);
+
+          if (insertError) {
+            console.error(`❌ Erro ao salvar movimentações de ${proc.numero}:`, insertError);
+          }
         }
 
         // Update sync timestamp
@@ -172,7 +191,8 @@ export default function Processos() {
           .eq("id", proc.id);
 
         sucessos++;
-      } catch {
+      } catch (err) {
+        console.error(`❌ Erro sync ${proc.numero}:`, err);
         erros++;
       }
     }
