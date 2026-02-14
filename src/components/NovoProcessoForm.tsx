@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 
 interface NovoProcessoFormProps {
-  onSuccess?: () => void
+  onSuccess?: (processoId?: string) => void
   onCancel?: () => void
 }
 
@@ -81,7 +81,7 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
 
       const numeroFormatado = formatarNumeroCNJ(numero)
 
-      const { error } = await supabase.from('processos').insert({
+      const { data: inserted, error } = await supabase.from('processos').insert({
         user_id: userData.user.id,
         numero: numeroFormatado,
         cliente: cliente.trim(),
@@ -96,12 +96,12 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
         sistema_tribunal: autofillData?.tribunal.sistema || null,
         data_ultima_sincronizacao: autofillData ? new Date().toISOString() : null,
         descricao_movimentacao: assunto.trim() || null,
-      })
+      }).select('id').single()
 
       if (error) throw error
 
       toast({ title: 'Processo cadastrado!', description: 'Dados salvos com sucesso.' })
-      onSuccess?.()
+      onSuccess?.(inserted?.id)
     } catch (err: any) {
       toast({ title: 'Erro ao cadastrar', description: err.message, variant: 'destructive' })
     } finally {

@@ -7,25 +7,13 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, GripVertical, User, Calendar, Loader2 } from "lucide-react";
+import { GripVertical, User, Calendar, Loader2, Link2, X, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 
 const COLUMNS = [
   { id: "todo", title: "A Fazer", color: "bg-muted-foreground" },
@@ -58,6 +46,11 @@ interface KanbanTask {
   due_date: string | null;
   user_id: string;
   created_at: string;
+  processo?: { id: string; numero: string; cliente: string } | null;
+}
+
+interface ProcessoMap {
+  [id: string]: { id: string; numero: string; cliente: string };
 }
 
 export default function Kanban() {
@@ -66,17 +59,40 @@ export default function Kanban() {
   const { toast } = useToast();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [newTask, setNewTask] = useState({ title: "", description: "", priority: "medium", assigned_to: "", due_date: "" });
+  const [filtroProcesso, setFiltroProcesso] = useState("");
+  const [processos, setProcessos] = useState<{ id: string; numero: string }[]>([]);
+  const [processoMap, setProcessoMap] = useState<ProcessoMap>({});
+
+  const loadProcessos = useCallback(async () => {
+    const { data } = await supabase
+      .from("processos")
+      .select("id, numero, cliente")
+      .order("created_at", { ascending: false });
+    if (data) {
+      setProcessos(data);
+      const map: ProcessoMap = {};
+      data.forEach((p) => { map[p.id] = p; });
+      setProcessoMap(map);
+    }
+  }, []);
 
   const loadTasks = useCallback(async () => {
     const { data, error } = await supabase
       .from("kanban_tasks")
       .select("*")
       .order("position_index", { ascending: true });
-    if (!error && data) setTasks(data as KanbanTask[]);
+    if (!error && data) {
+      setTasks(data.map((t) => ({
+        ...t,
+        processo: t.processo_id ? processoMap[t.processo_id] || null : null,
+      })) as KanbanTask[]);
+    }
     setLoading(false);
-  }, []);
+  }, [processoMap]);
+
+  useEffect(() => {
+    loadProcessos();
+  }, [loadProcessos]);
 
   useEffect(() => {
     loadTasks();
@@ -103,72 +119,48 @@ export default function Kanban() {
       .eq("id", draggableId);
   };
 
-  const createTask = async () => {
-    if (!newTask.title.trim() || !user) return;
-    const { error } = await supabase.from("kanban_tasks").insert({
-      title: newTask.title,
-      description: newTask.description || null,
-      priority: newTask.priority,
-      assigned_to: newTask.assigned_to || user.id,
-      due_date: newTask.due_date || null,
-      user_id: user.id,
-      status: "todo",
-      position_index: tasks.filter((t) => t.status === "todo").length,
-    });
-    if (error) {
-      toast({ title: "Erro ao criar tarefa", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Tarefa criada!" });
-      setNewTask({ title: "", description: "", priority: "medium", assigned_to: "", due_date: "" });
-      setDialogOpen(false);
+  const getTasksByStatus = (status: string) => {
+    let filtered = tasks.filter((t) => t.status === status);
+    if (filtroProcesso) {
+      filtered = filtered.filter((t) => t.processo_id === filtroProcesso);
     }
+    return filtered;
   };
 
-  const getTasksByStatus = (status: string) => tasks.filter((t) => t.status === status);
   const getMemberName = (id: string | null) => teamMembers.find((m) => m.id === id)?.full_name || "—";
 
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-up">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Kanban</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {tasks.filter((t) => t.status !== "done").length} tarefas pendentes
             </p>
           </div>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2"><Plus className="w-4 h-4" /> Nova Tarefa</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nova Tarefa</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <Input placeholder="Título da tarefa" value={newTask.title} onChange={(e) => setNewTask((p) => ({ ...p, title: e.target.value }))} />
-                <Textarea placeholder="Descrição (opcional)" value={newTask.description} onChange={(e) => setNewTask((p) => ({ ...p, description: e.target.value }))} />
-                <div className="grid grid-cols-2 gap-3">
-                  <Select value={newTask.priority} onValueChange={(v) => setNewTask((p) => ({ ...p, priority: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Prioridade" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="high">Alta</SelectItem>
-                      <SelectItem value="medium">Média</SelectItem>
-                      <SelectItem value="low">Baixa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={newTask.assigned_to} onValueChange={(v) => setNewTask((p) => ({ ...p, assigned_to: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Responsável" /></SelectTrigger>
-                    <SelectContent>
-                      {teamMembers.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Input type="date" value={newTask.due_date} onChange={(e) => setNewTask((p) => ({ ...p, due_date: e.target.value }))} />
-                <Button onClick={createTask} className="w-full">Criar Tarefa</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
+        </div>
+
+        {/* Process filter */}
+        <div className="flex items-center gap-3">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <Select value={filtroProcesso} onValueChange={setFiltroProcesso}>
+            <SelectTrigger className="w-72">
+              <SelectValue placeholder="Filtrar por processo..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os processos</SelectItem>
+              {processos.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.numero}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filtroProcesso && filtroProcesso !== "all" && (
+            <Button variant="ghost" size="sm" onClick={() => setFiltroProcesso("")}>
+              <X className="w-4 h-4 mr-1" /> Limpar
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -201,6 +193,16 @@ export default function Kanban() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <p className="text-sm font-medium text-foreground">{task.title}</p>
+
+                                      {task.processo && (
+                                        <div className="flex items-center gap-1 mt-1">
+                                          <Link2 className="w-3 h-3 text-primary" />
+                                          <span className="text-[11px] text-primary font-medium truncate">
+                                            {task.processo.numero}
+                                          </span>
+                                        </div>
+                                      )}
+
                                       {task.description && (
                                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
                                       )}
