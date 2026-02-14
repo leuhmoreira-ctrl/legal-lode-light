@@ -42,6 +42,7 @@ import { format, formatDistanceToNow, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { NovoWorkflowDialog } from "@/components/workflows/NovoWorkflowDialog";
+import { WorkflowApprovalActions } from "@/components/workflows/WorkflowApprovalActions";
 
 type WorkflowStatus = "rascunho" | "em_andamento" | "concluido" | "rejeitado" | "cancelado";
 
@@ -318,6 +319,7 @@ export default function Workflows() {
                       getMemberName={getMemberName}
                       isMyAction={isMyAction(w)}
                       currentUserId={user?.id}
+                      onRefresh={loadWorkflows}
                     />
                   ))}
                 </div>
@@ -343,11 +345,13 @@ function WorkflowCard({
   getMemberName,
   isMyAction,
   currentUserId,
+  onRefresh,
 }: {
   workflow: WorkflowWithEtapas;
   getMemberName: (id: string | null) => string;
   isMyAction: boolean;
   currentUserId?: string;
+  onRefresh?: () => void;
 }) {
   const progress = (() => {
     if (w.etapas.length === 0) return 0;
@@ -440,6 +444,18 @@ function WorkflowCard({
               </Badge>
             )}
           </div>
+
+          {/* Approval actions */}
+          {isMyAction && currentEtapa && w.status === "em_andamento" && (
+            <WorkflowApprovalActions
+              workflowId={w.id}
+              workflowTitulo={w.titulo}
+              etapaAtualId={currentEtapa.id}
+              etapaAtualNome={currentEtapa.nome}
+              etapas={w.etapas}
+              onSuccess={onRefresh}
+            />
+          )}
         </div>
 
         {/* Actions */}
