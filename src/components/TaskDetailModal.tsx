@@ -338,6 +338,21 @@ export function TaskDetailModal({
         storage_path: path,
         uploaded_by: user!.id,
       });
+
+      // Also insert into document_metadata if the task is linked to a process
+      if (task?.processo_id) {
+        await supabase.from("document_metadata").insert({
+          process_id: task.processo_id,
+          storage_path: path,
+          original_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+          category: "other",
+          uploaded_by: user!.id,
+          task_id: taskId,
+        });
+      }
+
       toast({ title: "✅ Arquivo anexado" });
       loadTaskDetails();
     } catch (err: any) {
