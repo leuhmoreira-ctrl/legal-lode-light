@@ -25,6 +25,7 @@ export type Database = {
           size_bytes: number
           storage_path: string
           tags: string[] | null
+          task_id: string | null
           uploaded_by: string
           version: number
         }
@@ -38,6 +39,7 @@ export type Database = {
           size_bytes: number
           storage_path: string
           tags?: string[] | null
+          task_id?: string | null
           uploaded_by: string
           version?: number
         }
@@ -51,6 +53,7 @@ export type Database = {
           size_bytes?: number
           storage_path?: string
           tags?: string[] | null
+          task_id?: string | null
           uploaded_by?: string
           version?: number
         }
@@ -60,6 +63,13 @@ export type Database = {
             columns: ["process_id"]
             isOneToOne: false
             referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_metadata_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "kanban_tasks"
             referencedColumns: ["id"]
           },
         ]

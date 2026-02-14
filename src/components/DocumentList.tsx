@@ -41,6 +41,8 @@ interface DocumentMeta {
   version: number;
   created_at: string;
   uploaded_by: string;
+  task_id?: string | null;
+  task_title?: string | null;
 }
 
 interface DocumentListProps {
@@ -71,8 +73,25 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
 
     if (error) {
       console.error('Erro ao carregar documentos:', error);
+      setDocs([]);
     } else {
-      setDocs(data || []);
+      // For docs with task_id, fetch the task title
+      const rawDocs = data || [];
+      const taskIds = [...new Set(rawDocs.filter(d => d.task_id).map(d => d.task_id!))];
+      let taskMap: Record<string, string> = {};
+      if (taskIds.length > 0) {
+        const { data: tasks } = await supabase
+          .from('kanban_tasks')
+          .select('id, title')
+          .in('id', taskIds);
+        if (tasks) {
+          taskMap = Object.fromEntries(tasks.map(t => [t.id, t.title]));
+        }
+      }
+      setDocs(rawDocs.map(d => ({
+        ...d,
+        task_title: d.task_id ? taskMap[d.task_id] || null : null,
+      })));
     }
     setLoading(false);
   };
@@ -176,10 +195,15 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
               <File className="w-5 h-5 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{doc.original_name}</p>
-                <div className="flex items-center gap-2 mt-0.5">
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <Badge variant="outline" className={`text-[10px] ${CATEGORY_COLORS[doc.category] || ''}`}>
                     {CATEGORY_LABELS[doc.category] || doc.category}
                   </Badge>
+                  {doc.task_title && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      📋 Tarefa: {doc.task_title}
+                    </Badge>
+                  )}
                   <span className="text-[10px] text-muted-foreground">
                     {(doc.size_bytes / 1024 / 1024).toFixed(2)} MB
                   </span>
