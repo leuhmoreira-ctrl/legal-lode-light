@@ -112,7 +112,7 @@ export default function ProcessoDetail() {
         return;
       }
 
-      // Save new movimentações
+      // Save new movimentações (deduplicated via unique constraint)
       const newMovs = data?.movimentacoes || [];
       if (newMovs.length > 0) {
         const movsToInsert = newMovs.map((mov: any) => ({
@@ -122,7 +122,10 @@ export default function ProcessoDetail() {
           complemento: mov.complemento || null,
         }));
 
-        await supabase.from("movimentacoes").insert(movsToInsert);
+        await supabase.from("movimentacoes").upsert(movsToInsert, {
+          onConflict: "processo_id,data_movimento,descricao",
+          ignoreDuplicates: true,
+        });
       }
 
       // Update sync timestamp

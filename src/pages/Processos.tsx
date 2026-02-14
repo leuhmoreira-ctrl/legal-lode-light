@@ -179,7 +179,7 @@ export default function Processos() {
           setSyncResults((prev) => ({ ...prev, [proc.id]: data }));
         }
 
-        // Save movimentações to database
+        // Save movimentações (deduplicated via unique constraint)
         if (data?.movimentacoes && data.movimentacoes.length > 0) {
           const movsToInsert = data.movimentacoes.map((mov: any) => ({
             processo_id: proc.id,
@@ -190,7 +190,10 @@ export default function Processos() {
 
           const { error: insertError } = await supabase
             .from("movimentacoes")
-            .insert(movsToInsert);
+            .upsert(movsToInsert, {
+              onConflict: "processo_id,data_movimento,descricao",
+              ignoreDuplicates: true,
+            });
 
           if (insertError) {
             console.error(`❌ Erro ao salvar movimentações de ${proc.numero}:`, insertError);
