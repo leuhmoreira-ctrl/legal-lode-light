@@ -23,6 +23,7 @@ import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
 import Mensagens from "./pages/Mensagens";
+import Workflows from "./pages/Workflows";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
               <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
               <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
+              <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
