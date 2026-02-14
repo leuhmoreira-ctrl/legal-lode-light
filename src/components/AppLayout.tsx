@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <main className="flex-1 overflow-auto">
         <div className="p-6 max-w-[1400px] mx-auto">{children}</div>
       </main>
+      <ChatWidget />
     </div>
   );
 }
