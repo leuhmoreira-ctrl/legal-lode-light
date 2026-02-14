@@ -863,6 +863,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_workflow: {
+        Args: { _user_id: string; _workflow_id: string }
+        Returns: boolean
+      }
       get_audit_logs: {
         Args: never
         Returns: {
@@ -890,6 +894,10 @@ export type Database = {
       is_admin_or_senior: { Args: { _user_id: string }; Returns: boolean }
       is_chat_participant: {
         Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_workflow_participant: {
+        Args: { _user_id: string; _workflow_id: string }
         Returns: boolean
       }
     }
