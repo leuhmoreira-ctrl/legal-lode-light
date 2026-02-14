@@ -38,6 +38,7 @@ import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
 import { format, parseISO } from "date-fns";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
   generateDeepLink,
@@ -98,6 +99,7 @@ interface UltimaMovimentacao {
 export default function Processos() {
   const { user } = useAuth();
   const { isSenior } = usePermissions();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [faseFilter, setFaseFilter] = useState("all");
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
@@ -363,7 +365,7 @@ export default function Processos() {
               const syncResult = syncResults[proc.id];
 
               return (
-                <Card key={proc.id} className="p-4 hover:shadow-md transition-shadow">
+                <Card key={proc.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/processos/${proc.id}`)}>
                   {/* Header */}
                   <div className="flex flex-col md:flex-row md:items-center gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -443,7 +445,7 @@ export default function Processos() {
                   </div>
 
                   {/* Action buttons */}
-                  <div className="mt-3 ml-12 flex flex-wrap gap-2">
+                  <div className="mt-3 ml-12 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                     {portalLink && (
                       <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" asChild>
                         <a href={portalLink} target="_blank" rel="noopener noreferrer">

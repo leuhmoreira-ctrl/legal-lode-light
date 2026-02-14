@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import Index from "./pages/Index";
 import Processos from "./pages/Processos";
+import ProcessoDetail from "./pages/ProcessoDetail";
 import Prazos from "./pages/Prazos";
 
 import Clientes from "./pages/Clientes";
@@ -41,6 +42,7 @@ const App = () => (
               {/* Protected routes */}
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
+              <Route path="/processos/:id" element={<ProtectedRoute><ProcessoDetail /></ProtectedRoute>} />
               <Route path="/prazos" element={<ProtectedRoute><Prazos /></ProtectedRoute>} />
               
               <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
