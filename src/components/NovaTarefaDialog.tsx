@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Link2, PlusCircle, X, Loader2 } from "lucide-react";
+import { Plus, Link2, PlusCircle, X, Loader2, Scale, Briefcase, UserRound } from "lucide-react";
 import { NovoProcessoForm } from "@/components/NovoProcessoForm";
 
 interface Processo {
@@ -41,6 +41,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
   const [dataVencimento, setDataVencimento] = useState("");
 
   const [vinculoOpcao, setVinculoOpcao] = useState("nenhum");
+  const [eventCategory, setEventCategory] = useState<"processual" | "escritorio" | "pessoal">("escritorio");
   const [processoSelecionado, setProcessoSelecionado] = useState("");
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [modalNovoProcesso, setModalNovoProcesso] = useState(false);
@@ -67,6 +68,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
     setDataVencimento("");
     setVinculoOpcao("nenhum");
     setProcessoSelecionado("");
+    setEventCategory("escritorio");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,6 +88,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
 
     setLoading(true);
     try {
+      const finalCategory = vinculoOpcao !== "nenhum" ? "processual" : eventCategory;
       const { error } = await supabase.from("kanban_tasks").insert({
         title: titulo,
         description: descricao || null,
@@ -96,6 +99,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
         due_date: dataVencimento || null,
         user_id: user!.id,
         processo_id: vinculoOpcao !== "nenhum" ? processoSelecionado : null,
+        event_category: finalCategory,
       });
       if (error) throw error;
 
@@ -180,6 +184,34 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
           <div className="space-y-1.5">
             <Label>Data de Vencimento</Label>
             <Input type="date" value={dataVencimento} onChange={(e) => setDataVencimento(e.target.value)} />
+          </div>
+
+          {/* Event Category */}
+          <div className="border-t pt-4 space-y-3">
+            <Label className="text-sm font-semibold">Tipo de Evento *</Label>
+            <RadioGroup value={eventCategory} onValueChange={(v) => setEventCategory(v as any)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="processual" id="cat-processual" />
+                <Label htmlFor="cat-processual" className="font-normal cursor-pointer flex items-center gap-1.5">
+                  <Scale className="h-3.5 w-3.5 text-orange-500" /> Prazo Processual
+                  <span className="text-[10px] text-muted-foreground ml-1">— vinculado a processo judicial</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="escritorio" id="cat-escritorio" />
+                <Label htmlFor="cat-escritorio" className="font-normal cursor-pointer flex items-center gap-1.5">
+                  <Briefcase className="h-3.5 w-3.5 text-blue-500" /> Escritório
+                  <span className="text-[10px] text-muted-foreground ml-1">— visível para toda a equipe</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="pessoal" id="cat-pessoal" />
+                <Label htmlFor="cat-pessoal" className="font-normal cursor-pointer flex items-center gap-1.5">
+                  <UserRound className="h-3.5 w-3.5 text-violet-500" /> Pessoal
+                  <span className="text-[10px] text-muted-foreground ml-1">— visível apenas para você</span>
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
           {/* Process linking section */}

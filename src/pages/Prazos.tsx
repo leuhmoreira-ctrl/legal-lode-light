@@ -94,7 +94,8 @@ function classifyMockPrazo(tipo: string): EventCategory {
 }
 
 function classifyDbTask(task: any): EventCategory {
-  if (task.processo_id) return "processual";
+  if (task.event_category === "pessoal") return "pessoal";
+  if (task.event_category === "processual" || task.processo_id) return "processual";
   return "escritorio";
 }
 
@@ -133,20 +134,33 @@ export default function Prazos() {
       const start = startOfMonth(currentMonth);
       const end = endOfMonth(currentMonth);
 
-      let query = supabase
+      // Load non-personal tasks (visible based on viewMode)
+      let nonPersonalQuery = supabase
         .from("kanban_tasks")
         .select("*")
         .not("due_date", "is", null)
+        .neq("event_category", "pessoal")
         .gte("due_date", format(start, "yyyy-MM-dd"))
         .lte("due_date", format(end, "yyyy-MM-dd"))
         .order("due_date", { ascending: true });
 
       if (viewMode === "personal") {
-        query = query.or(`assigned_to.eq.${user.id},user_id.eq.${user.id}`);
+        nonPersonalQuery = nonPersonalQuery.or(`assigned_to.eq.${user.id},user_id.eq.${user.id}`);
       }
 
-      const { data } = await query;
-      setDbTasks(data || []);
+      // Load personal tasks (always filtered to current user only)
+      const personalQuery = supabase
+        .from("kanban_tasks")
+        .select("*")
+        .not("due_date", "is", null)
+        .eq("event_category", "pessoal")
+        .eq("user_id", user.id)
+        .gte("due_date", format(start, "yyyy-MM-dd"))
+        .lte("due_date", format(end, "yyyy-MM-dd"))
+        .order("due_date", { ascending: true });
+
+      const [nonPersonalRes, personalRes] = await Promise.all([nonPersonalQuery, personalQuery]);
+      setDbTasks([...(nonPersonalRes.data || []), ...(personalRes.data || [])]);
     };
     loadTasks();
   }, [user, viewMode, currentMonth]);
