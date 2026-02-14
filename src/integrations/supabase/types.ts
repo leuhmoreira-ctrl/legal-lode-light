@@ -179,6 +179,7 @@ export type Database = {
           created_at: string
           description: string | null
           due_date: string | null
+          event_category: string
           id: string
           position_index: number
           priority: string
@@ -192,6 +193,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          event_category?: string
           id?: string
           position_index?: number
           priority?: string
@@ -205,6 +207,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           due_date?: string | null
+          event_category?: string
           id?: string
           position_index?: number
           priority?: string
