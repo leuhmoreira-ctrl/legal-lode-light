@@ -2,11 +2,33 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { prazosMock } from "@/data/mockData";
-import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, getDay, addMonths, subMonths, isPast, isToday as isDateToday } from "date-fns";
+import {
+  format,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  getDay,
+  addMonths,
+  subMonths,
+  isPast,
+  isToday as isDateToday,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, Clock, AlertTriangle, Users, User, Building2 } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Scale,
+  Briefcase,
+  UserRound,
+  User,
+  Building2,
+  Calendar,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -14,33 +36,95 @@ import { supabase } from "@/integrations/supabase/client";
 
 type ViewMode = "personal" | "office";
 
-const tipoIcon: Record<string, React.ReactNode> = {
-  Processual: <Clock className="w-3.5 h-3.5" />,
-  Administrativo: <CalendarDays className="w-3.5 h-3.5" />,
-  Audiência: <AlertTriangle className="w-3.5 h-3.5" />,
-  Reunião: <Users className="w-3.5 h-3.5" />,
+type EventCategory = "processual" | "escritorio" | "pessoal";
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  date: Date;
+  category: EventCategory;
+  processoNumero?: string;
+  processoId?: string;
+  responsavel?: string;
+  urgency: "urgente" | "proximo" | "em_dia";
+  source: "mock" | "db";
+}
+
+const CATEGORY_CONFIG: Record<
+  EventCategory,
+  { label: string; icon: React.ElementType; dotClass: string; badgeClass: string }
+> = {
+  processual: {
+    label: "Prazos Processuais",
+    icon: Scale,
+    dotClass: "bg-orange-500",
+    badgeClass: "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800",
+  },
+  escritorio: {
+    label: "Tarefas do Escritório",
+    icon: Briefcase,
+    dotClass: "bg-blue-500",
+    badgeClass: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800",
+  },
+  pessoal: {
+    label: "Pessoal",
+    icon: UserRound,
+    dotClass: "bg-violet-500",
+    badgeClass: "bg-violet-100 text-violet-700 border-violet-200 dark:bg-violet-900/30 dark:text-violet-400 dark:border-violet-800",
+  },
 };
 
-const statusBg: Record<string, string> = {
+const urgencyBg: Record<string, string> = {
   urgente: "urgency-high",
   proximo: "urgency-medium",
   em_dia: "urgency-low",
 };
 
-const statusLabel: Record<string, string> = {
+const urgencyLabel: Record<string, string> = {
   urgente: "Urgente",
   proximo: "Próximo",
   em_dia: "Em dia",
 };
 
+function classifyMockPrazo(tipo: string): EventCategory {
+  if (tipo === "Processual" || tipo === "Audiência") return "processual";
+  if (tipo === "Administrativo" || tipo === "Reunião") return "escritorio";
+  return "escritorio";
+}
+
+function classifyDbTask(task: any): EventCategory {
+  if (task.processo_id) return "processual";
+  return "escritorio";
+}
+
+function loadFilterPrefs(): Record<EventCategory, boolean> {
+  try {
+    const saved = localStorage.getItem("prazos_filters");
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { processual: true, escritorio: true, pessoal: false };
+}
+
 export default function Prazos() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("personal");
   const [dbTasks, setDbTasks] = useState<any[]>([]);
+  const [filters, setFilters] = useState<Record<EventCategory, boolean>>(loadFilterPrefs);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const { user } = useAuth();
-  const { isAdmin, isSenior } = usePermissions();
+  const { isAdmin, isSenior, teamMembers } = usePermissions();
 
   const canViewOffice = isAdmin || isSenior;
+
+  // Persist filter prefs
+  useEffect(() => {
+    localStorage.setItem("prazos_filters", JSON.stringify(filters));
+  }, [filters]);
+
+  const toggleFilter = useCallback((cat: EventCategory) => {
+    setFilters((prev) => ({ ...prev, [cat]: !prev[cat] }));
+  }, []);
 
   // Load tasks with due_date from database
   useEffect(() => {
@@ -67,37 +151,74 @@ export default function Prazos() {
     loadTasks();
   }, [user, viewMode, currentMonth]);
 
-  // Filter mock data based on view mode (for backward compat)
-  const filteredPrazos = useMemo(() => {
-    if (viewMode === "office") return prazosMock;
-    // "personal" — show subset (first few as placeholder since mock has no user_id)
-    return prazosMock;
-  }, [viewMode]);
+  // Build unified events list
+  const events: CalendarEvent[] = useMemo(() => {
+    const result: CalendarEvent[] = [];
+
+    // From mock data
+    prazosMock.forEach((p) => {
+      result.push({
+        id: `mock-${p.id}`,
+        title: p.descricao,
+        date: parseISO(p.dataVencimento),
+        category: classifyMockPrazo(p.tipo),
+        processoNumero: p.processoNumero,
+        processoId: p.processoId,
+        responsavel: p.responsavel,
+        urgency: p.status,
+        source: "mock",
+      });
+    });
+
+    // From database
+    dbTasks.forEach((t) => {
+      const getMemberName = (id: string | null) =>
+        teamMembers.find((m) => m.id === id)?.full_name || "—";
+      result.push({
+        id: `db-${t.id}`,
+        title: t.title,
+        description: t.description,
+        date: new Date(t.due_date),
+        category: classifyDbTask(t),
+        responsavel: getMemberName(t.assigned_to),
+        urgency:
+          isPast(new Date(t.due_date)) && !isDateToday(new Date(t.due_date))
+            ? "urgente"
+            : isDateToday(new Date(t.due_date))
+            ? "proximo"
+            : "em_dia",
+        source: "db",
+      });
+    });
+
+    return result;
+  }, [dbTasks, teamMembers]);
+
+  // Apply category filters
+  const filteredEvents = useMemo(
+    () => events.filter((e) => filters[e.category]),
+    [events, filters]
+  );
 
   const start = startOfMonth(currentMonth);
   const end = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start, end });
   const startDayOfWeek = getDay(start);
 
-  const getPrazosForDay = (day: Date) =>
-    filteredPrazos.filter((p) => isSameDay(parseISO(p.dataVencimento), day));
+  const getEventsForDay = (day: Date) =>
+    filteredEvents.filter((e) => isSameDay(e.date, day));
 
   // Stats
   const stats = useMemo(() => {
-    const today = new Date();
-    const overdue = filteredPrazos.filter(
-      (p) => isPast(parseISO(p.dataVencimento)) && !isDateToday(parseISO(p.dataVencimento))
-    ).length;
-    const todayCount = filteredPrazos.filter((p) =>
-      isDateToday(parseISO(p.dataVencimento))
-    ).length;
+    const overdue = filteredEvents.filter((e) => e.urgency === "urgente").length;
+    const todayCount = filteredEvents.filter((e) => isDateToday(e.date)).length;
     return {
-      total: filteredPrazos.length + dbTasks.length,
+      total: filteredEvents.length,
       overdue,
-      today: todayCount + dbTasks.filter((t) => isDateToday(new Date(t.due_date))).length,
-      upcoming: filteredPrazos.length - overdue - todayCount,
+      today: todayCount,
+      upcoming: filteredEvents.length - overdue - todayCount,
     };
-  }, [filteredPrazos, dbTasks]);
+  }, [filteredEvents]);
 
   return (
     <AppLayout>
@@ -111,7 +232,6 @@ export default function Prazos() {
             </p>
           </div>
 
-          {/* Segmented Control */}
           <div className="flex items-center rounded-lg bg-muted p-1 gap-1">
             <button
               onClick={() => setViewMode("personal")}
@@ -140,6 +260,36 @@ export default function Prazos() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* Category Filters */}
+        <div className="flex flex-wrap items-center gap-4">
+          {(Object.entries(CATEGORY_CONFIG) as [EventCategory, typeof CATEGORY_CONFIG[EventCategory]][]).map(
+            ([key, cfg]) => {
+              const Icon = cfg.icon;
+              const count = events.filter((e) => e.category === key).length;
+              return (
+                <label
+                  key={key}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-all select-none",
+                    filters[key]
+                      ? cfg.badgeClass
+                      : "bg-muted/50 text-muted-foreground border-border opacity-60"
+                  )}
+                >
+                  <Checkbox
+                    checked={filters[key]}
+                    onCheckedChange={() => toggleFilter(key)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Icon className="w-3.5 h-3.5" />
+                  <span className="font-medium">{cfg.label}</span>
+                  <span className="text-xs opacity-70">({count})</span>
+                </label>
+              );
+            }
+          )}
         </div>
 
         {/* Stats cards */}
@@ -172,13 +322,19 @@ export default function Prazos() {
             <Card className="p-5">
               {/* Month nav */}
               <div className="flex items-center justify-between mb-4">
-                <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1 rounded hover:bg-muted">
+                <button
+                  onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                  className="p-1 rounded hover:bg-muted"
+                >
                   <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                 </button>
                 <h3 className="text-sm font-semibold text-foreground capitalize">
                   {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
                 </h3>
-                <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1 rounded hover:bg-muted">
+                <button
+                  onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                  className="p-1 rounded hover:bg-muted"
+                >
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
@@ -186,7 +342,10 @@ export default function Prazos() {
               {/* Day headers */}
               <div className="grid grid-cols-7 gap-1 mb-1">
                 {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
-                  <div key={d} className="text-center text-[10px] font-medium text-muted-foreground py-1">
+                  <div
+                    key={d}
+                    className="text-center text-[10px] font-medium text-muted-foreground py-1"
+                  >
                     {d}
                   </div>
                 ))}
@@ -195,35 +354,51 @@ export default function Prazos() {
               {/* Calendar grid */}
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: startDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-20" />
+                  <div key={`empty-${i}`} className="h-24" />
                 ))}
                 {days.map((day) => {
-                  const dayPrazos = getPrazosForDay(day);
-                  const dayTasks = dbTasks.filter((t) => isSameDay(new Date(t.due_date), day));
-                  const allItems = [...dayPrazos.map((p) => ({ type: "mock" as const, label: p.descricao, status: p.status })), ...dayTasks.map((t) => ({ type: "db" as const, label: t.title, status: isPast(new Date(t.due_date)) && !isDateToday(new Date(t.due_date)) ? "urgente" : "em_dia" }))];
+                  const dayEvents = getEventsForDay(day);
                   const isToday = isSameDay(day, new Date());
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`h-20 rounded-lg p-1.5 text-xs border ${
-                        isToday ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"
-                      }`}
+                      className={cn(
+                        "h-24 rounded-lg p-1.5 text-xs border transition-colors",
+                        isToday
+                          ? "border-primary bg-primary/5"
+                          : "border-transparent hover:bg-muted/50"
+                      )}
                     >
-                      <span className={`font-medium ${isToday ? "text-primary" : "text-foreground"}`}>
+                      <span
+                        className={cn(
+                          "font-medium",
+                          isToday ? "text-primary" : "text-foreground"
+                        )}
+                      >
                         {format(day, "d")}
                       </span>
                       <div className="mt-0.5 space-y-0.5">
-                        {allItems.slice(0, 2).map((item, idx) => (
-                          <div
-                            key={idx}
-                            className={`px-1 py-0.5 rounded text-[9px] truncate border ${statusBg[item.status] || ""}`}
-                          >
-                            {item.label}
-                          </div>
-                        ))}
-                        {allItems.length > 2 && (
+                        {dayEvents.slice(0, 2).map((ev) => {
+                          const cfg = CATEGORY_CONFIG[ev.category];
+                          return (
+                            <div
+                              key={ev.id}
+                              className={cn(
+                                "flex items-center gap-1 px-1 py-0.5 rounded text-[9px] truncate cursor-pointer hover:opacity-80 transition-opacity",
+                                cfg.badgeClass
+                              )}
+                              onClick={() => setSelectedEvent(ev)}
+                            >
+                              <div
+                                className={cn("w-1.5 h-1.5 rounded-full shrink-0", cfg.dotClass)}
+                              />
+                              {ev.title}
+                            </div>
+                          );
+                        })}
+                        {dayEvents.length > 2 && (
                           <span className="text-[9px] text-muted-foreground">
-                            +{allItems.length - 2} mais
+                            +{dayEvents.length - 2} mais
                           </span>
                         )}
                       </div>
@@ -231,48 +406,171 @@ export default function Prazos() {
                   );
                 })}
               </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
+                {(Object.entries(CATEGORY_CONFIG) as [EventCategory, typeof CATEGORY_CONFIG[EventCategory]][]).map(
+                  ([key, cfg]) => {
+                    const Icon = cfg.icon;
+                    return (
+                      <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <div className={cn("w-2.5 h-2.5 rounded-full", cfg.dotClass)} />
+                        <Icon className="w-3 h-3" />
+                        <span>{cfg.label}</span>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="lista" className="mt-4">
             <div className="space-y-3">
-              {filteredPrazos
-                .sort((a, b) => a.dataVencimento.localeCompare(b.dataVencimento))
-                .map((prazo) => (
-                  <Card key={prazo.id} className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className={`mt-0.5 px-2 py-1 rounded text-[10px] font-semibold border ${statusBg[prazo.status]}`}>
-                        {statusLabel[prazo.status]}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          {tipoIcon[prazo.tipo]}
-                          <span className="text-sm font-medium text-foreground">
-                            {prazo.descricao}
-                          </span>
-                          <Badge variant="secondary" className="text-[10px]">
-                            {prazo.tipo}
-                          </Badge>
+              {filteredEvents.length === 0 && (
+                <Card className="p-8">
+                  <div className="text-center text-muted-foreground">
+                    <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Nenhum evento encontrado com os filtros selecionados</p>
+                  </div>
+                </Card>
+              )}
+              {filteredEvents
+                .sort((a, b) => a.date.getTime() - b.date.getTime())
+                .map((ev) => {
+                  const cfg = CATEGORY_CONFIG[ev.category];
+                  const Icon = cfg.icon;
+                  return (
+                    <Card
+                      key={ev.id}
+                      className="p-4 cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => setSelectedEvent(ev)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            "mt-0.5 px-2 py-1 rounded text-[10px] font-semibold border",
+                            urgencyBg[ev.urgency]
+                          )}
+                        >
+                          {urgencyLabel[ev.urgency]}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Processo: {prazo.processoNumero} • Responsável: {prazo.responsavel}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-foreground">
+                              {ev.title}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className={cn("text-[10px] gap-1", cfg.badgeClass)}
+                            >
+                              <Icon className="w-3 h-3" />
+                              {cfg.label}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {ev.processoNumero && `Processo: ${ev.processoNumero} • `}
+                            {ev.responsavel && `Responsável: ${ev.responsavel}`}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            {format(ev.date, "dd/MM/yyyy")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(ev.date, "EEEE", { locale: ptBR })}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">
-                          {format(parseISO(prazo.dataVencimento), "dd/MM/yyyy")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(parseISO(prazo.dataVencimento), "EEEE", { locale: ptBR })}
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Event Detail Modal */}
+        {selectedEvent && (
+          <EventDetailDialog
+            event={selectedEvent}
+            onClose={() => setSelectedEvent(null)}
+          />
+        )}
       </div>
     </AppLayout>
+  );
+}
+
+// -- Event Detail Dialog --
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+function EventDetailDialog({
+  event,
+  onClose,
+}: {
+  event: CalendarEvent;
+  onClose: () => void;
+}) {
+  const cfg = CATEGORY_CONFIG[event.category];
+  const Icon = cfg.icon;
+
+  return (
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="outline" className={cn("text-xs gap-1", cfg.badgeClass)}>
+              <Icon className="w-3 h-3" />
+              {cfg.label}
+            </Badge>
+            <Badge
+              variant="outline"
+              className={cn("text-[10px]", urgencyBg[event.urgency])}
+            >
+              {urgencyLabel[event.urgency]}
+            </Badge>
+          </div>
+          <DialogTitle className="text-lg">{event.title}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 text-sm">
+          {event.description && (
+            <p className="text-muted-foreground">{event.description}</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-muted-foreground">Data:</span>{" "}
+              <span className="font-medium text-foreground">
+                {format(event.date, "dd/MM/yyyy (EEEE)", { locale: ptBR })}
+              </span>
+            </div>
+            {event.responsavel && (
+              <div>
+                <span className="text-muted-foreground">Responsável:</span>{" "}
+                <span className="font-medium text-foreground">{event.responsavel}</span>
+              </div>
+            )}
+            {event.processoNumero && (
+              <div className="col-span-2">
+                <span className="text-muted-foreground">Processo:</span>{" "}
+                <span className="font-mono font-medium text-primary">
+                  {event.processoNumero}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {event.category === "pessoal" && (
+            <Badge variant="secondary" className="text-[10px]">🔒 Privado</Badge>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
