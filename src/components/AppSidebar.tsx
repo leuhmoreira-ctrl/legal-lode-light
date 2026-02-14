@@ -17,6 +17,7 @@ import {
   Shield,
   Settings,
   Building2,
+  MessageSquare,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -38,6 +39,7 @@ import {
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
+  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
   { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
 ];

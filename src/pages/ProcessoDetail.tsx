@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
+import { ProcessChat } from "@/components/chat/ProcessChat";
 import { ProcessoHeader } from "@/components/processo-detail/ProcessoHeader";
 import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid";
 import { SyncStatusCard } from "@/components/processo-detail/SyncStatusCard";
@@ -226,6 +227,7 @@ export default function ProcessoDetail() {
               <TabsList>
                 <TabsTrigger value="docs">Documentos</TabsTrigger>
                 <TabsTrigger value="upload">Upload</TabsTrigger>
+                <TabsTrigger value="chat">Chat</TabsTrigger>
               </TabsList>
               <TabsContent value="docs">
                 <DocumentList processId={processo.id} refreshKey={docsRefreshKey} />
@@ -235,6 +237,9 @@ export default function ProcessoDetail() {
                   processId={processo.id}
                   onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
                 />
+              </TabsContent>
+              <TabsContent value="chat">
+                <ProcessChat processoId={processo.id} processoNumero={processo.numero} />
               </TabsContent>
             </Tabs>
           </div>
