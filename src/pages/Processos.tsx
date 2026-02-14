@@ -40,6 +40,7 @@ import {
 } from "@/utils/tribunalLinks";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { NovoProcessoForm } from "@/components/NovoProcessoForm";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -73,6 +74,7 @@ export default function Processos() {
   const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({});
   const [tribunalMap, setTribunalMap] = useState<Record<string, string>>({});
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
+  const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
   const { toast } = useToast();
 
   const filtered = processosMock.filter((p) => {
@@ -148,9 +150,22 @@ export default function Processos() {
               {processosMock.length} processos cadastrados
             </p>
           </div>
-          <Button className="gap-2">
-            <Plus className="w-4 h-4" /> Novo Processo
-          </Button>
+          <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" /> Novo Processo
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Cadastrar Novo Processo</DialogTitle>
+              </DialogHeader>
+              <NovoProcessoForm
+                onSuccess={() => setNovoProcessoOpen(false)}
+                onCancel={() => setNovoProcessoOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Filters */}

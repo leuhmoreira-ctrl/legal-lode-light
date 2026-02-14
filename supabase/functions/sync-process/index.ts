@@ -65,6 +65,9 @@ serve(async (req) => {
       assunto: processo.assuntos?.[0]?.nome || 'Não informado',
       dataAjuizamento: processo.dataAjuizamento,
       grau: processo.grau,
+      valorCausa: processo.valorCausa || 0,
+      comarca: processo.orgaoJulgador?.municipio?.nome || processo.orgaoJulgador?.municipio || '',
+      orgaoJulgador: processo.orgaoJulgador?.nome || '',
       movimentacoes: (processo.movimentos || []).map((mov: any) => ({
         data: mov.dataHora,
         descricao: mov.nome,
