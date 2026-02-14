@@ -104,7 +104,15 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "kanban_tasks_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       movimentacoes: {
         Row: {
@@ -248,22 +256,52 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          avatar_url: string | null
+          city: string | null
+          cpf: string | null
           created_at: string
           email: string
           full_name: string
           id: string
+          oab_number: string | null
+          oab_uf: string | null
+          phone: string | null
+          state: string | null
+          updated_at: string | null
+          zip_code: string | null
         }
         Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          cpf?: string | null
           created_at?: string
           email: string
           full_name?: string
           id: string
+          oab_number?: string | null
+          oab_uf?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
         }
         Update: {
+          address?: string | null
+          avatar_url?: string | null
+          city?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          oab_number?: string | null
+          oab_uf?: string | null
+          phone?: string | null
+          state?: string | null
+          updated_at?: string | null
+          zip_code?: string | null
         }
         Relationships: []
       }
