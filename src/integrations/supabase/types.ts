@@ -14,7 +14,110 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      movimentacoes: {
+        Row: {
+          complemento: string | null
+          created_at: string | null
+          data_movimento: string
+          descricao: string
+          id: string
+          processo_id: string
+        }
+        Insert: {
+          complemento?: string | null
+          created_at?: string | null
+          data_movimento: string
+          descricao: string
+          id?: string
+          processo_id: string
+        }
+        Update: {
+          complemento?: string | null
+          created_at?: string | null
+          data_movimento?: string
+          descricao?: string
+          id?: string
+          processo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movimentacoes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processos: {
+        Row: {
+          advogado: string
+          cliente: string
+          comarca: string
+          created_at: string | null
+          data_distribuicao: string | null
+          data_ultima_sincronizacao: string | null
+          descricao_movimentacao: string | null
+          fase: string | null
+          id: string
+          numero: string
+          parte_contraria: string | null
+          sigla_tribunal: string | null
+          sistema_tribunal: string | null
+          tags: string[] | null
+          tipo_acao: string | null
+          ultima_movimentacao: string | null
+          updated_at: string | null
+          user_id: string
+          valor_causa: number | null
+          vara: string
+        }
+        Insert: {
+          advogado: string
+          cliente: string
+          comarca: string
+          created_at?: string | null
+          data_distribuicao?: string | null
+          data_ultima_sincronizacao?: string | null
+          descricao_movimentacao?: string | null
+          fase?: string | null
+          id?: string
+          numero: string
+          parte_contraria?: string | null
+          sigla_tribunal?: string | null
+          sistema_tribunal?: string | null
+          tags?: string[] | null
+          tipo_acao?: string | null
+          ultima_movimentacao?: string | null
+          updated_at?: string | null
+          user_id: string
+          valor_causa?: number | null
+          vara: string
+        }
+        Update: {
+          advogado?: string
+          cliente?: string
+          comarca?: string
+          created_at?: string | null
+          data_distribuicao?: string | null
+          data_ultima_sincronizacao?: string | null
+          descricao_movimentacao?: string | null
+          fase?: string | null
+          id?: string
+          numero?: string
+          parte_contraria?: string | null
+          sigla_tribunal?: string | null
+          sistema_tribunal?: string | null
+          tags?: string[] | null
+          tipo_acao?: string | null
+          ultima_movimentacao?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valor_causa?: number | null
+          vara?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
