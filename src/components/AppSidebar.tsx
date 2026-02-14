@@ -47,6 +47,7 @@ const mainNavItems = [
 const escritorioItems = [
   { title: "Processos", url: "/processos", icon: Scale },
   { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Workflows", url: "/workflows", icon: ClipboardList },
   { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
   { title: "Kanban", url: "/kanban", icon: LayoutDashboard },
 ];
@@ -88,6 +89,7 @@ export function AppSidebar() {
       ...escritorioItems.map((i) => i.url),
       "/equipe",
       "/auditoria",
+      "/workflows",
     ];
     if (allEscritorioUrls.some((u) => location.pathname === u)) {
       setEscritorioOpen(true);

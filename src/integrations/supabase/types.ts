@@ -597,6 +597,267 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_acoes: {
+        Row: {
+          acao: string
+          comentario: string | null
+          created_at: string
+          etapa_id: string | null
+          id: string
+          usuario_id: string
+          workflow_id: string
+        }
+        Insert: {
+          acao: string
+          comentario?: string | null
+          created_at?: string
+          etapa_id?: string | null
+          id?: string
+          usuario_id: string
+          workflow_id: string
+        }
+        Update: {
+          acao?: string
+          comentario?: string | null
+          created_at?: string
+          etapa_id?: string | null
+          id?: string
+          usuario_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_acoes_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_acoes_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_comentarios: {
+        Row: {
+          autor_id: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          posicao_texto: number | null
+          resolvido: boolean
+          texto: string
+          tipo: string
+          workflow_id: string
+        }
+        Insert: {
+          autor_id: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          posicao_texto?: number | null
+          resolvido?: boolean
+          texto: string
+          tipo?: string
+          workflow_id: string
+        }
+        Update: {
+          autor_id?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          posicao_texto?: number | null
+          resolvido?: boolean
+          texto?: string
+          tipo?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_comentarios_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_comentarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_comentarios_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_etapas: {
+        Row: {
+          concluido_em: string | null
+          created_at: string
+          id: string
+          nome: string
+          ordem: number
+          prazo_dias: number | null
+          responsavel_id: string | null
+          status: string
+          workflow_id: string
+        }
+        Insert: {
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          ordem?: number
+          prazo_dias?: number | null
+          responsavel_id?: string | null
+          status?: string
+          workflow_id: string
+        }
+        Update: {
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          ordem?: number
+          prazo_dias?: number | null
+          responsavel_id?: string | null
+          status?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_etapas_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_regras: {
+        Row: {
+          ativa: boolean
+          atribuicoes: Json
+          condicoes: Json
+          created_at: string
+          id: string
+          nome: string
+          prioridade: number
+        }
+        Insert: {
+          ativa?: boolean
+          atribuicoes?: Json
+          condicoes?: Json
+          created_at?: string
+          id?: string
+          nome: string
+          prioridade?: number
+        }
+        Update: {
+          ativa?: boolean
+          atribuicoes?: Json
+          condicoes?: Json
+          created_at?: string
+          id?: string
+          nome?: string
+          prioridade?: number
+        }
+        Relationships: []
+      }
+      workflow_versoes: {
+        Row: {
+          autor_id: string
+          conteudo: string | null
+          created_at: string
+          id: string
+          motivo: string | null
+          numero_versao: number
+          workflow_id: string
+        }
+        Insert: {
+          autor_id: string
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          numero_versao?: number
+          workflow_id: string
+        }
+        Update: {
+          autor_id?: string
+          conteudo?: string | null
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          numero_versao?: number
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_versoes_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflows: {
+        Row: {
+          created_at: string
+          criador_id: string
+          descricao: string | null
+          id: string
+          prazo_final: string | null
+          processo_id: string | null
+          status: string
+          tags: string[] | null
+          tipo_documento: string
+          titulo: string
+          updated_at: string
+          urgencia: string
+        }
+        Insert: {
+          created_at?: string
+          criador_id: string
+          descricao?: string | null
+          id?: string
+          prazo_final?: string | null
+          processo_id?: string | null
+          status?: string
+          tags?: string[] | null
+          tipo_documento?: string
+          titulo: string
+          updated_at?: string
+          urgencia?: string
+        }
+        Update: {
+          created_at?: string
+          criador_id?: string
+          descricao?: string | null
+          id?: string
+          prazo_final?: string | null
+          processo_id?: string | null
+          status?: string
+          tags?: string[] | null
+          tipo_documento?: string
+          titulo?: string
+          updated_at?: string
+          urgencia?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflows_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
