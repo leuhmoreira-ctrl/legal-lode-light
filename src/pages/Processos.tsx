@@ -32,7 +32,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   generateDeepLink,
@@ -61,12 +61,6 @@ interface SyncResult {
     descricao: string;
     complemento: string;
   }>;
-}
-
-interface SyncState {
-  loading: boolean;
-  error: string | null;
-  result: SyncResult | null;
 }
 
 interface Processo {
@@ -98,43 +92,19 @@ export default function Processos() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [faseFilter, setFaseFilter] = useState("all");
-  const [syncStates, setSyncStates] = useState<Record<string, SyncState>>({});
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncingAll, setSyncingAll] = useState(false);
   const [ultimasMovs, setUltimasMovs] = useState<Record<string, UltimaMovimentacao>>({});
+  const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
+  const hasSyncedRef = useRef(false);
   const { toast } = useToast();
-
-  const carregarProcessos = useCallback(async () => {
-    if (!user) return;
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("processos")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setProcessos(data || []);
-    } catch (err: any) {
-      console.error("Erro ao carregar processos:", err);
-      toast({
-        title: "Erro ao carregar processos",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast]);
 
   const carregarUltimasMovimentacoes = useCallback(async (processoIds: string[]) => {
     if (processoIds.length === 0) return;
-    
     const results: Record<string, UltimaMovimentacao> = {};
-    
-    // Fetch latest movimentacao for each processo
     for (const pid of processoIds) {
       const { data } = await supabase
         .from("movimentacoes")
@@ -143,24 +113,95 @@ export default function Processos() {
         .order("data_movimento", { ascending: false })
         .limit(1)
         .maybeSingle();
-      
-      if (data) {
-        results[pid] = data;
-      }
+      if (data) results[pid] = data;
     }
-    
     setUltimasMovs(results);
   }, []);
 
-  useEffect(() => {
-    carregarProcessos();
-  }, [carregarProcessos]);
-
-  useEffect(() => {
-    if (processos.length > 0) {
-      carregarUltimasMovimentacoes(processos.map((p) => p.id));
+  const carregarProcessos = useCallback(async () => {
+    if (!user) return [];
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("processos")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const procs = data || [];
+      setProcessos(procs);
+      if (procs.length > 0) {
+        await carregarUltimasMovimentacoes(procs.map((p) => p.id));
+      }
+      return procs;
+    } catch (err: any) {
+      console.error("Erro ao carregar processos:", err);
+      toast({ title: "Erro ao carregar processos", description: err.message, variant: "destructive" });
+      return [];
+    } finally {
+      setLoading(false);
     }
-  }, [processos, carregarUltimasMovimentacoes]);
+  }, [user, toast, carregarUltimasMovimentacoes]);
+
+  const sincronizarTodos = useCallback(async (procs: Processo[]) => {
+    const processosComTribunal = procs.filter((p) => p.sigla_tribunal);
+    if (processosComTribunal.length === 0) return;
+
+    setSyncingAll(true);
+    let sucessos = 0;
+    let erros = 0;
+
+    for (const proc of processosComTribunal) {
+      try {
+        const { data, error } = await supabase.functions.invoke("sync-process", {
+          body: { numeroProcesso: proc.numero, tribunal: proc.sigla_tribunal },
+        });
+
+        if (error || data?.error) {
+          erros++;
+          continue;
+        }
+
+        if (data) {
+          setSyncResults((prev) => ({ ...prev, [proc.id]: data }));
+        }
+
+        // Update sync timestamp
+        await supabase
+          .from("processos")
+          .update({ data_ultima_sincronizacao: new Date().toISOString() })
+          .eq("id", proc.id);
+
+        sucessos++;
+      } catch {
+        erros++;
+      }
+    }
+
+    setSyncingAll(false);
+
+    // Reload movimentacoes
+    await carregarUltimasMovimentacoes(procs.map((p) => p.id));
+
+    if (sucessos > 0 || erros > 0) {
+      toast({
+        title: "✅ Sincronização concluída",
+        description: `${sucessos} processo(s) atualizado(s)${erros > 0 ? `, ${erros} erro(s)` : ""}`,
+      });
+    }
+  }, [toast, carregarUltimasMovimentacoes]);
+
+  // Load and auto-sync on mount
+  useEffect(() => {
+    if (!user) return;
+    const init = async () => {
+      const procs = await carregarProcessos();
+      if (!hasSyncedRef.current && procs.length > 0) {
+        hasSyncedRef.current = true;
+        sincronizarTodos(procs);
+      }
+    };
+    init();
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = processos.filter((p) => {
     const matchSearch =
@@ -170,55 +211,6 @@ export default function Processos() {
     const matchFase = faseFilter === "all" || p.fase === faseFilter;
     return matchSearch && matchFase;
   });
-
-  const sincronizarProcesso = async (processoId: string, numero: string, tribunal: string) => {
-    if (!tribunal) {
-      toast({
-        title: "Tribunal não definido",
-        description: "Este processo não possui tribunal cadastrado.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSyncStates((prev) => ({
-      ...prev,
-      [processoId]: { loading: true, error: null, result: null },
-    }));
-
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-process", {
-        body: { numeroProcesso: numero, tribunal },
-      });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      setSyncStates((prev) => ({
-        ...prev,
-        [processoId]: { loading: false, error: null, result: data },
-      }));
-
-      // Reload movimentacoes for this processo
-      await carregarUltimasMovimentacoes([processoId]);
-
-      toast({
-        title: "✅ Sincronização concluída!",
-        description: `${data.movimentacoes?.length || 0} movimentações encontradas`,
-      });
-    } catch (err: any) {
-      const errorMsg = err.message || "Erro desconhecido";
-      setSyncStates((prev) => ({
-        ...prev,
-        [processoId]: { loading: false, error: errorMsg, result: null },
-      }));
-      toast({
-        title: "Erro na sincronização",
-        description: errorMsg,
-        variant: "destructive",
-      });
-    }
-  };
 
   const getPortalLink = (proc: Processo) => {
     if (!proc.sigla_tribunal) return null;
@@ -236,26 +228,47 @@ export default function Processos() {
               {processos.length} processo{processos.length !== 1 ? "s" : ""} cadastrado{processos.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" /> Novo Processo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Cadastrar Novo Processo</DialogTitle>
-              </DialogHeader>
-              <NovoProcessoForm
-                onSuccess={() => {
-                  setNovoProcessoOpen(false);
-                  carregarProcessos();
-                }}
-                onCancel={() => setNovoProcessoOpen(false)}
-              />
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={syncingAll || processos.length === 0}
+              onClick={() => sincronizarTodos(processos)}
+            >
+              <RefreshCw className={`w-4 h-4 ${syncingAll ? "animate-spin" : ""}`} />
+              {syncingAll ? "Sincronizando..." : "Atualizar Todos"}
+            </Button>
+            <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="w-4 h-4" /> Novo Processo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Novo Processo</DialogTitle>
+                </DialogHeader>
+                <NovoProcessoForm
+                  onSuccess={() => {
+                    setNovoProcessoOpen(false);
+                    carregarProcessos();
+                  }}
+                  onCancel={() => setNovoProcessoOpen(false)}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
+
+        {/* Sync indicator */}
+        {syncingAll && (
+          <Alert>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <AlertDescription>
+              Sincronizando processos com o DataJud... Isso pode levar alguns instantes.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -297,20 +310,13 @@ export default function Processos() {
               <FolderOpen className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="text-lg font-semibold text-foreground">
-              {search || faseFilter !== "all"
-                ? "Nenhum processo encontrado"
-                : "Nenhum processo cadastrado"}
+              {search || faseFilter !== "all" ? "Nenhum processo encontrado" : "Nenhum processo cadastrado"}
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {search || faseFilter !== "all"
-                ? "Tente buscar por outro termo ou filtro"
-                : "Comece cadastrando seu primeiro processo"}
+              {search || faseFilter !== "all" ? "Tente outro termo ou filtro" : "Comece cadastrando seu primeiro processo"}
             </p>
             {!search && faseFilter === "all" && (
-              <Button
-                className="mt-4 gap-2"
-                onClick={() => setNovoProcessoOpen(true)}
-              >
+              <Button className="mt-4 gap-2" onClick={() => setNovoProcessoOpen(true)}>
                 <Plus className="w-4 h-4" /> Cadastrar Primeiro Processo
               </Button>
             )}
@@ -321,15 +327,12 @@ export default function Processos() {
         {!loading && filtered.length > 0 && (
           <div className="space-y-3">
             {filtered.map((proc) => {
-              const syncState = syncStates[proc.id];
               const portalLink = getPortalLink(proc);
               const ultimaMov = ultimasMovs[proc.id];
+              const syncResult = syncResults[proc.id];
 
               return (
-                <Card
-                  key={proc.id}
-                  className="p-4 hover:shadow-md transition-shadow"
-                >
+                <Card key={proc.id} className="p-4 hover:shadow-md transition-shadow">
                   {/* Header */}
                   <div className="flex flex-col md:flex-row md:items-center gap-3">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -337,42 +340,27 @@ export default function Processos() {
                         <FileText className="w-5 h-5 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground font-mono">
-                          {proc.numero}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {proc.vara} - {proc.comarca}
-                        </p>
+                        <p className="text-sm font-semibold text-foreground font-mono">{proc.numero}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{proc.vara} - {proc.comarca}</p>
                       </div>
                     </div>
-
                     <div className="flex flex-wrap items-center gap-2 md:gap-4">
                       <div className="text-xs">
                         <span className="text-muted-foreground">Cliente: </span>
-                        <span className="font-medium text-foreground">
-                          {proc.cliente}
-                        </span>
+                        <span className="font-medium text-foreground">{proc.cliente}</span>
                       </div>
                       <div className="text-xs">
                         <span className="text-muted-foreground">Resp: </span>
-                        <span className="font-medium text-foreground">
-                          {proc.advogado}
-                        </span>
+                        <span className="font-medium text-foreground">{proc.advogado}</span>
                       </div>
                       {proc.fase && (
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] ${faseColor[proc.fase] || ""}`}
-                        >
+                        <Badge variant="outline" className={`text-[10px] ${faseColor[proc.fase] || ""}`}>
                           {proc.fase}
                         </Badge>
                       )}
                       {proc.valor_causa != null && proc.valor_causa > 0 && (
                         <span className="text-xs text-muted-foreground">
-                          {new Intl.NumberFormat("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          }).format(proc.valor_causa)}
+                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(proc.valor_causa)}
                         </span>
                       )}
                     </div>
@@ -381,13 +369,7 @@ export default function Processos() {
                   {/* Tags + Tribunal badge */}
                   <div className="flex items-center gap-2 mt-3 ml-12 flex-wrap">
                     {proc.tags?.map((tag) => (
-                      <Badge
-                        key={tag}
-                        variant="secondary"
-                        className="text-[10px]"
-                      >
-                        {tag}
-                      </Badge>
+                      <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
                     ))}
                     {proc.sigla_tribunal && (
                       <Badge variant="outline" className="text-[10px] ml-auto">
@@ -403,17 +385,12 @@ export default function Processos() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Calendar className="w-3.5 h-3.5" />
-                          <span>
-                            Última movimentação:{" "}
-                            {format(parseISO(ultimaMov.data_movimento), "dd/MM/yyyy")}
-                          </span>
+                          <span>Última movimentação: {format(parseISO(ultimaMov.data_movimento), "dd/MM/yyyy")}</span>
                         </div>
                         <p className="text-xs text-foreground">
                           {ultimaMov.descricao}
                           {ultimaMov.complemento && (
-                            <span className="text-muted-foreground">
-                              {" "}— {ultimaMov.complemento}
-                            </span>
+                            <span className="text-muted-foreground"> — {ultimaMov.complemento}</span>
                           )}
                         </p>
                       </div>
@@ -421,129 +398,75 @@ export default function Processos() {
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Calendar className="w-3.5 h-3.5" />
-                          <span>
-                            Última movimentação:{" "}
-                            {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}
-                          </span>
+                          <span>Última movimentação: {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}</span>
                         </div>
                         {proc.descricao_movimentacao && (
-                          <p className="text-xs text-foreground">
-                            {proc.descricao_movimentacao}
-                          </p>
+                          <p className="text-xs text-foreground">{proc.descricao_movimentacao}</p>
                         )}
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        Nenhuma movimentação registrada. Sincronize para buscar dados.
+                        {syncingAll ? "Sincronização em andamento..." : "Nenhuma movimentação registrada."}
                       </p>
                     )}
                   </div>
 
                   {/* Action buttons */}
                   <div className="mt-3 ml-12 flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5"
-                      disabled={!proc.sigla_tribunal || syncState?.loading}
-                      onClick={() =>
-                        sincronizarProcesso(proc.id, proc.numero, proc.sigla_tribunal || "")
-                      }
-                    >
-                      <RefreshCw
-                        className={`w-3.5 h-3.5 ${
-                          syncState?.loading ? "animate-spin" : ""
-                        }`}
-                      />
-                      {syncState?.loading
-                        ? "Sincronizando..."
-                        : "Buscar no DataJud"}
-                    </Button>
-
                     {portalLink && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs gap-1.5"
-                        asChild
-                      >
-                        <a
-                          href={portalLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
+                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" asChild>
+                        <a href={portalLink} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3.5 h-3.5" />
                           Abrir no Portal
                         </a>
                       </Button>
                     )}
 
-                    {syncState?.result && (
+                    {syncResult && (
                       <Dialog
                         open={dialogOpen === proc.id}
-                        onOpenChange={(open) =>
-                          setDialogOpen(open ? proc.id : null)
-                        }
+                        onOpenChange={(open) => setDialogOpen(open ? proc.id : null)}
                       >
                         <DialogTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 text-xs gap-1.5"
-                          >
+                          <Button variant="secondary" size="sm" className="h-8 text-xs gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Ver Movimentações
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle className="text-lg">
-                              Movimentações — {proc.numero}
-                            </DialogTitle>
+                            <DialogTitle className="text-lg">Movimentações — {proc.numero}</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-2 mt-4">
                             <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                               <div>
                                 <span className="text-muted-foreground">Classe: </span>
-                                <span className="font-medium">
-                                  {syncState.result.classe}
-                                </span>
+                                <span className="font-medium">{syncResult.classe}</span>
                               </div>
                               <div>
                                 <span className="text-muted-foreground">Assunto: </span>
-                                <span className="font-medium">
-                                  {syncState.result.assunto}
-                                </span>
+                                <span className="font-medium">{syncResult.assunto}</span>
                               </div>
                             </div>
                             <div className="space-y-2">
-                              {syncState.result.movimentacoes.map((mov, i) => (
-                                <div
-                                  key={i}
-                                  className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm"
-                                >
+                              {syncResult.movimentacoes.map((mov, i) => (
+                                <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm">
                                   <div className="flex flex-col items-center">
                                     <Clock className="w-4 h-4 text-primary" />
                                     <div className="w-px h-full bg-border mt-1" />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs text-muted-foreground">
-                                      {mov.data
-                                        ? format(parseISO(mov.data), "dd/MM/yyyy HH:mm")
-                                        : "Data não informada"}
+                                      {mov.data ? format(parseISO(mov.data), "dd/MM/yyyy HH:mm") : "Data não informada"}
                                     </p>
-                                    <p className="font-medium mt-0.5">
-                                      {mov.descricao}
-                                    </p>
+                                    <p className="font-medium mt-0.5">{mov.descricao}</p>
                                     {mov.complemento && (
-                                      <p className="text-xs text-muted-foreground mt-0.5">
-                                        {mov.complemento}
-                                      </p>
+                                      <p className="text-xs text-muted-foreground mt-0.5">{mov.complemento}</p>
                                     )}
                                   </div>
                                 </div>
                               ))}
-                              {syncState.result.movimentacoes.length === 0 && (
+                              {syncResult.movimentacoes.length === 0 && (
                                 <p className="text-sm text-muted-foreground text-center py-4">
                                   Nenhuma movimentação encontrada.
                                 </p>
@@ -554,21 +477,6 @@ export default function Processos() {
                       </Dialog>
                     )}
                   </div>
-
-                  {/* Error message */}
-                  {syncState?.error && (
-                    <Alert variant="destructive" className="mt-2 ml-12">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="text-xs">
-                        {syncState.error}
-                        {portalLink && (
-                          <span>
-                            {" "}— Use o botão "Abrir no Portal" para consulta manual.
-                          </span>
-                        )}
-                      </AlertDescription>
-                    </Alert>
-                  )}
                 </Card>
               );
             })}
