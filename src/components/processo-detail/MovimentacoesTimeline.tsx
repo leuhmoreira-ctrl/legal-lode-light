@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   FileText, Gavel, Calendar, Bell, ChevronDown, ChevronUp,
   AlertTriangle, Filter
@@ -28,6 +27,7 @@ const FILTER_OPTIONS: { value: MovFilter; label: string }[] = [
 ];
 
 const CRITICAL_KEYWORDS = ["sentença", "liminar", "tutela", "intimação", "citação", "penhora", "arresto"];
+const PAGE_SIZE = 50;
 
 function classifyMov(descricao: string): { icon: typeof Gavel; isCritical: boolean } {
   const lower = descricao.toLowerCase();
@@ -61,11 +61,15 @@ interface Props {
 export function MovimentacoesTimeline({ movimentacoes, loading }: Props) {
   const [filter, setFilter] = useState<MovFilter>("all");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const filtered = useMemo(
     () => movimentacoes.filter((m) => matchesFilter(m.descricao, filter)),
     [movimentacoes, filter]
   );
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -73,6 +77,10 @@ export function MovimentacoesTimeline({ movimentacoes, loading }: Props) {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + PAGE_SIZE);
   };
 
   return (
@@ -91,13 +99,18 @@ export function MovimentacoesTimeline({ movimentacoes, loading }: Props) {
                 variant={filter === opt.value ? "default" : "ghost"}
                 size="sm"
                 className="h-7 text-xs px-2.5"
-                onClick={() => setFilter(opt.value)}
+                onClick={() => { setFilter(opt.value); setVisibleCount(PAGE_SIZE); }}
               >
                 {opt.label}
               </Button>
             ))}
           </div>
         </div>
+        {filtered.length > 0 && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Exibindo {Math.min(visibleCount, filtered.length)} de {filtered.length} movimentações
+          </p>
+        )}
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -110,13 +123,13 @@ export function MovimentacoesTimeline({ movimentacoes, loading }: Props) {
             <p className="text-sm text-muted-foreground">Nenhuma movimentação encontrada.</p>
           </div>
         ) : (
-          <ScrollArea className="max-h-[500px] pr-2">
+          <div>
             <div className="relative">
               {/* Vertical line */}
               <div className="absolute left-[15px] top-0 bottom-0 w-px bg-border" />
 
               <div className="space-y-0">
-                {filtered.map((mov) => {
+                {visible.map((mov) => {
                   const { icon: MovIcon, isCritical } = classifyMov(mov.descricao);
                   const expanded = expandedIds.has(mov.id);
                   const hasLongText = (mov.complemento?.length || 0) > 100;
@@ -144,17 +157,12 @@ export function MovimentacoesTimeline({ movimentacoes, loading }: Props) {
                           <p className="text-xs text-muted-foreground">
                             {format(parseISO(mov.data_movimento), "dd/MM/yyyy HH:mm")}
                           </p>
-                          <div className="flex items-center gap-1.5">
-                            {isCritical && (
-                              <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/20">
-                                <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-                                Crítico
-                              </Badge>
-                            )}
-                            <Badge variant="outline" className="text-[9px] bg-primary/5 text-primary border-primary/20">
-                              Via API
+                          {isCritical && (
+                            <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/20">
+                              <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
+                              Crítico
                             </Badge>
-                          </div>
+                          )}
                         </div>
                         <p className={`text-sm font-medium mt-1 ${isCritical ? "text-destructive" : "text-foreground"}`}>
                           {mov.descricao}
@@ -184,7 +192,21 @@ export function MovimentacoesTimeline({ movimentacoes, loading }: Props) {
                 })}
               </div>
             </div>
-          </ScrollArea>
+
+            {hasMore && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoadMore}
+                  className="text-xs"
+                >
+                  <ChevronDown className="w-3.5 h-3.5 mr-1.5" />
+                  Carregar mais antigas ({filtered.length - visibleCount} restantes)
+                </Button>
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
