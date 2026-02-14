@@ -10,7 +10,14 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { GripVertical, User, Calendar, Loader2, Link2, X, Filter } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { GripVertical, User, Calendar, Loader2, Link2, X, Filter, MoreVertical, Trash2, Edit, ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
@@ -60,7 +67,7 @@ interface KanbanProps {
 
 export default function Kanban({ personalOnly = false }: KanbanProps) {
   const { user } = useAuth();
-  const { teamMembers } = usePermissions();
+  const { teamMembers, isAdmin } = usePermissions();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +75,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [processos, setProcessos] = useState<{ id: string; numero: string }[]>([]);
   const [processoMap, setProcessoMap] = useState<ProcessoMap>({});
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<KanbanTask | null>(null);
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -141,6 +149,25 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
   const getMemberName = (id: string | null) => teamMembers.find((m) => m.id === id)?.full_name || "—";
 
+  const canDelete = (task: KanbanTask) => task.user_id === user?.id || isAdmin;
+
+  const handleDeleteTask = async () => {
+    if (!deleteTarget) return;
+    try {
+      const { error } = await supabase.from("kanban_tasks").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      setTasks((prev) => prev.filter((t) => t.id !== deleteTarget.id));
+      toast({ title: "✅ Tarefa excluída com sucesso" });
+      onUpdate();
+    } catch (err: any) {
+      toast({ title: "Erro ao excluir", description: err.message, variant: "destructive" });
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
+  const onUpdate = () => { loadTasks(); loadProcessos(); };
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-up">
@@ -201,13 +228,40 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                           <Draggable key={task.id} draggableId={task.id} index={index}>
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.draggableProps}>
-                                <Card className="p-3.5 hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelectedTaskId(task.id)}>
+                                <Card className="p-3.5 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setSelectedTaskId(task.id)}>
                                   <div className="flex items-start gap-2">
                                     <div {...provided.dragHandleProps}>
                                       <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5" />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium text-foreground">{task.title}</p>
+                                      <div className="flex items-start justify-between gap-1">
+                                        <p className="text-sm font-medium text-foreground">{task.title}</p>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <MoreVertical className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                            <DropdownMenuItem onClick={() => setSelectedTaskId(task.id)}>
+                                              <Edit className="w-3.5 h-3.5 mr-2" /> Editar tarefa
+                                            </DropdownMenuItem>
+                                            {canDelete(task) && (
+                                              <DropdownMenuItem
+                                                className="text-destructive focus:text-destructive"
+                                                onClick={() => setDeleteTarget(task)}
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir tarefa
+                                              </DropdownMenuItem>
+                                            )}
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
 
                                       {task.processo && (
                                         <div className="flex items-center gap-1 mt-1">
@@ -257,8 +311,38 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           taskId={selectedTaskId}
           open={!!selectedTaskId}
           onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
-          onUpdate={loadTasks}
+          onUpdate={onUpdate}
         />
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Tarefa?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir a tarefa "<span className="font-medium">{deleteTarget?.title}</span>"? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {deleteTarget && (
+              <div className="text-xs text-muted-foreground space-y-1 border rounded-lg p-3 bg-muted/30">
+                {deleteTarget.processo && (
+                  <p>📋 Processo: <span className="font-medium">{deleteTarget.processo.numero}</span></p>
+                )}
+                <p>👤 Responsável: <span className="font-medium">{getMemberName(deleteTarget.assigned_to)}</span></p>
+                <p>📅 Criada em: <span className="font-medium">{format(new Date(deleteTarget.created_at), "dd/MM/yyyy")}</span></p>
+              </div>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteTask}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
