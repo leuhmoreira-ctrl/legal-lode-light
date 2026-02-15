@@ -67,11 +67,12 @@ export function SyncStatusCard({ siglaTribunal, sistemaTribunal, lastSync, onSyn
         <Button
           onClick={onSync}
           disabled={syncing || !siglaTribunal}
-          className="w-full gap-2"
-          variant={syncStatus === "error" ? "destructive" : "default"}
+          variant="ghost"
+          size="sm"
+          className="w-full gap-2 text-xs text-muted-foreground hover:text-foreground"
         >
-          <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Sincronizando..." : "Sincronizar Agora"}
+          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
+          {syncing ? "Sincronizando..." : "Sincronizar"}
         </Button>
       </CardContent>
     </Card>
