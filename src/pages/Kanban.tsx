@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -165,13 +165,32 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       .eq("id", draggableId);
   };
 
-  const getTasksByStatus = (status: string) => {
-    let filtered = tasks.filter((t) => t.status === status);
-    if (filtroProcesso) {
-      filtered = filtered.filter((t) => t.processo_id === filtroProcesso);
-    }
-    return filtered;
-  };
+  const tasksFilteredByProcess = useMemo(() => {
+    if (!filtroProcesso || filtroProcesso === "all") return tasks;
+    return tasks.filter((t) => t.processo_id === filtroProcesso);
+  }, [tasks, filtroProcesso]);
+
+  const tasksByStatus = useMemo(() => {
+    const grouped = COLUMNS.reduce((acc, col) => {
+      acc[col.id] = [];
+      return acc;
+    }, {} as Record<string, KanbanTask[]>);
+
+    tasksFilteredByProcess.forEach((task) => {
+      if (grouped[task.status]) {
+        grouped[task.status].push(task);
+      }
+    });
+    return grouped;
+  }, [tasksFilteredByProcess]);
+
+  const todayTasks = useMemo(() => {
+    return tasks.filter((t) => t.marked_for_today && t.status !== "done");
+  }, [tasks]);
+
+  const pendingTasksCount = useMemo(() => {
+    return tasks.filter((t) => t.status !== "done").length;
+  }, [tasks]);
 
   const getMember = (id: string | null) => teamMembers.find((m) => m.id === id);
 
@@ -203,7 +222,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               {personalOnly ? "Minhas Tarefas" : "Tarefas do Escritório"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {tasks.filter((t) => t.status !== "done").length} tarefas pendentes
+              {pendingTasksCount} tarefas pendentes
               {personalOnly ? " atribuídas a você" : " no total"}
             </p>
           </div>
@@ -233,7 +252,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
         {/* Para Fazer Hoje */}
         {(() => {
-          const todayTasks = tasks.filter((t) => t.marked_for_today && t.status !== "done");
           if (todayTasks.length === 0) return null;
           return (
             <Card className="p-4 border-yellow-400/30 bg-yellow-50/20 dark:bg-yellow-900/10">
@@ -272,13 +290,13 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                     <div className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
                     <h3 className="text-sm font-semibold text-foreground">{col.title}</h3>
                     <Badge variant="secondary" className="text-[10px] ml-auto">
-                      {getTasksByStatus(col.id).length}
+                      {tasksByStatus[col.id].length}
                     </Badge>
                   </div>
                   <Droppable droppableId={col.id}>
                     {(provided) => (
                       <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3 min-h-[100px]">
-                        {getTasksByStatus(col.id).map((task, index) => (
+                        {tasksByStatus[col.id].map((task, index) => (
                           <Draggable key={task.id} draggableId={task.id} index={index}>
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.draggableProps}>
