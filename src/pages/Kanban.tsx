@@ -17,9 +17,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, User, Calendar, Loader2, Link2, X, Filter, MoreVertical, Trash2, Edit, ArrowRight } from "lucide-react";
+import { GripVertical, User, Calendar, Loader2, Link2, X, Filter, MoreVertical, Trash2, Edit, ArrowRight, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 
@@ -54,6 +55,9 @@ interface KanbanTask {
   due_date: string | null;
   user_id: string;
   created_at: string;
+  marked_for_today: boolean;
+  marked_for_today_at: string | null;
+  observacoes: string | null;
   processo?: { id: string; numero: string; cliente: string } | null;
 }
 
@@ -205,6 +209,34 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           )}
         </div>
 
+        {/* Para Fazer Hoje */}
+        {(() => {
+          const todayTasks = tasks.filter((t) => t.marked_for_today && t.status !== "done");
+          if (todayTasks.length === 0) return null;
+          return (
+            <Card className="p-4 border-yellow-400/30 bg-yellow-50/20 dark:bg-yellow-900/10">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  Para Fazer Hoje ({todayTasks.length})
+                </h3>
+                <Button variant="ghost" size="sm" className="text-xs" onClick={async () => {
+                  await supabase.from("kanban_tasks").update({ marked_for_today: false, marked_for_today_at: null }).in("id", todayTasks.map(t => t.id));
+                  loadTasks();
+                }}>Limpar lista</Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {todayTasks.map((t) => (
+                  <Badge key={t.id} variant="outline" className="cursor-pointer text-xs gap-1.5 py-1.5" onClick={() => setSelectedTaskId(t.id)}>
+                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                    {t.title}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          );
+        })()}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -228,14 +260,28 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                           <Draggable key={task.id} draggableId={task.id} index={index}>
                             {(provided) => (
                               <div ref={provided.innerRef} {...provided.draggableProps}>
-                                <Card className="p-3.5 hover:shadow-md transition-shadow cursor-pointer group" onClick={() => setSelectedTaskId(task.id)}>
+                                <Card className={cn("p-3.5 hover:shadow-md transition-shadow cursor-pointer group", task.marked_for_today && "ring-1 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10")} onClick={() => setSelectedTaskId(task.id)}>
                                   <div className="flex items-start gap-2">
                                     <div {...provided.dragHandleProps}>
                                       <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-start justify-between gap-1">
-                                        <p className="text-sm font-medium text-foreground">{task.title}</p>
+                                        <div className="flex items-center gap-1.5">
+                                          <button
+                                            className="shrink-0"
+                                            onClick={async (e) => {
+                                              e.stopPropagation();
+                                              const newVal = !task.marked_for_today;
+                                              setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
+                                              await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
+                                            }}
+                                            title={task.marked_for_today ? "Desmarcar" : "Marcar para hoje"}
+                                          >
+                                            <Star className={cn("w-3.5 h-3.5", task.marked_for_today ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40")} />
+                                          </button>
+                                          <p className="text-sm font-medium text-foreground">{task.title}</p>
+                                        </div>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
                                             <Button
@@ -250,6 +296,13 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                                           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenuItem onClick={() => setSelectedTaskId(task.id)}>
                                               <Edit className="w-3.5 h-3.5 mr-2" /> Editar tarefa
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={async () => {
+                                              const newVal = !task.marked_for_today;
+                                              setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal } : t));
+                                              await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
+                                            }}>
+                                              <Star className="w-3.5 h-3.5 mr-2" /> {task.marked_for_today ? "Desmarcar" : "⭐ Marcar para hoje"}
                                             </DropdownMenuItem>
                                             {canDelete(task) && (
                                               <DropdownMenuItem

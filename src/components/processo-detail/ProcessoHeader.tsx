@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, RefreshCw, AlertCircle, Calendar, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { generateDeepLink, detectarSistema } from "@/utils/tribunalLinks";
+import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
 
 interface ProcessoHeaderProps {
   numero: string;
@@ -45,7 +46,10 @@ export function ProcessoHeader({
 
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground font-mono">{numero}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground font-mono">{numero}</h1>
+            <CopyProcessNumber numero={numero} />
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             {cliente} • {vara} — {comarca}
           </p>

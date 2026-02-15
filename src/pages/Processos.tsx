@@ -32,6 +32,8 @@ import {
   Calendar,
   Paperclip,
   Trash2,
+  User,
+  Building2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
@@ -50,6 +52,9 @@ import { NovoProcessoForm } from "@/components/NovoProcessoForm";
 import { DeleteProcessDialog } from "@/components/DeleteProcessDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
+import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
+import { cn } from "@/lib/utils";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -79,6 +84,7 @@ interface Processo {
   cliente: string;
   parte_contraria: string | null;
   advogado: string;
+  advogado_id: string | null;
   tipo_acao: string | null;
   valor_causa: number | null;
   fase: string | null;
@@ -88,6 +94,7 @@ interface Processo {
   descricao_movimentacao: string | null;
   sigla_tribunal: string | null;
   sistema_tribunal: string | null;
+  user_id: string;
 }
 
 interface UltimaMovimentacao {
@@ -114,6 +121,9 @@ export default function Processos() {
   const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
   const hasSyncedRef = useRef(false);
   const { toast } = useToast();
+  const [viewMode, setViewMode] = useState<"meus" | "todos">(() => {
+    return (localStorage.getItem("processos_view_mode") as "meus" | "todos") || "meus";
+  });
 
   const carregarUltimasMovimentacoes = useCallback(async (processoIds: string[]) => {
     if (processoIds.length === 0) return;
@@ -239,14 +249,23 @@ export default function Processos() {
     init();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Persist view mode
+  useEffect(() => {
+    localStorage.setItem("processos_view_mode", viewMode);
+  }, [viewMode]);
+
   const filtered = processos.filter((p) => {
     const matchSearch =
       p.numero.includes(search) ||
       p.cliente.toLowerCase().includes(search.toLowerCase()) ||
       p.advogado.toLowerCase().includes(search.toLowerCase());
     const matchFase = faseFilter === "all" || p.fase === faseFilter;
-    return matchSearch && matchFase;
+    const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
+    return matchSearch && matchFase && matchView;
   });
+
+  const meusCount = processos.filter((p) => p.user_id === user?.id || p.advogado_id === user?.id).length;
+  const todosCount = processos.length;
 
   const getPortalLink = (proc: Processo) => {
     if (!proc.sigla_tribunal) return null;
@@ -376,7 +395,10 @@ export default function Processos() {
                         <FileText className="w-5 h-5 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground font-mono">{proc.numero}</p>
+                        <div className="flex items-center gap-1">
+                          <p className="text-sm font-semibold text-foreground font-mono">{proc.numero}</p>
+                          <CopyProcessNumber numero={proc.numero} />
+                        </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{proc.vara} - {proc.comarca}</p>
                       </div>
                     </div>
@@ -407,6 +429,7 @@ export default function Processos() {
                     {proc.tags?.map((tag) => (
                       <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
                     ))}
+                    <DiasParadoBadge ultimaMovimentacao={ultimaMov?.data_movimento || proc.ultima_movimentacao || null} />
                     {proc.sigla_tribunal && (
                       <Badge variant="outline" className="text-[10px] ml-auto">
                         {proc.sistema_tribunal && `${proc.sistema_tribunal} — `}
