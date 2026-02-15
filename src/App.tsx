@@ -61,7 +61,7 @@ const App = () => (
                     <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
                     <Route path="/comunicacoes" element={<ProtectedRoute><Comunicacoes /></ProtectedRoute>} />
                     <Route path="/mensagens" element={<Navigate to="/comunicacoes" replace />} />
-                    <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                    <Route path="/notifications" element={<Navigate to="/comunicacoes" replace />} />
                     <Route path="/email" element={<Navigate to="/comunicacoes" replace />} />
                     <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                     <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />

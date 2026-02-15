@@ -50,7 +50,6 @@ const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
   { title: "Comunicações", url: "/comunicacoes", icon: MessageSquare },
-  { title: "Notificações", url: "/notifications", icon: Bell },
   { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
 ];
