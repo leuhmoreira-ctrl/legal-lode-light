@@ -16,7 +16,7 @@ import { ProcessoHeader } from "@/components/processo-detail/ProcessoHeader";
 import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid";
 
 import { MovimentacoesTimeline, type Movimentacao } from "@/components/processo-detail/MovimentacoesTimeline";
-import { SyncLogsAccordion, type SyncLog } from "@/components/processo-detail/SyncLogsAccordion";
+
 import { ClienteCommunicationCard } from "@/components/processo/ClienteCommunicationCard";
 import { ProcessoNotes } from "@/components/processo/ProcessoNotes";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
@@ -56,7 +56,7 @@ export default function ProcessoDetail() {
   const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
   const [movsLoading, setMovsLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
+  const [syncLogs, setSyncLogs] = useState<any[]>([]);
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [acaoManualOpen, setAcaoManualOpen] = useState(false);
   const [ultimaAcaoManual, setUltimaAcaoManual] = useState<string | null>(null);
@@ -276,7 +276,6 @@ export default function ProcessoDetail() {
         {/* Three columns: Sync + Communication | Tabs | Notes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-4">
-            <SyncLogsAccordion logs={syncLogs} />
             <ClienteCommunicationCard processoId={processo.id} />
           </div>
 
