@@ -1,51 +1,59 @@
 
 
-## Plano de Correção dos Erros de Build
+## Unificar Notificacoes e Comunicacoes
 
-### Problema Principal
-O arquivo `src/App.tsx` tem tags JSX desalinhadas -- tags de fechamento (`</ErrorBoundary>`, `</ThemeContextProvider>`) que não correspondem às tags de abertura. Alem disso, dois arquivos de pagina importados (`Mensagens` e `Email`) nao existem mais.
+### Objetivo
+Fundir as paginas `/notifications` e `/comunicacoes` em uma unica pagina `/comunicacoes` com abas que mostram: Notificacoes do sistema, Mensagens internas e E-mails (mock por enquanto).
 
-### Correções
+### Mudancas
 
-**1. Corrigir `src/App.tsx` (erro critico)**
+**1. Pagina `src/pages/Comunicacoes.tsx` -- Reescrever**
 
-Reescrever a estrutura de providers com a hierarquia correta:
+Criar uma pagina unificada com 3 abas usando o componente Tabs existente:
+- **Todas**: lista unificada ordenada por data (notificacoes + mensagens + emails mock)
+- **Notificacoes**: alertas de prazo, sistema (`notifications` table)
+- **Mensagens**: mensagens internas entre usuarios (`messages` table)
+- **E-mails**: emails mock (dados estaticos, como ja existe)
 
-```text
-QueryClientProvider
-  ThemeProvider
-    ThemeContextProvider        <-- adicionar abertura
-      TooltipProvider
-        Toaster
-        AuthProvider
-          PermissionsProvider
-            BrowserRouter
-              ErrorBoundary     <-- adicionar abertura
-                Routes
-                  ...rotas...
-              /ErrorBoundary
-            /BrowserRouter
-          /PermissionsProvider
-        /AuthProvider
-      /TooltipProvider
-    /ThemeContextProvider       <-- já existe no fechamento
-  /ThemeProvider
-/QueryClientProvider
-```
+Layout: barra de abas no topo + area de conteudo abaixo. Ao selecionar uma mensagem/email, abre o visualizador no lado direito (layout duas colunas, como esta hoje). Notificacoes apenas marcam como lida ao clicar.
 
-Remover imports de `Mensagens` e `Email` (arquivos inexistentes) e substituir suas rotas por redirecionamentos `Navigate to="/comunicacoes"`.
+Badge de contagem nao-lida em cada aba.
 
-**2. Corrigir `supabase/functions/sync-process/index.ts` (erro secundario)**
+**2. Sidebar `src/components/AppSidebar.tsx`**
 
-Na linha 156, `error` é do tipo `unknown`. Corrigir com:
-```typescript
-JSON.stringify({ error: error instanceof Error ? error.message : String(error) })
-```
+- Remover o item "Notificacoes" separado do `mainNavItems`
+- Manter apenas "Comunicacoes" com badge unificado (notificacoes nao lidas + mensagens nao lidas)
 
-### Detalhes Técnicos
+**3. Rota `/notifications` -- Redirecionar**
 
-Mudancas em 2 arquivos:
-- `src/App.tsx`: Corrigir hierarquia JSX, remover imports quebrados, adicionar redirects
-- `supabase/functions/sync-process/index.ts`: Tipar corretamente o `error` no catch
+Em `src/App.tsx`, trocar a rota `/notifications` de renderizar `<Notifications />` para `<Navigate to="/comunicacoes" replace />`.
 
-Nenhuma funcionalidade sera removida. As rotas `/mensagens` e `/email` redirecionarao automaticamente para `/comunicacoes`.
+**4. Hook unificado `src/hooks/useComunicacoesUnificadas.ts` -- Criar**
+
+Combinar dados de `useNotifications` e `useMessages` em um unico hook que retorna:
+- Lista unificada de itens (tipo: notification | message | email)
+- Contadores de nao lidos por categoria
+- Funcoes: markAsRead, markAllAsRead, sendMessage, deleteNotification
+
+**5. Componentes existentes -- Reaproveitar**
+
+- `NotificationItem.tsx`: manter para renderizar notificacoes na lista
+- `MessagesList.tsx` e `MessageView.tsx`: manter para mensagens
+- `ComposeModal.tsx`: manter o botao de nova mensagem
+
+### Detalhes Tecnicos
+
+Arquivos modificados:
+- `src/pages/Comunicacoes.tsx` -- reescrever com abas unificadas
+- `src/components/AppSidebar.tsx` -- remover item Notificacoes, unificar badge
+- `src/App.tsx` -- redirecionar `/notifications` para `/comunicacoes`
+- `src/hooks/useComunicacoesUnificadas.ts` -- novo hook que combina useNotifications + useMessages
+
+Arquivos mantidos sem alteracao:
+- `src/hooks/useNotifications.ts`
+- `src/hooks/useMessages.ts`
+- `src/components/NotificationItem.tsx`
+- `src/components/comunicacoes/MessageView.tsx`
+- `src/components/comunicacoes/ComposeModal.tsx`
+
+Nenhuma alteracao de banco de dados necessaria. Ambas as tabelas (`notifications` e `messages`) ja existem com RLS.
