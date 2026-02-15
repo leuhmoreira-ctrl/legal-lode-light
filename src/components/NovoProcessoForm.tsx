@@ -143,16 +143,22 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
         )}
       </div>
 
-      {/* Cliente + Advogado */}
+      {/* Cliente (Polo Ativo) + Parte Contrária (Polo Passivo) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label>Cliente *</Label>
-          <Input placeholder="Nome do cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} />
+          <Label>Polo Ativo (Cliente) *</Label>
+          <Input placeholder="Nome do autor/reclamante" value={cliente} onChange={(e) => setCliente(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label>Advogado Responsável *</Label>
-          <Input placeholder="Nome do advogado" value={advogado} onChange={(e) => setAdvogado(e.target.value)} />
+          <Label>Polo Passivo (Parte Contrária)</Label>
+          <Input placeholder="Nome do réu/reclamado" value={parteContraria} onChange={(e) => setParteContraria(e.target.value)} />
         </div>
+      </div>
+
+      {/* Advogado Responsável */}
+      <div className="space-y-1.5">
+        <Label>Advogado Responsável *</Label>
+        <Input placeholder="Nome do advogado" value={advogado} onChange={(e) => setAdvogado(e.target.value)} />
       </div>
 
       {/* Classe + Assunto (auto-preenchidos) */}
@@ -179,8 +185,8 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
         </div>
       </div>
 
-      {/* Valor + Fase + Parte Contrária */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Valor + Fase */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Valor da Causa (R$)</Label>
           <Input
@@ -203,10 +209,6 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
               <SelectItem value="Encerrado">Encerrado</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Parte Contrária</Label>
-          <Input placeholder="Nome da parte contrária" value={parteContraria} onChange={(e) => setParteContraria(e.target.value)} />
         </div>
       </div>
 
