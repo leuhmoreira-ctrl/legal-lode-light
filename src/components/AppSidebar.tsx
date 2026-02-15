@@ -13,7 +13,6 @@ import {
   ChevronDown,
   Gavel,
   LogOut,
-  User,
   Shield,
   Settings,
   Building2,
@@ -22,6 +21,7 @@ import {
   Moon,
   Laptop,
   Mail,
+  Menu,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -41,6 +41,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
 import { UserAvatar } from "@/components/UserAvatar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -67,6 +70,7 @@ const roleLabels: Record<UserRole, string> = {
   secretary: "Secretário",
 };
 
+// Keeping this although currently unused in the snippet provided, potentially useful
 const roleColors: Record<UserRole, string> = {
   admin: "bg-destructive/10 text-destructive border-destructive/20",
   senior: "bg-primary/10 text-primary border-primary/20",
@@ -75,10 +79,14 @@ const roleColors: Record<UserRole, string> = {
   secretary: "bg-secondary text-secondary-foreground border-secondary",
 };
 
-import { supabase } from "@/integrations/supabase/client";
+interface SidebarContentProps {
+  collapsed: boolean;
+  setCollapsed?: (collapsed: boolean) => void;
+  isMobile?: boolean;
+  onCloseMobile?: () => void;
+}
 
-export function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobile }: SidebarContentProps) {
   const [escritorioOpen, setEscritorioOpen] = useState(() => {
     const saved = localStorage.getItem("escritorio_expanded");
     return saved ? JSON.parse(saved) : false;
@@ -127,6 +135,12 @@ export function AppSidebar() {
     }
   };
 
+  const handleLinkClick = () => {
+    if (isMobile && onCloseMobile) {
+      onCloseMobile();
+    }
+  };
+
   const linkClass = cn(
     "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-white/5 hover:text-white",
     collapsed && "justify-center px-0"
@@ -135,14 +149,9 @@ export function AppSidebar() {
   const activeLinkClass = "bg-primary/10 border-l-4 border-primary text-white font-medium";
 
   return (
-    <aside
-      className={cn(
-        "h-screen sticky top-0 flex flex-col bg-gradient-to-b from-sidebar-background to-sidebar-background/95 text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 z-40 shadow-xl",
-        collapsed ? "w-20" : "w-64"
-      )}
-    >
+    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar-background to-sidebar-background/95 text-sidebar-foreground">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border/50">
+      <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border/50 relative">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0">
           <Gavel className="w-5 h-5 text-white" />
         </div>
@@ -182,6 +191,7 @@ export function AppSidebar() {
             end={item.url === "/"}
             className={linkClass}
             activeClassName={activeLinkClass}
+            onClick={handleLinkClick}
           >
             <item.icon className="w-5 h-5 shrink-0" />
             {!collapsed && <span>{item.title}</span>}
@@ -221,6 +231,7 @@ export function AppSidebar() {
                   to={item.url}
                   className={linkClass}
                   activeClassName={activeLinkClass}
+                  onClick={handleLinkClick}
                 >
                   <item.icon className="w-5 h-5 shrink-0" />
                   {!collapsed && (
@@ -242,6 +253,7 @@ export function AppSidebar() {
                   to="/equipe"
                   className={linkClass}
                   activeClassName={activeLinkClass}
+                  onClick={handleLinkClick}
                 >
                   <Users className="w-5 h-5 shrink-0" />
                   {!collapsed && <span>Equipe</span>}
@@ -254,6 +266,7 @@ export function AppSidebar() {
                   to="/auditoria"
                   className={linkClass}
                   activeClassName={activeLinkClass}
+                  onClick={handleLinkClick}
                 >
                   <Shield className="w-5 h-5 shrink-0" />
                   {!collapsed && <span>Auditoria</span>}
@@ -294,7 +307,7 @@ export function AppSidebar() {
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="right" align="end" className="w-64 mb-2 p-2">
+          <DropdownMenuContent side={isMobile ? "top" : "right"} align={isMobile ? "start" : "end"} className="w-64 mb-2 p-2">
             <div className="flex items-center gap-3 p-2 mb-2 bg-muted/50 rounded-lg">
                <UserAvatar
                 name={profile?.full_name || user?.email || ""}
@@ -308,7 +321,7 @@ export function AppSidebar() {
             </div>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="py-2.5 cursor-pointer">
+            <DropdownMenuItem onClick={() => { navigate("/configuracoes"); handleLinkClick(); }} className="py-2.5 cursor-pointer">
               <Settings className="w-4 h-4 mr-2" />
               Configurações
             </DropdownMenuItem>
@@ -337,17 +350,65 @@ export function AppSidebar() {
         </DropdownMenu>
       </div>
 
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-9 flex items-center justify-center w-6 h-6 rounded-full bg-sidebar-border text-sidebar-foreground border border-sidebar-background hover:bg-primary hover:text-white transition-colors shadow-md z-50"
-      >
-        {collapsed ? (
-          <ChevronRight className="w-3 h-3" />
-        ) : (
-          <ChevronLeft className="w-3 h-3" />
+      {/* Collapse toggle (Desktop only) */}
+      {!isMobile && setCollapsed && (
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-9 flex items-center justify-center w-6 h-6 rounded-full bg-sidebar-border text-sidebar-foreground border border-sidebar-background hover:bg-primary hover:text-white transition-colors shadow-md z-50"
+        >
+          {collapsed ? (
+            <ChevronRight className="w-3 h-3" />
+          ) : (
+            <ChevronLeft className="w-3 h-3" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function AppSidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Mobile Trigger and Sheet */}
+      <div className="md:hidden">
+        <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+          {/* We need a trigger that is positioned appropriately, usually in a header.
+              If the layout doesn't have a header, we float it. */}
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="fixed top-4 left-4 z-50 bg-sidebar-background/80 backdrop-blur-sm text-sidebar-foreground shadow-md hover:bg-sidebar-background border border-sidebar-border"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-72 border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground">
+            <SidebarContent
+              collapsed={false}
+              isMobile={true}
+              onCloseMobile={() => setIsMobileOpen(false)}
+            />
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "hidden md:flex h-screen sticky top-0 flex-col border-r border-sidebar-border transition-all duration-300 z-40 shadow-xl",
+          collapsed ? "w-20" : "w-64"
         )}
-      </button>
-    </aside>
+      >
+        <SidebarContent
+          collapsed={collapsed}
+          setCollapsed={setCollapsed}
+        />
+      </aside>
+    </>
   );
 }
