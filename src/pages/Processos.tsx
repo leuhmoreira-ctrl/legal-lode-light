@@ -436,10 +436,17 @@ export default function Processos() {
                     ))}
                     <DiasParadoBadge ultimaMovimentacao={ultimaMov?.data_movimento || proc.ultima_movimentacao || null} />
                     {proc.sigla_tribunal && (
-                      <Badge variant="outline" className="text-[10px] ml-auto">
-                        {proc.sistema_tribunal && `${proc.sistema_tribunal} — `}
-                        {proc.sigla_tribunal.toUpperCase()}
-                      </Badge>
+                      <div className="flex items-center gap-1 ml-auto">
+                        <Badge variant="outline" className="text-[10px]">
+                          {proc.sistema_tribunal && `${proc.sistema_tribunal} — `}
+                          {proc.sigla_tribunal.toUpperCase()}
+                        </Badge>
+                        {portalLink && (
+                          <a href={portalLink} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()} title="Abrir no Portal">
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -477,14 +484,6 @@ export default function Processos() {
 
                   {/* Action buttons */}
                   <div className="mt-3 ml-12 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                    {portalLink && (
-                      <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" asChild>
-                        <a href={portalLink} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          Abrir no Portal
-                        </a>
-                      </Button>
-                    )}
 
                     {syncResult && (
                       <Dialog
