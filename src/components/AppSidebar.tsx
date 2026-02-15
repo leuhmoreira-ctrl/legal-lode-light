@@ -140,22 +140,22 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
   };
 
   const linkClass = cn(
-    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-white/5 hover:text-white",
+    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
     collapsed && "justify-center px-0"
   );
 
-  const activeLinkClass = "bg-primary/10 border-l-4 border-primary text-white font-medium";
+  const activeLinkClass = "bg-sidebar-accent border-l-4 border-primary text-sidebar-accent-foreground font-medium";
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar-background to-sidebar-background/95 text-sidebar-foreground">
+    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border/50 relative">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0">
-          <Gavel className="w-5 h-5 text-white" />
+          <Gavel className="w-5 h-5 text-primary-foreground" />
         </div>
         {!collapsed && (
           <div className="animate-fade-in-scale flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-white tracking-tight">
+            <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">
               JurisControl
             </h1>
             <p className="text-[11px] text-sidebar-foreground/60 font-medium">
@@ -204,7 +204,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
             className={cn(
               linkClass,
               "w-full",
-              escritorioOpen && !collapsed && "text-white"
+              escritorioOpen && !collapsed && "text-sidebar-foreground"
             )}
           >
             <Building2 className="w-5 h-5 shrink-0" />
@@ -276,12 +276,12 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
       </nav>
 
       {/* User menu */}
-      <div className="border-t border-sidebar-border/50 p-4 bg-black/10">
+      <div className="border-t border-sidebar-border/50 p-4 bg-sidebar-muted/20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-all duration-200 group",
+                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-sidebar-accent transition-all duration-200 group",
                 collapsed && "justify-center p-0"
               )}
             >
@@ -293,7 +293,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
               />
               {!collapsed && (
                 <div className="flex flex-col items-start flex-1 min-w-0">
-                  <span className="truncate text-sm font-semibold text-white">
+                  <span className="truncate text-sm font-semibold text-sidebar-foreground">
                     {profile?.full_name || user?.email}
                   </span>
                   {role && (
