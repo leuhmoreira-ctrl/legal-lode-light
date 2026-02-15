@@ -120,7 +120,10 @@ export default function Processos() {
   const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
 
   const [viewMode, setViewMode] = useState<"meus" | "todos">(() => {
-    return (localStorage.getItem("processos_view_mode") as "meus" | "todos") || "meus";
+    const saved = localStorage.getItem("processos_view_mode") as "meus" | "todos";
+    if (saved) return saved;
+    // Default to 'mine' for regular users, 'all' for seniors/admins
+    return isSenior ? "todos" : "meus";
   });
 
   const handleSyncAll = () => {
@@ -165,6 +168,9 @@ export default function Processos() {
     return generateDeepLink(proc.numero, proc.sigla_tribunal, sistema);
   };
 
+  const meusCount = processos.filter((p) => p.user_id === user?.id || p.advogado_id === user?.id).length;
+  const todosCount = processos.length;
+
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-up">
@@ -172,7 +178,7 @@ export default function Processos() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Processos</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {processos.length} processo{processos.length !== 1 ? "s" : ""} cadastrado{processos.length !== 1 ? "s" : ""}
+              {filtered.length} processo{filtered.length !== 1 ? "s" : ""} cadastrado{filtered.length !== 1 ? "s" : ""}
             </p>
           </div>
           <div className="flex gap-2">
@@ -217,6 +223,51 @@ export default function Processos() {
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Toggle Switch - Segmented Control */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2">
+          <div className="bg-muted p-1 rounded-lg inline-flex">
+            <button
+              onClick={() => setViewMode("meus")}
+              className={cn(
+                "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
+                viewMode === "meus"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Meus Processos
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full text-[10px]",
+                viewMode === "meus" ? "bg-primary/10 text-primary" : "bg-muted-foreground/10"
+              )}>
+                {meusCount}
+              </span>
+            </button>
+            <button
+              onClick={() => setViewMode("todos")}
+              className={cn(
+                "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
+                viewMode === "todos"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Todos
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full text-[10px]",
+                viewMode === "todos" ? "bg-primary/10 text-primary" : "bg-muted-foreground/10"
+              )}>
+                {todosCount}
+              </span>
+            </button>
+          </div>
+          <span className="text-xs text-muted-foreground hidden sm:inline-block">
+            {viewMode === 'meus'
+              ? `Mostrando apenas processos sob sua responsabilidade`
+              : `Mostrando todos os processos do escritório`}
+          </span>
+        </div>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">

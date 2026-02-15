@@ -75,12 +75,15 @@ const roleColors: Record<UserRole, string> = {
   secretary: "bg-secondary text-secondary-foreground border-secondary",
 };
 
+import { supabase } from "@/integrations/supabase/client";
+
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [escritorioOpen, setEscritorioOpen] = useState(() => {
     const saved = localStorage.getItem("escritorio_expanded");
     return saved ? JSON.parse(saved) : false;
   });
+  const [myProcessCount, setMyProcessCount] = useState(0);
   const { user, signOut } = useAuth();
   const { profile, role, isAdmin, isSenior } = usePermissions();
   const navigate = useNavigate();
@@ -90,6 +93,18 @@ export function AppSidebar() {
   useEffect(() => {
     localStorage.setItem("escritorio_expanded", JSON.stringify(escritorioOpen));
   }, [escritorioOpen]);
+
+  useEffect(() => {
+    if (!user) return;
+    const fetchCount = async () => {
+      const { count } = await supabase
+        .from("processos")
+        .select("id", { count: "exact", head: true })
+        .or(`user_id.eq.${user.id},advogado_id.eq.${user.id}`);
+      setMyProcessCount(count || 0);
+    };
+    fetchCount();
+  }, [user]);
 
   // Auto-expand if current route is inside Escritório
   useEffect(() => {
@@ -208,7 +223,16 @@ export function AppSidebar() {
                   activeClassName={activeLinkClass}
                 >
                   <item.icon className="w-5 h-5 shrink-0" />
-                  {!collapsed && <span>{item.title}</span>}
+                  {!collapsed && (
+                    <div className="flex items-center justify-between flex-1 min-w-0">
+                      <span>{item.title}</span>
+                      {item.title === "Processos" && myProcessCount > 0 && (
+                        <span className="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          {myProcessCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </NavLink>
               ))}
 
