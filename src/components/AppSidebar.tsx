@@ -20,7 +20,8 @@ import {
   Sun,
   Moon,
   Laptop,
-  Menu,
+  Mail,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -47,7 +48,9 @@ import { supabase } from "@/integrations/supabase/client";
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
-  { title: "Comunicações", url: "/comunicacoes", icon: MessageSquare },
+  { title: "Email", url: "/email", icon: Mail },
+  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
+  { title: "Notificações", url: "/notifications", icon: Bell },
   { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
 ];
@@ -90,6 +93,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
     return saved ? JSON.parse(saved) : false;
   });
   const [myProcessCount, setMyProcessCount] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { user, signOut } = useAuth();
   const { profile, role, isAdmin, isSenior } = usePermissions();
   const navigate = useNavigate();
@@ -109,7 +113,31 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
         .or(`user_id.eq.${user.id},advogado_id.eq.${user.id}`);
       setMyProcessCount(count || 0);
     };
+
+    const fetchNotifications = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .eq("archived", false);
+      setUnreadNotifications(count || 0);
+    };
+
     fetchCount();
+    fetchNotifications();
+
+    // Subscribe to notifications
+    const channel = supabase
+      .channel("sidebar-notifications")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => fetchNotifications()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   // Auto-expand if current route is inside Escritório
@@ -238,6 +266,11 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                       {item.title === "Processos" && myProcessCount > 0 && (
                         <span className="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                           {myProcessCount}
+                        </span>
+                      )}
+                      {item.title === "Notificações" && unreadNotifications > 0 && (
+                        <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          {unreadNotifications}
                         </span>
                       )}
                     </div>
