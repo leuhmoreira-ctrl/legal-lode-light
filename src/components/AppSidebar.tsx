@@ -18,6 +18,9 @@ import {
   Settings,
   Building2,
   MessageSquare,
+  Sun,
+  Moon,
+  Laptop,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -35,6 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTheme } from "next-themes";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -78,6 +82,7 @@ export function AppSidebar() {
   const { profile, role, isAdmin, isSenior } = usePermissions();
   const navigate = useNavigate();
   const location = useLocation();
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     localStorage.setItem("escritorio_expanded", JSON.stringify(escritorioOpen));
@@ -264,6 +269,23 @@ export function AppSidebar() {
               <Settings className="w-4 h-4 mr-2" />
               Configurações
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Tema</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setTheme("light")}>
+              <Sun className="w-4 h-4 mr-2" />
+              Claro
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("dark")}>
+              <Moon className="w-4 h-4 mr-2" />
+              Escuro
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setTheme("system")}>
+              <Laptop className="w-4 h-4 mr-2" />
+              Sistema
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               Sair
