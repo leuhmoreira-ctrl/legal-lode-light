@@ -30,16 +30,18 @@ import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeContextProvider } from "@/contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
+      <ThemeContextProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AuthProvider>
           <PermissionsProvider>
             <BrowserRouter>
               <Routes>
@@ -73,7 +75,8 @@ const App = () => (
             </BrowserRouter>
           </PermissionsProvider>
         </AuthProvider>
-      </TooltipProvider>
+        </TooltipProvider>
+      </ThemeContextProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
