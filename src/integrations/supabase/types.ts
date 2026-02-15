@@ -235,6 +235,39 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          from_user_id: string
+          id: string
+          read_by: string[]
+          subject: string
+          to_user_ids: string[]
+          type: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          read_by?: string[]
+          subject: string
+          to_user_ids: string[]
+          type?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          read_by?: string[]
+          subject?: string
+          to_user_ids?: string[]
+          type?: string
+        }
+        Relationships: []
+      }
       movimentacoes: {
         Row: {
           complemento: string | null

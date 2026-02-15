@@ -49,8 +49,7 @@ import { supabase } from "@/integrations/supabase/client";
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
-  { title: "Email", url: "/email", icon: Mail },
-  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
+  { title: "Comunicações", url: "/comunicacoes", icon: MessageSquare },
   { title: "Notificações", url: "/notifications", icon: Bell },
   { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
