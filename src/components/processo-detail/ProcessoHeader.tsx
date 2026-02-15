@@ -4,8 +4,10 @@ import { ArrowLeft, RefreshCw, AlertCircle, Calendar, ExternalLink } from "lucid
 import { useNavigate } from "react-router-dom";
 import { generateDeepLink, detectarSistema } from "@/utils/tribunalLinks";
 import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
+import { ProcessoActionBar } from "./ProcessoActionBar";
 
 interface ProcessoHeaderProps {
+  processoId: string;
   numero: string;
   cliente: string;
   vara: string;
@@ -17,6 +19,9 @@ interface ProcessoHeaderProps {
   unreadMovCount: number;
   pendingPrazosCount: number;
   onScrollToTimeline: () => void;
+  onNewTask: () => void;
+  onViewTasks: () => void;
+  onViewHistory: () => void;
 }
 
 const faseColor: Record<string, string> = {
@@ -27,8 +32,9 @@ const faseColor: Record<string, string> = {
 };
 
 export function ProcessoHeader({
-  numero, cliente, vara, comarca, fase, siglaTribunal, sistemaTribunal,
+  processoId, numero, cliente, vara, comarca, fase, siglaTribunal, sistemaTribunal,
   syncActive, unreadMovCount, pendingPrazosCount, onScrollToTimeline,
+  onNewTask, onViewTasks, onViewHistory,
 }: ProcessoHeaderProps) {
   const navigate = useNavigate();
 
@@ -94,6 +100,14 @@ export function ProcessoHeader({
           )}
         </div>
       </div>
+
+      {/* Action Bar */}
+      <ProcessoActionBar
+        processoId={processoId}
+        onNewTask={onNewTask}
+        onViewTasks={onViewTasks}
+        onViewHistory={onViewHistory}
+      />
     </div>
   );
 }

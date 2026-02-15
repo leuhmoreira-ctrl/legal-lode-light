@@ -21,6 +21,9 @@ import { ClienteCommunicationCard } from "@/components/processo/ClienteCommunica
 import { ProcessoNotes } from "@/components/processo/ProcessoNotes";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
 import { RegistrarAcaoManualDialog } from "@/components/processo/RegistrarAcaoManualDialog";
+import { ProcessoTarefasTab } from "@/components/processo-detail/ProcessoTarefasTab";
+import { NovaTarefaProcessoDialog } from "@/components/processo-detail/NovaTarefaProcessoDialog";
+import { ProcessoTaskHistory } from "@/components/processo-detail/ProcessoTaskHistory";
 import { differenceInDays, format } from "date-fns";
 
 interface Processo {
@@ -57,6 +60,10 @@ export default function ProcessoDetail() {
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [acaoManualOpen, setAcaoManualOpen] = useState(false);
   const [ultimaAcaoManual, setUltimaAcaoManual] = useState<string | null>(null);
+  const [novaTarefaOpen, setNovaTarefaOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [tarefasRefreshKey, setTarefasRefreshKey] = useState(0);
+  const [activeTab, setActiveTab] = useState("docs");
 
   // Load processo
   useEffect(() => {
@@ -111,6 +118,17 @@ export default function ProcessoDetail() {
     };
     load();
   }, [id]);
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === "n" || e.key === "N") { e.preventDefault(); setNovaTarefaOpen(true); }
+      if (e.key === "t" || e.key === "T") { e.preventDefault(); setActiveTab("tarefas"); }
+      if (e.key === "h" || e.key === "H") { e.preventDefault(); setHistoryOpen(true); }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   // Sync handler
   const handleSync = useCallback(async () => {
@@ -217,6 +235,7 @@ export default function ProcessoDetail() {
       <div className="space-y-6 animate-fade-up">
         {/* Header with badges */}
         <ProcessoHeader
+          processoId={processo.id}
           numero={processo.numero}
           cliente={processo.cliente}
           vara={processo.vara}
@@ -228,6 +247,9 @@ export default function ProcessoDetail() {
           unreadMovCount={movimentacoes.length}
           pendingPrazosCount={0}
           onScrollToTimeline={() => timelineRef.current?.scrollIntoView({ behavior: "smooth" })}
+          onNewTask={() => setNovaTarefaOpen(true)}
+          onViewTasks={() => setActiveTab("tarefas")}
+          onViewHistory={() => setHistoryOpen(true)}
         />
 
         {/* Days stalled indicator */}
@@ -266,10 +288,11 @@ export default function ProcessoDetail() {
           </div>
 
           <div className="lg:col-span-2">
-            <Tabs defaultValue="docs" className="space-y-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="docs">Documentos</TabsTrigger>
                 <TabsTrigger value="upload">Upload</TabsTrigger>
+                <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
                 <TabsTrigger value="notas">📝 Notas</TabsTrigger>
                 <TabsTrigger value="chat">Chat</TabsTrigger>
               </TabsList>
@@ -280,6 +303,14 @@ export default function ProcessoDetail() {
                 <DocumentUploader
                   processId={processo.id}
                   onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
+                />
+              </TabsContent>
+              <TabsContent value="tarefas">
+                <ProcessoTarefasTab
+                  processoId={processo.id}
+                  onNewTask={() => setNovaTarefaOpen(true)}
+                  onViewHistory={() => setHistoryOpen(true)}
+                  refreshKey={tarefasRefreshKey}
                 />
               </TabsContent>
               <TabsContent value="notas">
@@ -305,6 +336,23 @@ export default function ProcessoDetail() {
           onSuccess={() => {
             setUltimaAcaoManual(new Date().toISOString());
           }}
+        />
+
+        {/* Nova Tarefa Dialog */}
+        <NovaTarefaProcessoDialog
+          processoId={processo.id}
+          processoNumero={processo.numero}
+          processoCliente={processo.cliente}
+          open={novaTarefaOpen}
+          onOpenChange={setNovaTarefaOpen}
+          onSuccess={() => setTarefasRefreshKey((k) => k + 1)}
+        />
+
+        {/* Task History Dialog */}
+        <ProcessoTaskHistory
+          processoId={processo.id}
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
         />
       </div>
     </AppLayout>
