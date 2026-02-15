@@ -51,10 +51,10 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { EditProcessoDialog } from "@/components/EditProcessoDialog";
 import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
-import { cn } from "@/lib/utils";
 import { useProcessos } from "@/hooks/useProcessos";
 import { ProcessosSkeleton } from "@/components/skeletons/ProcessosSkeleton";
 import { AnimatedTabContent } from "@/components/AnimatedTabContent";
+import { ProcessosToggle } from "@/components/processo/ProcessosToggle";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -235,42 +235,12 @@ export default function Processos() {
 
         {/* Toggle Switch - Segmented Control */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2">
-          <div className="bg-muted p-1 rounded-lg inline-flex">
-            <button
-              onClick={() => handleTabChange("meus")}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
-                viewMode === "meus"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Meus Processos
-              <span className={cn(
-                "px-1.5 py-0.5 rounded-full text-[10px]",
-                viewMode === "meus" ? "bg-primary/10 text-primary" : "bg-muted-foreground/10"
-              )}>
-                {meusCount}
-              </span>
-            </button>
-            <button
-              onClick={() => handleTabChange("todos")}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
-                viewMode === "todos"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Todos
-              <span className={cn(
-                "px-1.5 py-0.5 rounded-full text-[10px]",
-                viewMode === "todos" ? "bg-primary/10 text-primary" : "bg-muted-foreground/10"
-              )}>
-                {todosCount}
-              </span>
-            </button>
-          </div>
+          <ProcessosToggle
+            viewMode={viewMode}
+            onViewModeChange={handleTabChange}
+            meusCount={meusCount}
+            todosCount={todosCount}
+          />
           <span className="text-xs text-muted-foreground hidden sm:inline-block">
             {viewMode === 'meus'
               ? `Mostrando apenas processos sob sua responsabilidade`
