@@ -39,24 +39,57 @@ export function useChat() {
 
     if (!convos) { setLoading(false); return; }
 
+    const conversationIds = convos.map((c) => c.id);
+
+    // Batch fetch participants
+    const { data: allParticipants } = await supabase
+      .from("chat_participants")
+      .select("conversation_id, user_id, last_read_at")
+      .in("conversation_id", conversationIds);
+
+    // Collect user IDs
+    const allUserIds = [
+      ...new Set((allParticipants || []).map((p) => p.user_id)),
+    ];
+
+    // Batch fetch profiles
+    const { data: allProfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", allUserIds);
+
+    // Index data for O(1) lookup
+    const participantsByConvo = (allParticipants || []).reduce(
+      (acc, p) => {
+        if (!acc[p.conversation_id]) acc[p.conversation_id] = [];
+        acc[p.conversation_id].push(p);
+        return acc;
+      },
+      {} as Record<string, NonNullable<typeof allParticipants>>
+    );
+
+    const profilesById = (allProfiles || []).reduce(
+      (acc, p) => {
+        acc[p.id] = p;
+        return acc;
+      },
+      {} as Record<string, NonNullable<typeof allProfiles>[0]>
+    );
+
     const enriched: Conversation[] = await Promise.all(
       convos.map(async (c) => {
-        const { data: parts } = await supabase
-          .from("chat_participants")
-          .select("user_id, last_read_at")
-          .eq("conversation_id", c.id);
-
-        const userIds = (parts || []).map((p) => p.user_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", userIds);
-
-        const participants = (profiles || []).map((p) => ({
-          user_id: p.id,
-          full_name: p.full_name,
-          avatar_url: p.avatar_url,
-        }));
+        const parts = participantsByConvo[c.id] || [];
+        const participants = parts
+          .map((p) => {
+            const profile = profilesById[p.user_id];
+            if (!profile) return null;
+            return {
+              user_id: p.user_id,
+              full_name: profile.full_name,
+              avatar_url: profile.avatar_url,
+            };
+          })
+          .filter((p): p is { user_id: string; full_name: string; avatar_url: string | null } => p !== null);
 
         const { data: msgs } = await supabase
           .from("chat_messages")
@@ -65,7 +98,7 @@ export function useChat() {
           .order("created_at", { ascending: false })
           .limit(1);
 
-        const myParticipant = (parts || []).find((p) => p.user_id === user.id);
+        const myParticipant = parts.find((p) => p.user_id === user.id);
         const lastReadAt = myParticipant?.last_read_at;
 
         const { count } = await supabase
