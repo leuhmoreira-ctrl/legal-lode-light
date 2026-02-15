@@ -54,6 +54,7 @@ import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
 import { cn } from "@/lib/utils";
 import { useProcessos } from "@/hooks/useProcessos";
 import { ProcessosSkeleton } from "@/components/skeletons/ProcessosSkeleton";
+import { AnimatedTabContent } from "@/components/AnimatedTabContent";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -125,6 +126,14 @@ export default function Processos() {
     // Default to 'mine' for regular users, 'all' for seniors/admins
     return isSenior ? "todos" : "meus";
   });
+  const [direction, setDirection] = useState(0);
+
+  const handleTabChange = (newMode: "meus" | "todos") => {
+    if (newMode === viewMode) return;
+    const newDirection = newMode === "todos" ? 1 : -1;
+    setDirection(newDirection);
+    setViewMode(newMode);
+  };
 
   const handleSyncAll = () => {
      syncMutation.mutate(processos, {
@@ -228,7 +237,7 @@ export default function Processos() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2">
           <div className="bg-muted p-1 rounded-lg inline-flex">
             <button
-              onClick={() => setViewMode("meus")}
+              onClick={() => handleTabChange("meus")}
               className={cn(
                 "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
                 viewMode === "meus"
@@ -245,7 +254,7 @@ export default function Processos() {
               </span>
             </button>
             <button
-              onClick={() => setViewMode("todos")}
+              onClick={() => handleTabChange("todos")}
               className={cn(
                 "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
                 viewMode === "todos"
@@ -313,11 +322,12 @@ export default function Processos() {
         </div>
 
         {/* Loading */}
-        {isLoading && <ProcessosSkeleton />}
+        <AnimatedTabContent activeTab={viewMode} direction={direction}>
+          {isLoading && <ProcessosSkeleton />}
 
-        {/* Empty state */}
-        {!isLoading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          {/* Empty state */}
+          {!isLoading && filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="p-4 rounded-full bg-muted mb-4">
               <FolderOpen className="w-10 h-10 text-muted-foreground" />
             </div>
@@ -526,6 +536,8 @@ export default function Processos() {
             })}
           </div>
         )}
+
+        </AnimatedTabContent>
 
         {/* Edit process dialog */}
         {editTarget && (
