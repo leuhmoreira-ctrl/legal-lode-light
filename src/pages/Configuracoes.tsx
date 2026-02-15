@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, Save, Loader2, Eye, EyeOff } from "lucide-react";
+import { Upload, Save, Loader2, Eye, EyeOff, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
@@ -40,6 +41,7 @@ interface ProfileData {
 
 export default function Configuracoes() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -210,7 +212,21 @@ export default function Configuracoes() {
             <TabsTrigger value="security">Segurança</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="mt-4">
+          <TabsContent value="profile" className="mt-4 space-y-6">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer border-l-4 border-l-blue-500" onClick={() => navigate("/configuracoes/email")}>
+              <div className="flex items-center gap-4 p-6">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <Mail className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Email e Integrações</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Conectar contas, SMTP/IMAP e preferências de sincronização.
+                  </p>
+                </div>
+              </div>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Informações Pessoais</CardTitle>

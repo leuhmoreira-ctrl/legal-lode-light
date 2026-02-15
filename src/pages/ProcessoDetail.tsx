@@ -14,6 +14,7 @@ import { DocumentList } from "@/components/DocumentList";
 import { ProcessChat } from "@/components/chat/ProcessChat";
 import { ProcessoHeader } from "@/components/processo-detail/ProcessoHeader";
 import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid";
+import { EmailComposer } from "@/components/email/EmailComposer";
 
 import { MovimentacoesTimeline, type Movimentacao } from "@/components/processo-detail/MovimentacoesTimeline";
 
@@ -61,6 +62,7 @@ export default function ProcessoDetail() {
   const [acaoManualOpen, setAcaoManualOpen] = useState(false);
   const [ultimaAcaoManual, setUltimaAcaoManual] = useState<string | null>(null);
   const [novaTarefaOpen, setNovaTarefaOpen] = useState(false);
+  const [emailComposerOpen, setEmailComposerOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [tarefasRefreshKey, setTarefasRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState("docs");
@@ -285,6 +287,7 @@ export default function ProcessoDetail() {
                 <TabsTrigger value="docs">Documentos</TabsTrigger>
                 <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
                 <TabsTrigger value="notas">📝 Notas</TabsTrigger>
+                <TabsTrigger value="comunicacoes">📧 Comunicações</TabsTrigger>
                 <TabsTrigger value="chat">Chat</TabsTrigger>
               </TabsList>
               <TabsContent value="docs">
@@ -306,6 +309,20 @@ export default function ProcessoDetail() {
               </TabsContent>
               <TabsContent value="notas">
                 <ProcessoNotes processoId={processo.id} />
+              </TabsContent>
+              <TabsContent value="comunicacoes">
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Histórico de Comunicações</h3>
+                    <Button onClick={() => setEmailComposerOpen(true)} className="gap-2">
+                      <span className="text-lg">✉️</span> Novo Email
+                    </Button>
+                  </div>
+                  <div className="p-8 text-center border rounded-lg bg-muted/20 text-muted-foreground">
+                    <p>Nenhuma comunicação registrada para este processo.</p>
+                    <p className="text-xs mt-1">Emails trocados com o cliente aparecerão aqui.</p>
+                  </div>
+                </div>
               </TabsContent>
               <TabsContent value="chat">
                 <ProcessChat processoId={processo.id} processoNumero={processo.numero} />
@@ -344,6 +361,13 @@ export default function ProcessoDetail() {
           processoId={processo.id}
           open={historyOpen}
           onOpenChange={setHistoryOpen}
+        />
+
+        {/* Email Composer */}
+        <EmailComposer
+          open={emailComposerOpen}
+          onOpenChange={setEmailComposerOpen}
+          initialSubject={`Processo ${processo.numero} - ${processo.cliente}`}
         />
       </div>
     </AppLayout>

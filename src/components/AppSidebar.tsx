@@ -21,6 +21,7 @@ import {
   Sun,
   Moon,
   Laptop,
+  Mail,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -44,6 +45,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
+  { title: "Email", url: "/email", icon: Mail },
   { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
   { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
