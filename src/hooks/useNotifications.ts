@@ -6,14 +6,11 @@ import { useToast } from "@/hooks/use-toast";
 export interface Notification {
   id: string;
   user_id: string;
-  type: string; // 'deadline_alert', 'email', 'internal'
+  type: string;
   title: string;
   message: string;
   link?: string;
   is_read: boolean;
-  archived: boolean;
-  from_user_id?: string;
-  from_email?: string;
   created_at: string;
 }
 
@@ -32,7 +29,6 @@ export function useNotifications() {
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
-        .eq("archived", false)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -71,13 +67,9 @@ export function useNotifications() {
             });
           } else if (payload.eventType === "UPDATE") {
             const updated = payload.new as Notification;
-            if (updated.archived) {
-              setNotifications((prev) => prev.filter((n) => n.id !== updated.id));
-            } else {
-              setNotifications((prev) =>
-                prev.map((n) => (n.id === updated.id ? updated : n))
-              );
-            }
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === updated.id ? updated : n))
+            );
             // Re-calc unread count slightly expensive but accurate
             // Or just fetch again
             fetchNotifications();
@@ -124,17 +116,13 @@ export function useNotifications() {
     }
   };
 
-  const archive = async (id: string) => {
+  const deleteNotification = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({ archived: true })
-        .eq("id", id);
-      if (error) throw error;
-
+      // Since we can't delete, just mark as read
+      await markAsRead(id);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     } catch (err) {
-      console.error("Error archiving notification:", err);
+      console.error("Error removing notification:", err);
     }
   };
 
@@ -144,7 +132,7 @@ export function useNotifications() {
     unreadCount,
     markAsRead,
     markAllAsRead,
-    archive,
+    deleteNotification,
     refetch: fetchNotifications,
   };
 }

@@ -22,6 +22,7 @@ import {
   Laptop,
   Mail,
   Bell,
+  Menu,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -123,8 +124,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
         .from("notifications")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id)
-        .eq("is_read", false)
-        .eq("archived", false);
+        .eq("is_read", false);
       setUnreadNotifications(count || 0);
     };
 

@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, CheckCheck, Bell } from "lucide-react";
 
 export default function Notifications() {
-  const { notifications, loading, unreadCount, markAsRead, markAllAsRead, archive } = useNotifications();
+  const { notifications, loading, unreadCount, markAsRead, markAllAsRead, deleteNotification: archive } = useNotifications();
   const [filterType, setFilterType] = useState("all");
   const [tab, setTab] = useState("all");
 
