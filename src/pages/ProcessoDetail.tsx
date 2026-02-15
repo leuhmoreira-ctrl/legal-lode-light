@@ -283,19 +283,18 @@ export default function ProcessoDetail() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="docs">Documentos</TabsTrigger>
-                <TabsTrigger value="upload">Upload</TabsTrigger>
                 <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
                 <TabsTrigger value="notas">📝 Notas</TabsTrigger>
                 <TabsTrigger value="chat">Chat</TabsTrigger>
               </TabsList>
               <TabsContent value="docs">
-                <DocumentList processId={processo.id} refreshKey={docsRefreshKey} />
-              </TabsContent>
-              <TabsContent value="upload">
-                <DocumentUploader
-                  processId={processo.id}
-                  onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
-                />
+                <div className="space-y-6">
+                  <DocumentUploader
+                    processId={processo.id}
+                    onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
+                  />
+                  <DocumentList processId={processo.id} refreshKey={docsRefreshKey} />
+                </div>
               </TabsContent>
               <TabsContent value="tarefas">
                 <ProcessoTarefasTab
