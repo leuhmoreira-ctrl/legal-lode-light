@@ -5,6 +5,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
+const ALLOWED_TRIBUNALS = [
+  // Justiça Estadual
+  'tjac', 'tjal', 'tjam', 'tjap', 'tjba', 'tjce', 'tjdf', 'tjes', 'tjgo', 'tjma', 'tjmg', 'tjms', 'tjmt',
+  'tjpa', 'tjpb', 'tjpe', 'tjpi', 'tjpr', 'tjrj', 'tjrn', 'tjro', 'tjrr', 'tjrs', 'tjsc', 'tjse', 'tjsp', 'tjto',
+  // Justiça Federal
+  'trf1', 'trf2', 'trf3', 'trf4', 'trf5', 'trf6',
+  // Justiça do Trabalho
+  'trt1', 'trt2', 'trt3', 'trt4', 'trt5', 'trt6', 'trt7', 'trt8', 'trt9', 'trt10', 'trt11', 'trt12',
+  'trt13', 'trt14', 'trt15', 'trt16', 'trt17', 'trt18', 'trt19', 'trt20', 'trt21', 'trt22', 'trt23', 'trt24',
+  // Tribunais Superiores e Outros
+  'stj', 'tst', 'tse', 'stm', 'cnj'
+]
+
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = 15000): Promise<Response> {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -42,6 +55,14 @@ serve(async (req) => {
     if (!numeroProcesso || !tribunal) {
       return new Response(
         JSON.stringify({ error: 'Número do processo e tribunal são obrigatórios' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    if (typeof tribunal !== 'string' || !ALLOWED_TRIBUNALS.includes(tribunal.toLowerCase())) {
+      console.error(`Tribunal inválido ou não suportado: ${tribunal}`)
+      return new Response(
+        JSON.stringify({ error: `Tribunal inválido ou não suportado: ${tribunal}` }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       )
     }
