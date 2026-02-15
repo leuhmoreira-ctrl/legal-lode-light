@@ -14,7 +14,7 @@ import { DocumentList } from "@/components/DocumentList";
 import { ProcessChat } from "@/components/chat/ProcessChat";
 import { ProcessoHeader } from "@/components/processo-detail/ProcessoHeader";
 import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid";
-import { SyncStatusCard } from "@/components/processo-detail/SyncStatusCard";
+
 import { MovimentacoesTimeline, type Movimentacao } from "@/components/processo-detail/MovimentacoesTimeline";
 import { SyncLogsAccordion, type SyncLog } from "@/components/processo-detail/SyncLogsAccordion";
 import { ClienteCommunicationCard } from "@/components/processo/ClienteCommunicationCard";
@@ -276,14 +276,6 @@ export default function ProcessoDetail() {
         {/* Three columns: Sync + Communication | Tabs | Notes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-4">
-            <SyncStatusCard
-              siglaTribunal={processo.sigla_tribunal}
-              sistemaTribunal={processo.sistema_tribunal}
-              lastSync={processo.data_ultima_sincronizacao}
-              onSync={handleSync}
-              syncing={syncing}
-              syncStatus={getSyncStatus()}
-            />
             <SyncLogsAccordion logs={syncLogs} />
             <ClienteCommunicationCard processoId={processo.id} />
           </div>
