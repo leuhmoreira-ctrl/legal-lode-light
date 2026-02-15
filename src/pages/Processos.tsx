@@ -24,25 +24,20 @@ import {
   Filter,
   ExternalLink,
   RefreshCw,
-  AlertCircle,
   Clock,
   CheckCircle2,
-  Loader2,
   FolderOpen,
   Calendar,
   Paperclip,
-  Trash2,
-  User,
-  Building2,
   Pencil,
+  Loader2
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
 import { format, parseISO } from "date-fns";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import {
   generateDeepLink,
   detectarSistema,
@@ -57,6 +52,8 @@ import { EditProcessoDialog } from "@/components/EditProcessoDialog";
 import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
 import { cn } from "@/lib/utils";
+import { useProcessos } from "@/hooks/useProcessos";
+import { ProcessosSkeleton } from "@/components/skeletons/ProcessosSkeleton";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -97,161 +94,42 @@ interface Processo {
   sigla_tribunal: string | null;
   sistema_tribunal: string | null;
   user_id: string;
-}
-
-interface UltimaMovimentacao {
-  data_movimento: string;
-  descricao: string;
-  complemento: string | null;
+  [key: string]: any;
 }
 
 export default function Processos() {
   const { user } = useAuth();
   const { isSenior } = usePermissions();
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // React Query Hook
+  const { processes, isLoading, error, syncMutation } = useProcessos();
+  const processos = (processes as Processo[]) || [];
+
   const [search, setSearch] = useState("");
   const [faseFilter, setFaseFilter] = useState("all");
+  const [dateStart, setDateStart] = useState("");
+  const [dateEnd, setDateEnd] = useState("");
   const [dialogOpen, setDialogOpen] = useState<string | null>(null);
   const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
   const [docsDialogOpen, setDocsDialogOpen] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Processo | null>(null);
   const [editTarget, setEditTarget] = useState<Processo | null>(null);
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
-  const [processos, setProcessos] = useState<Processo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [syncingAll, setSyncingAll] = useState(false);
-  const [ultimasMovs, setUltimasMovs] = useState<Record<string, UltimaMovimentacao>>({});
   const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
-  const hasSyncedRef = useRef(false);
-  const { toast } = useToast();
+
   const [viewMode, setViewMode] = useState<"meus" | "todos">(() => {
     return (localStorage.getItem("processos_view_mode") as "meus" | "todos") || "meus";
   });
 
-  const carregarUltimasMovimentacoes = useCallback(async (processoIds: string[]) => {
-    if (processoIds.length === 0) return;
-    const results: Record<string, UltimaMovimentacao> = {};
-    for (const pid of processoIds) {
-      const { data } = await supabase
-        .from("movimentacoes")
-        .select("data_movimento, descricao, complemento")
-        .eq("processo_id", pid)
-        .order("data_movimento", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (data) results[pid] = data;
-    }
-    setUltimasMovs(results);
-  }, []);
-
-  const carregarProcessos = useCallback(async () => {
-    if (!user) return [];
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("processos")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      const procs = data || [];
-      setProcessos(procs);
-      if (procs.length > 0) {
-        await carregarUltimasMovimentacoes(procs.map((p) => p.id));
-      }
-      return procs;
-    } catch (err: any) {
-      console.error("Erro ao carregar processos:", err);
-      toast({ title: "Erro ao carregar processos", description: err.message, variant: "destructive" });
-      return [];
-    } finally {
-      setLoading(false);
-    }
-  }, [user, toast, carregarUltimasMovimentacoes]);
-
-  const sincronizarTodos = useCallback(async (procs: Processo[]) => {
-    const processosComTribunal = procs.filter((p) => p.sigla_tribunal);
-    if (processosComTribunal.length === 0) return;
-
-    setSyncingAll(true);
-    let sucessos = 0;
-    let erros = 0;
-
-    for (const proc of processosComTribunal) {
-      try {
-        const { data, error } = await supabase.functions.invoke("sync-process", {
-          body: { numeroProcesso: proc.numero, tribunal: proc.sigla_tribunal },
-        });
-
-        if (error || data?.error) {
-          console.warn(`⚠️ Erro sync ${proc.numero}:`, error || data?.error);
-          erros++;
-          continue;
+  const handleSyncAll = () => {
+     syncMutation.mutate(processos, {
+        onSuccess: (data: any) => {
+            setSyncResults(prev => ({ ...prev, ...data.results }));
         }
-
-        if (data) {
-          setSyncResults((prev) => ({ ...prev, [proc.id]: data }));
-        }
-
-        // Save movimentações (deduplicated via unique constraint)
-        if (data?.movimentacoes && data.movimentacoes.length > 0) {
-          const movsToInsert = data.movimentacoes.map((mov: any) => ({
-            processo_id: proc.id,
-            data_movimento: mov.data,
-            descricao: mov.descricao,
-            complemento: mov.complemento || null,
-          }));
-
-          const { error: insertError } = await supabase
-            .from("movimentacoes")
-            .upsert(movsToInsert, {
-              onConflict: "processo_id,data_movimento,descricao",
-              ignoreDuplicates: true,
-            });
-
-          if (insertError) {
-            console.error(`❌ Erro ao salvar movimentações de ${proc.numero}:`, insertError);
-          }
-        }
-
-        // Update sync timestamp
-        await supabase
-          .from("processos")
-          .update({ data_ultima_sincronizacao: new Date().toISOString() })
-          .eq("id", proc.id);
-
-        sucessos++;
-      } catch (err) {
-        console.error(`❌ Erro sync ${proc.numero}:`, err);
-        erros++;
-      }
-    }
-
-    setSyncingAll(false);
-
-    // Reload movimentacoes
-    await carregarUltimasMovimentacoes(procs.map((p) => p.id));
-
-    if (erros > 0) {
-      toast({
-        title: "⚠️ Sincronização com erros",
-        description: `${erros} processo(s) com erro`,
-        variant: "destructive",
-      });
-    }
-  }, [toast, carregarUltimasMovimentacoes]);
-
-  // Load and auto-sync on mount
-  useEffect(() => {
-    if (!user) return;
-    const init = async () => {
-      const procs = await carregarProcessos();
-      if (!hasSyncedRef.current && procs.length > 0) {
-        hasSyncedRef.current = true;
-        sincronizarTodos(procs);
-      }
-    };
-    init();
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+     });
+  };
 
   // Persist view mode
   useEffect(() => {
@@ -266,11 +144,20 @@ export default function Processos() {
       p.advogado.toLowerCase().includes(search.toLowerCase());
     const matchFase = faseFilter === "all" || p.fase === faseFilter;
     const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
-    return matchSearch && matchFase && matchView;
-  });
 
-  const meusCount = processos.filter((p) => p.user_id === user?.id || p.advogado_id === user?.id).length;
-  const todosCount = processos.length;
+    let matchDate = true;
+    if (dateStart || dateEnd) {
+      if (!p.ultima_movimentacao) {
+        matchDate = false;
+      } else {
+        const movDate = p.ultima_movimentacao.split('T')[0]; // simple YYYY-MM-DD compare
+        if (dateStart && movDate < dateStart) matchDate = false;
+        if (dateEnd && movDate > dateEnd) matchDate = false;
+      }
+    }
+
+    return matchSearch && matchFase && matchView && matchDate;
+  });
 
   const getPortalLink = (proc: Processo) => {
     if (!proc.sigla_tribunal) return null;
@@ -293,11 +180,11 @@ export default function Processos() {
               variant="ghost"
               size="icon"
               className="h-9 w-9"
-              disabled={syncingAll || processos.length === 0}
-              onClick={() => sincronizarTodos(processos)}
-              title={syncingAll ? "Sincronizando..." : "Atualizar Todos"}
+              disabled={syncMutation.isPending || processos.length === 0}
+              onClick={handleSyncAll}
+              title={syncMutation.isPending ? "Sincronizando..." : "Atualizar Todos"}
             >
-              <RefreshCw className={`w-4 h-4 ${syncingAll ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />
             </Button>
             <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
               <DialogTrigger asChild>
@@ -312,7 +199,7 @@ export default function Processos() {
                 <NovoProcessoForm
                   onSuccess={() => {
                     setNovoProcessoOpen(false);
-                    carregarProcessos();
+                    // refetch handled by hook invalidation
                   }}
                   onCancel={() => setNovoProcessoOpen(false)}
                 />
@@ -322,7 +209,7 @@ export default function Processos() {
         </div>
 
         {/* Sync indicator */}
-        {syncingAll && (
+        {syncMutation.isPending && (
           <Alert>
             <Loader2 className="h-4 w-4 animate-spin" />
             <AlertDescription>
@@ -355,17 +242,30 @@ export default function Processos() {
               <SelectItem value="Encerrado">Encerrado</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex gap-2 items-center">
+             <Input
+               type="date"
+               className="w-auto"
+               value={dateStart}
+               onChange={e => setDateStart(e.target.value)}
+               title="Data Início (Última Movimentação)"
+             />
+             <span className="text-muted-foreground">-</span>
+             <Input
+               type="date"
+               className="w-auto"
+               value={dateEnd}
+               onChange={e => setDateEnd(e.target.value)}
+               title="Data Fim (Última Movimentação)"
+             />
+          </div>
         </div>
 
         {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        )}
+        {isLoading && <ProcessosSkeleton />}
 
         {/* Empty state */}
-        {!loading && filtered.length === 0 && (
+        {!isLoading && filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <div className="p-4 rounded-full bg-muted mb-4">
               <FolderOpen className="w-10 h-10 text-muted-foreground" />
@@ -385,11 +285,10 @@ export default function Processos() {
         )}
 
         {/* Process List */}
-        {!loading && filtered.length > 0 && (
+        {!isLoading && filtered.length > 0 && (
           <div className="space-y-3">
             {filtered.map((proc) => {
               const portalLink = getPortalLink(proc);
-              const ultimaMov = ultimasMovs[proc.id];
               const syncResult = syncResults[proc.id];
 
               return (
@@ -429,7 +328,7 @@ export default function Processos() {
                     {proc.tags?.map((tag) => (
                       <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
                     ))}
-                    <DiasParadoBadge ultimaMovimentacao={ultimaMov?.data_movimento || proc.ultima_movimentacao || null} />
+                    <DiasParadoBadge ultimaMovimentacao={proc.ultima_movimentacao} />
                     {proc.sigla_tribunal && (
                       <div className="flex items-center gap-1 ml-auto">
                         <Badge variant="outline" className="text-[10px]">
@@ -447,32 +346,21 @@ export default function Processos() {
 
                   {/* Footer — Última movimentação */}
                   <div className="mt-3 ml-12 pt-3 border-t border-border/50">
-                    {ultimaMov ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>Última movimentação: {format(parseISO(ultimaMov.data_movimento), "dd/MM/yyyy")}</span>
-                        </div>
-                        <p className="text-xs text-foreground">
-                          {ultimaMov.descricao}
-                          {ultimaMov.complemento && (
-                            <span className="text-muted-foreground"> — {ultimaMov.complemento}</span>
-                          )}
-                        </p>
-                      </div>
-                    ) : proc.ultima_movimentacao ? (
+                    {proc.ultima_movimentacao ? (
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Calendar className="w-3.5 h-3.5" />
                           <span>Última movimentação: {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}</span>
                         </div>
                         {proc.descricao_movimentacao && (
-                          <p className="text-xs text-foreground">{proc.descricao_movimentacao}</p>
+                          <p className="text-xs text-foreground">
+                            {proc.descricao_movimentacao}
+                          </p>
                         )}
                       </div>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        {syncingAll ? "Sincronização em andamento..." : "Nenhuma movimentação registrada."}
+                        {syncMutation.isPending ? "Sincronização em andamento..." : "Nenhuma movimentação registrada."}
                       </p>
                     )}
                   </div>
@@ -594,7 +482,7 @@ export default function Processos() {
             onOpenChange={(open) => { if (!open) setEditTarget(null); }}
             onSuccess={() => {
               setEditTarget(null);
-              carregarProcessos();
+              // refetch handled by hook invalidation
             }}
             canDelete={isSenior}
             onDelete={() => {
@@ -612,7 +500,7 @@ export default function Processos() {
             onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
             onDeleted={() => {
               setDeleteTarget(null);
-              carregarProcessos();
+              // refetch handled by hook invalidation
             }}
           />
         )}

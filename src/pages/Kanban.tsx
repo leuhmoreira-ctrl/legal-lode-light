@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const COLUMNS = [
   { id: "todo", title: "A Fazer", color: "bg-muted-foreground" },
@@ -172,7 +173,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     return filtered;
   };
 
-  const getMemberName = (id: string | null) => teamMembers.find((m) => m.id === id)?.full_name || "—";
+  const getMember = (id: string | null) => teamMembers.find((m) => m.id === id);
 
   const canDelete = (task: KanbanTask) => task.user_id === user?.id || isAdmin;
 
@@ -353,9 +354,14 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${priorityStyle[task.priority]}`}>
                                           {priorityLabel[task.priority]}
                                         </span>
-                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                                          <User className="w-3 h-3" />
-                                          {getMemberName(task.assigned_to)}
+                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                          <UserAvatar
+                                            name={getMember(task.assigned_to)?.full_name}
+                                            avatarUrl={getMember(task.assigned_to)?.avatar_url}
+                                            size="sm"
+                                            className="w-4 h-4 text-[8px]"
+                                          />
+                                          {getMember(task.assigned_to)?.full_name.split(" ")[0] || "—"}
                                         </div>
                                         {task.due_date && (
                                           <div className="flex items-center gap-1 text-[10px] text-muted-foreground ml-auto">
@@ -402,7 +408,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                 {deleteTarget.processo && (
                   <p>📋 Processo: <span className="font-medium">{deleteTarget.processo.numero}</span></p>
                 )}
-                <p>👤 Responsável: <span className="font-medium">{getMemberName(deleteTarget.assigned_to)}</span></p>
+                <p>👤 Responsável: <span className="font-medium">{getMember(deleteTarget.assigned_to)?.full_name || "—"}</span></p>
                 <p>📅 Criada em: <span className="font-medium">{format(new Date(deleteTarget.created_at), "dd/MM/yyyy")}</span></p>
               </div>
             )}

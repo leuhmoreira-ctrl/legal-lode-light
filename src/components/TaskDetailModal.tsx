@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
@@ -42,6 +41,7 @@ import { formatDistanceToNow, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ProcessInfoCard } from "@/components/task-detail/ProcessInfoCard";
 import { AttachmentSection, type AttachmentItem } from "@/components/task-detail/AttachmentSection";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface TaskComment {
   id: string;
@@ -125,9 +125,14 @@ export function TaskDetailModal({
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDesc, setEditDesc] = useState("");
 
-  const getMemberName = useCallback(
-    (id: string | null) => teamMembers.find((m) => m.id === id)?.full_name || "—",
+  const getMember = useCallback(
+    (id: string | null) => teamMembers.find((m) => m.id === id),
     [teamMembers]
+  );
+
+  const getMemberName = useCallback(
+    (id: string | null) => getMember(id)?.full_name || "—",
+    [getMember]
   );
 
   const loadTaskDetails = useCallback(async () => {
@@ -413,24 +418,30 @@ export function TaskDetailModal({
                     Comentários ({comments.length})
                   </h3>
                   <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="flex gap-2.5">
-                        <Avatar className="h-7 w-7 shrink-0">
-                          <AvatarFallback className="text-[10px]">{comment.user_name?.charAt(0)?.toUpperCase() || "?"}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="bg-muted/50 rounded-lg p-2.5">
-                            <div className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="text-xs font-semibold text-foreground">{comment.user_name}</span>
-                              <span className="text-[10px] text-muted-foreground shrink-0">
-                                {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
-                              </span>
+                    {comments.map((comment) => {
+                      const member = getMember(comment.user_id);
+                      return (
+                        <div key={comment.id} className="flex gap-2.5">
+                          <UserAvatar
+                            name={member?.full_name || comment.user_name}
+                            avatarUrl={member?.avatar_url}
+                            size="md"
+                            className="h-7 w-7"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="bg-muted/50 rounded-lg p-2.5">
+                              <div className="flex items-center justify-between gap-2 mb-0.5">
+                                <span className="text-xs font-semibold text-foreground">{member?.full_name || comment.user_name}</span>
+                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                  {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
+                                </span>
+                              </div>
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
                             </div>
-                            <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {comments.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">Nenhum comentário ainda</p>}
                   </div>
                   <div className="flex gap-2">
@@ -479,7 +490,17 @@ export function TaskDetailModal({
                     <SelectContent>
                       <SelectItem value="unassigned">Não atribuído</SelectItem>
                       {teamMembers.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>
+                        <SelectItem key={m.id} value={m.id}>
+                          <div className="flex items-center gap-2">
+                             <UserAvatar
+                                name={m.full_name}
+                                avatarUrl={m.avatar_url}
+                                size="sm"
+                                className="w-5 h-5 text-[9px]"
+                             />
+                             {m.full_name}
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -503,15 +524,26 @@ export function TaskDetailModal({
                     <Clock className="w-3.5 h-3.5" /> Atividades
                   </h4>
                   <div className="space-y-2.5 max-h-48 overflow-y-auto">
-                    {activities.map((act) => (
-                      <div key={act.id} className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">{act.user_name || "Sistema"}</span>{" "}
-                        {getActivityText(act)}
-                        <div className="text-[10px] mt-0.5">
-                          {formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })}
+                    {activities.map((act) => {
+                      const member = getMember(act.user_id);
+                      return (
+                        <div key={act.id} className="flex gap-2 text-xs text-muted-foreground">
+                           <UserAvatar
+                              name={member?.full_name || act.user_name || "Sistema"}
+                              avatarUrl={member?.avatar_url}
+                              size="sm"
+                              className="w-5 h-5 mt-0.5 text-[8px]"
+                           />
+                           <div>
+                              <span className="font-medium text-foreground">{act.user_name || "Sistema"}</span>{" "}
+                              {getActivityText(act)}
+                              <div className="text-[10px] mt-0.5">
+                                {formatDistanceToNow(new Date(act.created_at), { addSuffix: true, locale: ptBR })}
+                              </div>
+                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {activities.length === 0 && <p className="text-xs text-muted-foreground">Nenhuma atividade</p>}
                   </div>
                 </div>
