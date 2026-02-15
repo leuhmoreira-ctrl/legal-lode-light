@@ -575,13 +575,13 @@ export default function Processos() {
 
                     {/* Edit button */}
                     <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs gap-1.5"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 opacity-50 hover:opacity-100"
                       onClick={() => setEditTarget(proc)}
+                      title="Editar processo"
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                      Editar
                     </Button>
 
                     {/* Delete button - only for admin/senior */}
