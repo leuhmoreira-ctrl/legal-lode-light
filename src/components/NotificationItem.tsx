@@ -50,9 +50,9 @@ export function NotificationItem({ notification, onRead, onArchive }: Notificati
             {notification.message}
           </p>
           <div className="flex items-center gap-2 mt-3">
-            {notification.from_email && (
+            {(notification as any).from_email && (
               <Badge variant="outline" className="text-[10px]">
-                {notification.from_email}
+                {(notification as any).from_email}
               </Badge>
             )}
             {notification.link && (
