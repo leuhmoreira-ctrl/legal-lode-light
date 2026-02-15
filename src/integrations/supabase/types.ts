@@ -181,6 +181,9 @@ export type Database = {
           due_date: string | null
           event_category: string
           id: string
+          marked_for_today: boolean
+          marked_for_today_at: string | null
+          observacoes: string | null
           position_index: number
           priority: string
           processo_id: string | null
@@ -195,6 +198,9 @@ export type Database = {
           due_date?: string | null
           event_category?: string
           id?: string
+          marked_for_today?: boolean
+          marked_for_today_at?: string | null
+          observacoes?: string | null
           position_index?: number
           priority?: string
           processo_id?: string | null
@@ -209,6 +215,9 @@ export type Database = {
           due_date?: string | null
           event_category?: string
           id?: string
+          marked_for_today?: boolean
+          marked_for_today_at?: string | null
+          observacoes?: string | null
           position_index?: number
           priority?: string
           processo_id?: string | null
@@ -293,6 +302,114 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      processo_acoes_manuais: {
+        Row: {
+          created_at: string
+          data_acao: string
+          descricao: string
+          id: string
+          processo_id: string
+          responsavel_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_acao?: string
+          descricao: string
+          id?: string
+          processo_id: string
+          responsavel_id: string
+        }
+        Update: {
+          created_at?: string
+          data_acao?: string
+          descricao?: string
+          id?: string
+          processo_id?: string
+          responsavel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_acoes_manuais_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processo_comunicacoes: {
+        Row: {
+          created_at: string
+          data_comunicacao: string
+          id: string
+          meio: string
+          processo_id: string
+          responsavel_id: string
+          resumo: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_comunicacao?: string
+          id?: string
+          meio?: string
+          processo_id: string
+          responsavel_id: string
+          resumo?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_comunicacao?: string
+          id?: string
+          meio?: string
+          processo_id?: string
+          responsavel_id?: string
+          resumo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_comunicacoes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processo_notas: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          processo_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          processo_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          processo_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_notas_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: true
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processos: {
         Row: {

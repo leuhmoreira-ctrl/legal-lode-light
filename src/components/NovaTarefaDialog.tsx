@@ -36,6 +36,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
 
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [observacoes, setObservacoes] = useState("");
   const [prioridade, setPrioridade] = useState("medium");
   const [responsavel, setResponsavel] = useState("");
   const [dataVencimento, setDataVencimento] = useState("");
@@ -63,6 +64,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
   const resetForm = () => {
     setTitulo("");
     setDescricao("");
+    setObservacoes("");
     setPrioridade("medium");
     setResponsavel("");
     setDataVencimento("");
@@ -92,6 +94,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
       const { error } = await supabase.from("kanban_tasks").insert({
         title: titulo,
         description: descricao || null,
+        observacoes: observacoes.trim() || null,
         assigned_to: responsavel || user?.id || null,
         priority: prioridade,
         status: "todo",
@@ -184,6 +187,11 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
           <div className="space-y-1.5">
             <Label>Data de Vencimento</Label>
             <Input type="date" value={dataVencimento} onChange={(e) => setDataVencimento(e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Observações</Label>
+            <Textarea placeholder='Ex: "Levar procuração original", "Confirmar presença"' value={observacoes} onChange={(e) => setObservacoes(e.target.value)} rows={2} />
           </div>
 
           {/* Event Category */}

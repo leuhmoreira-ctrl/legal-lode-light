@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
@@ -15,6 +17,11 @@ import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid"
 import { SyncStatusCard } from "@/components/processo-detail/SyncStatusCard";
 import { MovimentacoesTimeline, type Movimentacao } from "@/components/processo-detail/MovimentacoesTimeline";
 import { SyncLogsAccordion, type SyncLog } from "@/components/processo-detail/SyncLogsAccordion";
+import { ClienteCommunicationCard } from "@/components/processo/ClienteCommunicationCard";
+import { ProcessoNotes } from "@/components/processo/ProcessoNotes";
+import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
+import { RegistrarAcaoManualDialog } from "@/components/processo/RegistrarAcaoManualDialog";
+import { differenceInDays, format } from "date-fns";
 
 interface Processo {
   id: string;
@@ -48,6 +55,8 @@ export default function ProcessoDetail() {
   const [syncing, setSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
+  const [acaoManualOpen, setAcaoManualOpen] = useState(false);
+  const [ultimaAcaoManual, setUltimaAcaoManual] = useState<string | null>(null);
 
   // Load processo
   useEffect(() => {
@@ -83,6 +92,22 @@ export default function ProcessoDetail() {
         .order("data_movimento", { ascending: false });
       setMovimentacoes(data || []);
       setMovsLoading(false);
+    };
+    load();
+  }, [id]);
+
+  // Load ultima acao manual
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("processo_acoes_manuais")
+        .select("data_acao")
+        .eq("processo_id", id)
+        .order("data_acao", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setUltimaAcaoManual(data?.data_acao || null);
     };
     load();
   }, [id]);
@@ -205,10 +230,27 @@ export default function ProcessoDetail() {
           onScrollToTimeline={() => timelineRef.current?.scrollIntoView({ behavior: "smooth" })}
         />
 
+        {/* Days stalled indicator */}
+        {movimentacoes.length > 0 && (() => {
+          const ultimaMovDate = movimentacoes[0]?.data_movimento || null;
+          const dias = ultimaMovDate ? differenceInDays(new Date(), new Date(ultimaMovDate)) : 0;
+          return dias > 30 ? (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+              <DiasParadoBadge ultimaMovimentacao={ultimaMovDate} ultimaAcaoManual={ultimaAcaoManual} />
+              <span className="text-xs text-muted-foreground flex-1">
+                Última movimentação: {ultimaMovDate ? format(new Date(ultimaMovDate), "dd/MM/yyyy") : "—"}
+              </span>
+              <Button size="sm" variant="outline" className="text-xs" onClick={() => setAcaoManualOpen(true)}>
+                Registrar Ação Manual
+              </Button>
+            </div>
+          ) : null;
+        })()}
+
         {/* Process info */}
         <ProcessoInfoGrid processo={processo} />
 
-        {/* Two columns: Sync Card + Documents */}
+        {/* Three columns: Sync + Communication | Tabs | Notes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-4">
             <SyncStatusCard
@@ -220,6 +262,7 @@ export default function ProcessoDetail() {
               syncStatus={getSyncStatus()}
             />
             <SyncLogsAccordion logs={syncLogs} />
+            <ClienteCommunicationCard processoId={processo.id} />
           </div>
 
           <div className="lg:col-span-2">
@@ -227,6 +270,7 @@ export default function ProcessoDetail() {
               <TabsList>
                 <TabsTrigger value="docs">Documentos</TabsTrigger>
                 <TabsTrigger value="upload">Upload</TabsTrigger>
+                <TabsTrigger value="notas">📝 Notas</TabsTrigger>
                 <TabsTrigger value="chat">Chat</TabsTrigger>
               </TabsList>
               <TabsContent value="docs">
@@ -237,6 +281,9 @@ export default function ProcessoDetail() {
                   processId={processo.id}
                   onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
                 />
+              </TabsContent>
+              <TabsContent value="notas">
+                <ProcessoNotes processoId={processo.id} />
               </TabsContent>
               <TabsContent value="chat">
                 <ProcessChat processoId={processo.id} processoNumero={processo.numero} />
@@ -249,6 +296,16 @@ export default function ProcessoDetail() {
         <div ref={timelineRef}>
           <MovimentacoesTimeline movimentacoes={movimentacoes} loading={movsLoading} />
         </div>
+
+        {/* Manual action dialog */}
+        <RegistrarAcaoManualDialog
+          processoId={processo.id}
+          open={acaoManualOpen}
+          onOpenChange={setAcaoManualOpen}
+          onSuccess={() => {
+            setUltimaAcaoManual(new Date().toISOString());
+          }}
+        />
       </div>
     </AppLayout>
   );
