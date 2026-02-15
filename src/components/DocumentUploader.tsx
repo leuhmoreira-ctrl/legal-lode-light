@@ -117,47 +117,68 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
     setProgress(0);
 
     const taskId = selectedTaskId !== 'none' ? selectedTaskId : null;
+    let completed = 0;
+    const CONCURRENCY_LIMIT = 3;
+
+    const uploadFile = async (file: File) => {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${user.id}/${processId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('process-documents')
+        .upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { error: metaError } = await supabase
+        .from('document_metadata')
+        .insert({
+          process_id: processId,
+          storage_path: filePath,
+          original_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+          category,
+          uploaded_by: user.id,
+          task_id: taskId,
+        });
+      if (metaError) throw metaError;
+
+      // Also insert into task_attachments if linked
+      if (taskId) {
+        await supabase.from('task_attachments').insert({
+          task_id: taskId,
+          file_name: file.name,
+          file_size: file.size,
+          mime_type: file.type,
+          storage_path: filePath,
+          uploaded_by: user.id,
+        });
+      }
+
+      completed++;
+      setProgress((completed / files.length) * 100);
+    };
 
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${crypto.randomUUID()}.${fileExt}`;
-        const filePath = `${user.id}/${processId}/${fileName}`;
+      const activePromises: Promise<void>[] = [];
+      const results: Promise<void>[] = [];
 
-        const { error: uploadError } = await supabase.storage
-          .from('process-documents')
-          .upload(filePath, file);
-        if (uploadError) throw uploadError;
+      for (const file of files) {
+        const p = uploadFile(file);
+        results.push(p);
 
-        const { error: metaError } = await supabase
-          .from('document_metadata')
-          .insert({
-            process_id: processId,
-            storage_path: filePath,
-            original_name: file.name,
-            mime_type: file.type,
-            size_bytes: file.size,
-            category,
-            uploaded_by: user.id,
-            task_id: taskId,
-          });
-        if (metaError) throw metaError;
+        const e: Promise<void> = p.then(() => {
+          activePromises.splice(activePromises.indexOf(e), 1);
+        });
+        activePromises.push(e);
 
-        // Also insert into task_attachments if linked
-        if (taskId) {
-          await supabase.from('task_attachments').insert({
-            task_id: taskId,
-            file_name: file.name,
-            file_size: file.size,
-            mime_type: file.type,
-            storage_path: filePath,
-            uploaded_by: user.id,
-          });
+        if (activePromises.length >= CONCURRENCY_LIMIT) {
+          await Promise.race(activePromises);
         }
-
-        setProgress(((i + 1) / files.length) * 100);
       }
+
+      await Promise.all(results);
 
       const linkedMsg = taskId
         ? ` Vinculado(s) à tarefa "${tasks.find(t => t.id === taskId)?.title}".`
