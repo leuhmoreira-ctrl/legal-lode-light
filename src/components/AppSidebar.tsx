@@ -111,50 +111,52 @@ export function AppSidebar() {
   };
 
   const linkClass = cn(
-    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
+    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-white/5 hover:text-white",
     collapsed && "justify-center px-0"
   );
+
+  const activeLinkClass = "bg-primary/10 border-l-4 border-primary text-white font-medium";
 
   return (
     <aside
       className={cn(
-        "h-screen sticky top-0 flex flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 z-40",
-        collapsed ? "w-16" : "w-64"
+        "h-screen sticky top-0 flex flex-col bg-gradient-to-b from-sidebar-background to-sidebar-background/95 text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 z-40 shadow-xl",
+        collapsed ? "w-20" : "w-64"
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sidebar-accent">
-          <Gavel className="w-4 h-4 text-sidebar-accent-foreground" />
+      <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border/50">
+        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0">
+          <Gavel className="w-5 h-5 text-white" />
         </div>
         {!collapsed && (
-          <div className="animate-fade-up flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-sidebar-primary-foreground tracking-tight">
+          <div className="animate-fade-in-scale flex-1 min-w-0">
+            <h1 className="text-lg font-bold text-white tracking-tight">
               JurisControl
             </h1>
-            <p className="text-[10px] text-sidebar-foreground/60">
+            <p className="text-[11px] text-sidebar-foreground/60 font-medium">
               Gestão Jurídica
             </p>
           </div>
         )}
-        {!collapsed && <NotificationBell />}
+        {!collapsed && <div className="ml-auto"><NotificationBell /></div>}
       </div>
 
       {/* Search */}
       {!collapsed && (
-        <div className="px-3 py-3">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-sidebar-foreground/40" />
+        <div className="px-4 py-4">
+          <div className="relative group">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-sidebar-foreground/40 group-focus-within:text-primary transition-colors" />
             <Input
               placeholder="Buscar..."
-              className="h-8 pl-8 text-xs bg-sidebar-muted border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-foreground/40"
+              className="h-10 pl-9 text-sm bg-sidebar-muted/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 focus-visible:bg-sidebar-muted focus-visible:ring-primary/30"
             />
           </div>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {/* Main items */}
         {mainNavItems.map((item) => (
           <NavLink
@@ -162,31 +164,32 @@ export function AppSidebar() {
             to={item.url}
             end={item.url === "/"}
             className={linkClass}
-            activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+            activeClassName={activeLinkClass}
           >
-            <item.icon className="w-4 h-4 shrink-0" />
+            <item.icon className="w-5 h-5 shrink-0" />
             {!collapsed && <span>{item.title}</span>}
           </NavLink>
         ))}
 
         {/* Escritório group */}
-        <div className="pt-1">
+        <div className="pt-4 mt-2 border-t border-sidebar-border/30">
+          {!collapsed && <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40">Gestão</p>}
           <button
             onClick={() => setEscritorioOpen(!escritorioOpen)}
             className={cn(
               linkClass,
               "w-full",
-              escritorioOpen && "text-sidebar-accent-foreground"
+              escritorioOpen && !collapsed && "text-white"
             )}
           >
-            <Building2 className="w-4 h-4 shrink-0" />
+            <Building2 className="w-5 h-5 shrink-0" />
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">Escritório</span>
                 <ChevronDown
                   className={cn(
-                    "w-3.5 h-3.5 transition-transform duration-200",
-                    escritorioOpen && "rotate-180"
+                    "w-4 h-4 transition-transform duration-200 opacity-50",
+                    escritorioOpen && "rotate-180 opacity-100"
                   )}
                 />
               </>
@@ -194,15 +197,15 @@ export function AppSidebar() {
           </button>
 
           {escritorioOpen && (
-            <div className={cn("space-y-0.5", !collapsed && "ml-3 pl-3 border-l border-sidebar-border/50")}>
+            <div className={cn("space-y-1 mt-1", !collapsed && "ml-4 pl-2 border-l border-sidebar-border/30")}>
               {escritorioItems.map((item) => (
                 <NavLink
                   key={item.url}
                   to={item.url}
                   className={linkClass}
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  activeClassName={activeLinkClass}
                 >
-                  <item.icon className="w-4 h-4 shrink-0" />
+                  <item.icon className="w-5 h-5 shrink-0" />
                   {!collapsed && <span>{item.title}</span>}
                 </NavLink>
               ))}
@@ -212,9 +215,9 @@ export function AppSidebar() {
                 <NavLink
                   to="/equipe"
                   className={linkClass}
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  activeClassName={activeLinkClass}
                 >
-                  <Users className="w-4 h-4 shrink-0" />
+                  <Users className="w-5 h-5 shrink-0" />
                   {!collapsed && <span>Equipe</span>}
                 </NavLink>
               )}
@@ -224,9 +227,9 @@ export function AppSidebar() {
                 <NavLink
                   to="/auditoria"
                   className={linkClass}
-                  activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  activeClassName={activeLinkClass}
                 >
-                  <Shield className="w-4 h-4 shrink-0" />
+                  <Shield className="w-5 h-5 shrink-0" />
                   {!collapsed && <span>Auditoria</span>}
                 </NavLink>
               )}
@@ -236,28 +239,28 @@ export function AppSidebar() {
       </nav>
 
       {/* User menu */}
-      <div className="border-t border-sidebar-border p-2">
+      <div className="border-t border-sidebar-border/50 p-4 bg-black/10">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
-                collapsed && "justify-center px-0"
+                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-all duration-200 group",
+                collapsed && "justify-center p-0"
               )}
             >
               <UserAvatar
                 name={profile?.full_name || user?.email || ""}
                 avatarUrl={profile?.avatar_url}
-                size="sm"
-                className="shrink-0"
+                size="md"
+                className="shrink-0 border-2 border-sidebar-border group-hover:border-primary transition-colors"
               />
               {!collapsed && (
                 <div className="flex flex-col items-start flex-1 min-w-0">
-                  <span className="truncate text-xs font-medium">
+                  <span className="truncate text-sm font-semibold text-white">
                     {profile?.full_name || user?.email}
                   </span>
                   {role && (
-                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 mt-0.5 ${roleColors[role]}`}>
+                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 mt-0.5 h-4 border-sidebar-border text-sidebar-foreground/70 bg-sidebar-muted/30`}>
                       {roleLabels[role]}
                     </Badge>
                   )}
@@ -265,34 +268,42 @@ export function AppSidebar() {
               )}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="start" className="w-56">
-            <DropdownMenuLabel className="text-xs">
-              <div>{profile?.full_name || "Usuário"}</div>
-              <div className="text-muted-foreground font-normal truncate">{user?.email}</div>
-            </DropdownMenuLabel>
+          <DropdownMenuContent side="right" align="end" className="w-64 mb-2 p-2">
+            <div className="flex items-center gap-3 p-2 mb-2 bg-muted/50 rounded-lg">
+               <UserAvatar
+                name={profile?.full_name || user?.email || ""}
+                avatarUrl={profile?.avatar_url}
+                size="md"
+              />
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold">{profile?.full_name}</span>
+                <span className="text-xs text-muted-foreground truncate max-w-[140px]">{user?.email}</span>
+              </div>
+            </div>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate("/configuracoes")}>
+            <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="py-2.5 cursor-pointer">
               <Settings className="w-4 h-4 mr-2" />
               Configurações
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Tema</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => setTheme("light")}>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground uppercase tracking-wider px-2 py-1.5">Tema</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer">
               <Sun className="w-4 h-4 mr-2" />
               Claro
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("dark")}>
+            <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer">
               <Moon className="w-4 h-4 mr-2" />
               Escuro
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("system")}>
+            <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer">
               <Laptop className="w-4 h-4 mr-2" />
               Sistema
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive py-2.5 cursor-pointer focus:text-destructive focus:bg-destructive/10">
               <LogOut className="w-4 h-4 mr-2" />
               Sair
             </DropdownMenuItem>
@@ -303,12 +314,12 @@ export function AppSidebar() {
       {/* Collapse toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center justify-center h-12 border-t border-sidebar-border text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+        className="absolute -right-3 top-9 flex items-center justify-center w-6 h-6 rounded-full bg-sidebar-border text-sidebar-foreground border border-sidebar-background hover:bg-primary hover:text-white transition-colors shadow-md z-50"
       >
         {collapsed ? (
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="w-3 h-3" />
         ) : (
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="w-3 h-3" />
         )}
       </button>
     </aside>

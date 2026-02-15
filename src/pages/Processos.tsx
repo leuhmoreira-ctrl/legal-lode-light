@@ -292,81 +292,83 @@ export default function Processos() {
               const syncResult = syncResults[proc.id];
 
               return (
-                <Card key={proc.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/processos/${proc.id}`)}>
-                  {/* Header */}
-                  <div className="flex flex-col md:flex-row md:items-center gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="p-2 rounded-lg bg-primary/5">
-                        <FileText className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground">
-                          {proc.cliente}{proc.parte_contraria ? ` × ${proc.parte_contraria}` : ''}
-                        </p>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <p className="text-xs text-muted-foreground font-mono">{proc.numero}</p>
-                          <CopyProcessNumber numero={proc.numero} />
+                <Card key={proc.id} className="p-0 hover:shadow-card-hover transition-all duration-200 cursor-pointer overflow-hidden border-border/60" onClick={() => navigate(`/processos/${proc.id}`)}>
+                  <div className="p-5">
+                    {/* Header */}
+                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 shrink-0">
+                          <FileText className="w-5 h-5 text-primary" />
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{proc.vara} - {proc.comarca}</p>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            {proc.fase && (
+                              <Badge variant="outline" className={`text-[10px] font-semibold border-0 px-2 py-0.5 h-5 ${faseColor[proc.fase] || ""}`}>
+                                {proc.fase}
+                              </Badge>
+                            )}
+                            {proc.tags?.map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-[10px] h-5 bg-secondary/50 text-secondary-foreground">{tag}</Badge>
+                            ))}
+                          </div>
+                          <h3 className="text-base font-bold text-foreground leading-tight mb-1">
+                            {proc.cliente}
+                            <span className="text-muted-foreground font-normal"> vs </span>
+                            {proc.parte_contraria || '...'}
+                          </h3>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="font-mono bg-muted/50 px-1.5 py-0.5 rounded">{proc.numero}</span>
+                            <CopyProcessNumber numero={proc.numero} />
+                            <span className="w-1 h-1 rounded-full bg-border" />
+                            <span>{proc.vara} - {proc.comarca}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <DiasParadoBadge ultimaMovimentacao={proc.ultima_movimentacao} />
+                        {proc.sigla_tribunal && (
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
+                              {proc.sigla_tribunal.toUpperCase()}
+                            </Badge>
+                            {portalLink && (
+                              <a href={portalLink} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors p-1" onClick={(e) => e.stopPropagation()} title="Abrir no Portal">
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                      <div className="text-xs">
-                        <span className="text-muted-foreground">Resp: </span>
-                        <span className="font-medium text-foreground">{proc.advogado}</span>
-                      </div>
-                      {proc.fase && (
-                        <Badge variant="outline" className={`text-[10px] ${faseColor[proc.fase] || ""}`}>
-                          {proc.fase}
-                        </Badge>
+
+                    {/* Content Body */}
+                    <div className="mt-4 pl-12">
+                      {proc.ultima_movimentacao ? (
+                        <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
+                          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+                            <Calendar className="w-3.5 h-3.5" />
+                            {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}
+                          </div>
+                          {proc.descricao_movimentacao ? (
+                            <p className="text-sm text-foreground line-clamp-2">{proc.descricao_movimentacao}</p>
+                          ) : (
+                            <p className="text-sm text-muted-foreground italic">Descrição indisponível</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="bg-muted/30 rounded-lg p-3 border border-border/50 text-xs text-muted-foreground italic">
+                          {syncMutation.isPending ? "Sincronização em andamento..." : "Nenhuma movimentação registrada."}
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Tags + Tribunal badge */}
-                  <div className="flex items-center gap-2 mt-3 ml-12 flex-wrap">
-                    {proc.tags?.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-[10px]">{tag}</Badge>
-                    ))}
-                    <DiasParadoBadge ultimaMovimentacao={proc.ultima_movimentacao} />
-                    {proc.sigla_tribunal && (
-                      <div className="flex items-center gap-1 ml-auto">
-                        <Badge variant="outline" className="text-[10px]">
-                          {proc.sistema_tribunal && `${proc.sistema_tribunal} — `}
-                          {proc.sigla_tribunal.toUpperCase()}
-                        </Badge>
-                        {portalLink && (
-                          <a href={portalLink} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()} title="Abrir no Portal">
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Footer — Última movimentação */}
-                  <div className="mt-3 ml-12 pt-3 border-t border-border/50">
-                    {proc.ultima_movimentacao ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>Última movimentação: {format(parseISO(proc.ultima_movimentacao), "dd/MM/yyyy")}</span>
-                        </div>
-                        {proc.descricao_movimentacao && (
-                          <p className="text-xs text-foreground">
-                            {proc.descricao_movimentacao}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {syncMutation.isPending ? "Sincronização em andamento..." : "Nenhuma movimentação registrada."}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Action buttons */}
-                  <div className="mt-3 ml-12 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                  {/* Footer Actions */}
+                  <div className="flex items-center justify-between bg-muted/30 px-5 py-3 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                       <span className="font-medium">Responsável:</span> {proc.advogado}
+                    </div>
+                    <div className="flex gap-2">
 
                     {syncResult && (
                       <Dialog
@@ -466,7 +468,7 @@ export default function Processos() {
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-
+                    </div>
                   </div>
                 </Card>
               );
