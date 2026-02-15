@@ -30,6 +30,9 @@ export const generateDeepLink = (
     case 'ESAJ':
       return `https://esaj.${tribunalLower}.jus.br/cpopg/show.do?processo.numero=${numeroProcesso}`
     case 'EPROC':
+      if (tribunalLower === 'tjrs') {
+        return `https://eproc1g.tjrs.jus.br/eproc/externo_controlador.php?acao=processo_consulta_publica&numero_processo=${nupLimpo}`
+      }
       return `https://eproc.${tribunalLower}.jus.br/eproc2trf4/externo_controlador.php?acao=processo_consulta_publica&numero_processo=${nupLimpo}`
     case 'PJE':
       return `https://pje.${tribunalLower}.jus.br/pje/ConsultaPublica/DetalheProcessoConsultaPublica/listView.seam?nd=${nupLimpo}`
