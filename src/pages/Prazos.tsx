@@ -42,6 +42,7 @@ interface CalendarEvent {
   id: string;
   title: string;
   description?: string;
+  observacoes?: string | null;
   date: Date;
   category: EventCategory;
   processoNumero?: string;
@@ -192,6 +193,7 @@ export default function Prazos() {
         id: `db-${t.id}`,
         title: t.title,
         description: t.description,
+        observacoes: t.observacoes,
         date: new Date(t.due_date),
         category: classifyDbTask(t),
         responsavel: getMemberName(t.assigned_to),
@@ -486,6 +488,11 @@ export default function Prazos() {
                             {ev.processoNumero && `Processo: ${ev.processoNumero} • `}
                             {ev.responsavel && `Responsável: ${ev.responsavel}`}
                           </p>
+                          {ev.observacoes && (
+                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                              💡 {ev.observacoes}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-sm font-semibold text-foreground">
@@ -555,6 +562,13 @@ function EventDetailDialog({
         <div className="space-y-3 text-sm">
           {event.description && (
             <p className="text-muted-foreground">{event.description}</p>
+          )}
+
+          {event.observacoes && (
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">📝 Observações</p>
+              <p className="text-sm text-amber-800 dark:text-amber-300">{event.observacoes}</p>
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-3 text-xs">
