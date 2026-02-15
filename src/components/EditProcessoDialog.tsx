@@ -145,18 +145,24 @@ export function EditProcessoDialog({ processo, open, onOpenChange, onSuccess, on
             </div>
           </div>
 
-          {/* Fase */}
-          <div className="space-y-1.5">
-            <Label>Fase Processual</Label>
-            <Select value={fase} onValueChange={setFase}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Conhecimento">Conhecimento</SelectItem>
-                <SelectItem value="Recursal">Recursal</SelectItem>
-                <SelectItem value="Execução">Execução</SelectItem>
-                <SelectItem value="Encerrado">Encerrado</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Valor + Fase */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Valor da Causa (R$)</Label>
+              <Input type="number" placeholder="0,00" value={valorCausa} onChange={(e) => setValorCausa(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Fase Processual</Label>
+              <Select value={fase} onValueChange={setFase}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Conhecimento">Conhecimento</SelectItem>
+                  <SelectItem value="Recursal">Recursal</SelectItem>
+                  <SelectItem value="Execução">Execução</SelectItem>
+                  <SelectItem value="Encerrado">Encerrado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Botões */}

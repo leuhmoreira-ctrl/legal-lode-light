@@ -273,56 +273,56 @@ export default function ProcessoDetail() {
         {/* Process info */}
         <ProcessoInfoGrid processo={processo} />
 
-        {/* Full width tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="docs">Documentos</TabsTrigger>
-            <TabsTrigger value="upload">Upload</TabsTrigger>
-            <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
-            <TabsTrigger value="notas">📝 Notas</TabsTrigger>
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="sync">Sincronização</TabsTrigger>
-          </TabsList>
-          <TabsContent value="docs">
-            <DocumentList processId={processo.id} refreshKey={docsRefreshKey} />
-          </TabsContent>
-          <TabsContent value="upload">
-            <DocumentUploader
-              processId={processo.id}
-              onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
+        {/* Three columns: Sync + Communication | Tabs | Notes */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-4">
+            <SyncStatusCard
+              siglaTribunal={processo.sigla_tribunal}
+              sistemaTribunal={processo.sistema_tribunal}
+              lastSync={processo.data_ultima_sincronizacao}
+              onSync={handleSync}
+              syncing={syncing}
+              syncStatus={getSyncStatus()}
             />
-          </TabsContent>
-          <TabsContent value="tarefas">
-            <ProcessoTarefasTab
-              processoId={processo.id}
-              onNewTask={() => setNovaTarefaOpen(true)}
-              onViewHistory={() => setHistoryOpen(true)}
-              refreshKey={tarefasRefreshKey}
-            />
-          </TabsContent>
-          <TabsContent value="notas">
-            <ProcessoNotes processoId={processo.id} />
-          </TabsContent>
-          <TabsContent value="chat">
-            <ProcessChat processoId={processo.id} processoNumero={processo.numero} />
-          </TabsContent>
-          <TabsContent value="sync">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SyncStatusCard
-                siglaTribunal={processo.sigla_tribunal}
-                sistemaTribunal={processo.sistema_tribunal}
-                lastSync={processo.data_ultima_sincronizacao}
-                onSync={handleSync}
-                syncing={syncing}
-                syncStatus={getSyncStatus()}
-              />
-              <ClienteCommunicationCard processoId={processo.id} />
-              <div className="md:col-span-2">
-                <SyncLogsAccordion logs={syncLogs} />
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            <SyncLogsAccordion logs={syncLogs} />
+            <ClienteCommunicationCard processoId={processo.id} />
+          </div>
+
+          <div className="lg:col-span-2">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="docs">Documentos</TabsTrigger>
+                <TabsTrigger value="upload">Upload</TabsTrigger>
+                <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
+                <TabsTrigger value="notas">📝 Notas</TabsTrigger>
+                <TabsTrigger value="chat">Chat</TabsTrigger>
+              </TabsList>
+              <TabsContent value="docs">
+                <DocumentList processId={processo.id} refreshKey={docsRefreshKey} />
+              </TabsContent>
+              <TabsContent value="upload">
+                <DocumentUploader
+                  processId={processo.id}
+                  onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
+                />
+              </TabsContent>
+              <TabsContent value="tarefas">
+                <ProcessoTarefasTab
+                  processoId={processo.id}
+                  onNewTask={() => setNovaTarefaOpen(true)}
+                  onViewHistory={() => setHistoryOpen(true)}
+                  refreshKey={tarefasRefreshKey}
+                />
+              </TabsContent>
+              <TabsContent value="notas">
+                <ProcessoNotes processoId={processo.id} />
+              </TabsContent>
+              <TabsContent value="chat">
+                <ProcessChat processoId={processo.id} processoNumero={processo.numero} />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
 
         {/* Movimentações Timeline */}
         <div ref={timelineRef}>
