@@ -56,6 +56,7 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
   const [docs, setDocs] = useState<DocumentMeta[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [taskFilter, setTaskFilter] = useState('all');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState('');
 
@@ -152,7 +153,22 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
     loadDocuments();
   };
 
-  const filtered = categoryFilter === 'all' ? docs : docs.filter(d => d.category === categoryFilter);
+  const filteredByCategory = categoryFilter === 'all' ? docs : docs.filter(d => d.category === categoryFilter);
+  const filtered = taskFilter === 'all'
+    ? filteredByCategory
+    : taskFilter === 'linked'
+      ? filteredByCategory.filter(d => d.task_id)
+      : taskFilter === 'unlinked'
+        ? filteredByCategory.filter(d => !d.task_id)
+        : filteredByCategory.filter(d => d.task_id === taskFilter);
+
+  // Unique tasks for filter dropdown
+  const linkedTasks = docs.filter(d => d.task_id && d.task_title).reduce((acc, d) => {
+    if (d.task_id && !acc.find(t => t.id === d.task_id)) {
+      acc.push({ id: d.task_id, title: d.task_title || '' });
+    }
+    return acc;
+  }, [] as { id: string; title: string }[]);
 
   if (loading) {
     return (
@@ -166,16 +182,29 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
     <div className="space-y-3">
       {/* Filter */}
       {docs.length > 0 && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-48 h-8 text-xs">
+            <SelectTrigger className="w-44 h-8 text-xs">
               <SelectValue placeholder="Filtrar categoria" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as categorias</SelectItem>
               {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
                 <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={taskFilter} onValueChange={setTaskFilter}>
+            <SelectTrigger className="w-44 h-8 text-xs">
+              <SelectValue placeholder="Filtrar vínculo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="linked">🔗 Vinculados a tarefas</SelectItem>
+              <SelectItem value="unlinked">⚠️ Sem vínculo</SelectItem>
+              {linkedTasks.map(t => (
+                <SelectItem key={t.id} value={t.id}>📋 {t.title}</SelectItem>
               ))}
             </SelectContent>
           </Select>
