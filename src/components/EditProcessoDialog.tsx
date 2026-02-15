@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Loader2, Pencil } from 'lucide-react'
+import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,9 +30,11 @@ interface EditProcessoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess: () => void
+  onDelete?: () => void
+  canDelete?: boolean
 }
 
-export function EditProcessoDialog({ processo, open, onOpenChange, onSuccess }: EditProcessoDialogProps) {
+export function EditProcessoDialog({ processo, open, onOpenChange, onSuccess, onDelete, canDelete }: EditProcessoDialogProps) {
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
 
@@ -172,6 +174,14 @@ export function EditProcessoDialog({ processo, open, onOpenChange, onSuccess }: 
               Cancelar
             </Button>
           </div>
+          {canDelete && onDelete && (
+            <div className="pt-2 border-t">
+              <Button type="button" variant="ghost" className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 text-xs gap-1.5" onClick={onDelete}>
+                <Trash2 className="w-3.5 h-3.5" />
+                Deletar Processo
+              </Button>
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>
