@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Link2, PlusCircle, X, Loader2, Scale, Briefcase, UserRound } from "lucide-react";
 import { NovoProcessoForm } from "@/components/NovoProcessoForm";
+import { UserAvatar } from "@/components/UserAvatar";
 
 interface Processo {
   id: string;
@@ -177,7 +178,17 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {teamMembers.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.full_name}</SelectItem>
+                    <SelectItem key={m.id} value={m.id}>
+                      <div className="flex items-center gap-2">
+                        <UserAvatar
+                          name={m.full_name}
+                          avatarUrl={m.avatar_url}
+                          size="sm"
+                          className="w-5 h-5 text-[9px]"
+                        />
+                        {m.full_name}
+                      </div>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

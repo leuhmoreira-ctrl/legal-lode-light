@@ -39,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -244,7 +245,12 @@ export function AppSidebar() {
                 collapsed && "justify-center px-0"
               )}
             >
-              <User className="w-4 h-4 shrink-0" />
+              <UserAvatar
+                name={profile?.full_name || user?.email || ""}
+                avatarUrl={profile?.avatar_url}
+                size="sm"
+                className="shrink-0"
+              />
               {!collapsed && (
                 <div className="flex flex-col items-start flex-1 min-w-0">
                   <span className="truncate text-xs font-medium">
