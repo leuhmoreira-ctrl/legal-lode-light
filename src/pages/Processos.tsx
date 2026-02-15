@@ -36,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
 import { format, parseISO } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   generateDeepLink,
@@ -148,28 +148,38 @@ export default function Processos() {
     localStorage.setItem("processos_view_mode", viewMode);
   }, [viewMode]);
 
-  const filtered = processos.filter((p) => {
-    const matchSearch =
-      p.numero.includes(search) ||
-      p.cliente.toLowerCase().includes(search.toLowerCase()) ||
-      (p.parte_contraria || '').toLowerCase().includes(search.toLowerCase()) ||
-      p.advogado.toLowerCase().includes(search.toLowerCase());
-    const matchFase = faseFilter === "all" || p.fase === faseFilter;
-    const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
+  const filtered = useMemo(() => {
+    const searchLower = search.toLowerCase();
 
-    let matchDate = true;
-    if (dateStart || dateEnd) {
-      if (!p.ultima_movimentacao) {
-        matchDate = false;
-      } else {
-        const movDate = p.ultima_movimentacao.split('T')[0]; // simple YYYY-MM-DD compare
-        if (dateStart && movDate < dateStart) matchDate = false;
-        if (dateEnd && movDate > dateEnd) matchDate = false;
+    return processos.filter((p) => {
+      const matchSearch =
+        p.numero.includes(search) ||
+        p.cliente.toLowerCase().includes(searchLower) ||
+        (p.parte_contraria || '').toLowerCase().includes(searchLower) ||
+        p.advogado.toLowerCase().includes(searchLower);
+
+      if (!matchSearch) return false;
+
+      const matchFase = faseFilter === "all" || p.fase === faseFilter;
+      if (!matchFase) return false;
+
+      const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
+      if (!matchView) return false;
+
+      let matchDate = true;
+      if (dateStart || dateEnd) {
+        if (!p.ultima_movimentacao) {
+          matchDate = false;
+        } else {
+          const movDate = p.ultima_movimentacao.substring(0, 10); // simple YYYY-MM-DD compare
+          if (dateStart && movDate < dateStart) matchDate = false;
+          if (dateEnd && movDate > dateEnd) matchDate = false;
+        }
       }
-    }
 
-    return matchSearch && matchFase && matchView && matchDate;
-  });
+      return matchDate;
+    });
+  }, [processos, search, faseFilter, viewMode, user?.id, dateStart, dateEnd]);
 
   const getPortalLink = (proc: Processo) => {
     if (!proc.sigla_tribunal) return null;
