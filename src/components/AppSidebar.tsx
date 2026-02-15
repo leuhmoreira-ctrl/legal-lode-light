@@ -87,7 +87,11 @@ interface SidebarContentProps {
 function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobile }: SidebarContentProps) {
   const [escritorioOpen, setEscritorioOpen] = useState(() => {
     const saved = localStorage.getItem("escritorio_expanded");
-    return saved ? JSON.parse(saved) : false;
+    try {
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
+    }
   });
   const [myProcessCount, setMyProcessCount] = useState(0);
   const { user, signOut } = useAuth();

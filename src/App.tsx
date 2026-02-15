@@ -28,6 +28,7 @@ import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
@@ -40,9 +41,10 @@ const App = () => (
         <AuthProvider>
           <PermissionsProvider>
             <BrowserRouter>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
+              <ErrorBoundary>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
                 <Route path="/cadastro" element={<Cadastro />} />
 
                 {/* Protected routes */}
@@ -67,8 +69,9 @@ const App = () => (
                 <Route path="/email" element={<Navigate to="/comunicacoes" replace />} />
                 <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                 <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </ErrorBoundary>
             </BrowserRouter>
           </PermissionsProvider>
         </AuthProvider>
