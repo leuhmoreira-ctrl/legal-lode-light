@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Scale, User, Users, Landmark, Calendar, DollarSign } from "lucide-react";
+import { Scale, User, Users, Landmark, Calendar } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
     vara: string;
     comarca: string;
     data_distribuicao: string | null;
-    valor_causa: number | null;
+    
   };
 }
 
@@ -35,15 +35,6 @@ export function ProcessoInfoGrid({ processo }: Props) {
             icon={Calendar}
             label="Data de Distribuição"
             value={processo.data_distribuicao ? format(parseISO(processo.data_distribuicao), "dd/MM/yyyy") : "Não informada"}
-          />
-          <InfoItem
-            icon={DollarSign}
-            label="Valor da Causa"
-            value={
-              processo.valor_causa
-                ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(processo.valor_causa)
-                : "Não informado"
-            }
           />
         </div>
       </CardContent>

@@ -185,17 +185,8 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
         </div>
       </div>
 
-      {/* Valor + Fase */}
+      {/* Fase */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>Valor da Causa (R$)</Label>
-          <Input
-            type="number"
-            placeholder="0,00"
-            value={valorCausa}
-            onChange={(e) => setValorCausa(e.target.value)}
-          />
-        </div>
         <div className="space-y-1.5">
           <Label>Fase Processual</Label>
           <Select value={fase} onValueChange={setFase}>
