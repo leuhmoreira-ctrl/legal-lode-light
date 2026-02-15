@@ -421,11 +421,6 @@ export default function Processos() {
                           {proc.fase}
                         </Badge>
                       )}
-                      {proc.valor_causa != null && proc.valor_causa > 0 && (
-                        <span className="text-xs text-muted-foreground">
-                          {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(proc.valor_causa)}
-                        </span>
-                      )}
                     </div>
                   </div>
 
