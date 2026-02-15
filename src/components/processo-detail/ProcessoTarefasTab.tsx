@@ -8,8 +8,9 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, History, User, Calendar, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { Plus, History, User, Calendar, AlertTriangle, CheckCircle2, Clock, Loader2, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 
 interface Task {
   id: string;
@@ -50,6 +51,7 @@ export function ProcessoTarefasTab({ processoId, onNewTask, onViewHistory, refre
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"ativas" | "concluidas" | "todas">("ativas");
   const [sortBy, setSortBy] = useState<"due_date" | "priority" | "created_at">("due_date");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const loadTasks = useCallback(async () => {
     setLoading(true);
@@ -140,13 +142,20 @@ export function ProcessoTarefasTab({ processoId, onNewTask, onViewHistory, refre
             const StatusIcon = status.icon;
 
             return (
-              <Card key={task.id} className="p-3 hover:shadow-sm transition-shadow">
+              <Card
+                key={task.id}
+                className="p-3 hover:shadow-sm transition-shadow cursor-pointer"
+                onClick={() => setSelectedTaskId(task.id)}
+              >
                 <div className="flex items-start gap-3">
                   {task.status !== "done" && (
                     <Checkbox
                       className="mt-1"
                       checked={false}
-                      onCheckedChange={() => handleComplete(task.id)}
+                      onCheckedChange={(e) => {
+                        e && handleComplete(task.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   )}
                   {task.status === "done" && <CheckCircle2 className="w-4 h-4 text-[hsl(152,60%,40%)] mt-1 shrink-0" />}
@@ -169,12 +178,22 @@ export function ProcessoTarefasTab({ processoId, onNewTask, onViewHistory, refre
                       </Badge>
                     </div>
                   </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={(e) => { e.stopPropagation(); setSelectedTaskId(task.id); }}>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               </Card>
             );
           })}
         </div>
       )}
+      {/* Task Detail Modal */}
+      <TaskDetailModal
+        taskId={selectedTaskId}
+        open={!!selectedTaskId}
+        onOpenChange={(open) => { if (!open) setSelectedTaskId(null); }}
+        onUpdate={loadTasks}
+      />
     </div>
   );
 }
