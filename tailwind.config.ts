@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["Inter", "Segoe UI", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -22,6 +25,8 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          dark: "hsl(var(--primary-dark))",
+          light: "hsl(var(--primary-light))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -55,6 +60,10 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        error: {
+          DEFAULT: "hsl(var(--error))",
+          foreground: "hsl(var(--error-foreground))",
+        },
         urgent: {
           DEFAULT: "hsl(var(--urgent))",
           foreground: "hsl(var(--urgent-foreground))",
@@ -72,9 +81,14 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "12px",
+        md: "8px",
+        sm: "4px",
+      },
+      boxShadow: {
+        'card': '0 1px 3px rgba(0,0,0,0.1)',
+        'card-hover': '0 4px 12px rgba(0,0,0,0.15)',
+        'modal': '0 20px 60px rgba(0,0,0,0.3)',
       },
       keyframes: {
         "accordion-down": {
@@ -89,9 +103,17 @@ export default {
           from: { transform: "translateX(-100%)", opacity: "0" },
           to: { transform: "translateX(0)", opacity: "1" },
         },
+        "slide-in-top": {
+          from: { transform: "translateY(-100%)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
         "fade-up": {
           from: { transform: "translateY(8px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
+        },
+        "fade-in-scale": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
         },
         "pulse-urgent": {
           "0%, 100%": { opacity: "1" },
@@ -102,7 +124,9 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
+        "slide-in-top": "slide-in-top 0.3s ease-out",
         "fade-up": "fade-up 0.4s ease-out",
+        "fade-in-scale": "fade-in-scale 0.2s ease-out",
         "pulse-urgent": "pulse-urgent 2s ease-in-out infinite",
       },
     },

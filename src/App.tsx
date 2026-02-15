@@ -22,7 +22,9 @@ import Auditoria from "./pages/Auditoria";
 import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
+import EmailConfig from "./pages/EmailConfig";
 import Mensagens from "./pages/Mensagens";
+import Email from "./pages/Email";
 import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
@@ -59,7 +61,9 @@ const App = () => (
                 <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
                 <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+                <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
                 <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
+                <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
                 <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                 <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
