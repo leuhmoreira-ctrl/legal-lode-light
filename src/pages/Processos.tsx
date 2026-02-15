@@ -258,6 +258,7 @@ export default function Processos() {
     const matchSearch =
       p.numero.includes(search) ||
       p.cliente.toLowerCase().includes(search.toLowerCase()) ||
+      (p.parte_contraria || '').toLowerCase().includes(search.toLowerCase()) ||
       p.advogado.toLowerCase().includes(search.toLowerCase());
     const matchFase = faseFilter === "all" || p.fase === faseFilter;
     const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
@@ -395,18 +396,17 @@ export default function Processos() {
                         <FileText className="w-5 h-5 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1">
-                          <p className="text-sm font-semibold text-foreground font-mono">{proc.numero}</p>
+                        <p className="text-sm font-semibold text-foreground">
+                          {proc.cliente}{proc.parte_contraria ? ` × ${proc.parte_contraria}` : ''}
+                        </p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <p className="text-xs text-muted-foreground font-mono">{proc.numero}</p>
                           <CopyProcessNumber numero={proc.numero} />
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{proc.vara} - {proc.comarca}</p>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 md:gap-4">
-                      <div className="text-xs">
-                        <span className="text-muted-foreground">Cliente: </span>
-                        <span className="font-medium text-foreground">{proc.cliente}</span>
-                      </div>
                       <div className="text-xs">
                         <span className="text-muted-foreground">Resp: </span>
                         <span className="font-medium text-foreground">{proc.advogado}</span>

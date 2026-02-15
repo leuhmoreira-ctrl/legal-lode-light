@@ -238,6 +238,7 @@ export default function ProcessoDetail() {
           processoId={processo.id}
           numero={processo.numero}
           cliente={processo.cliente}
+          parteContraria={processo.parte_contraria}
           vara={processo.vara}
           comarca={processo.comarca}
           fase={processo.fase}

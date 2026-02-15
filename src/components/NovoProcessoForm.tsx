@@ -49,6 +49,8 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
           setComarca(dados.comarca)
           setVara(dados.vara)
           if (dados.valorCausa) setValorCausa(String(dados.valorCausa))
+          if (dados.poloAtivo && !cliente) setCliente(dados.poloAtivo)
+          if (dados.poloPassivo && !parteContraria) setParteContraria(dados.poloPassivo)
           toast({
             title: '✅ Dados encontrados!',
             description: `Processo do ${dados.tribunal.nome} carregado automaticamente`,

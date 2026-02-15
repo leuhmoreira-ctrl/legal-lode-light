@@ -11,6 +11,8 @@ export interface ProcessoAutofillData {
   comarca: string
   vara: string
   grau: string
+  poloAtivo: string
+  poloPassivo: string
   tribunal: TribunalInfo
   movimentacoes: Array<{
     data: string
@@ -61,6 +63,8 @@ export const useProcessoAutofill = () => {
         comarca: apiData.comarca || '',
         vara: apiData.orgaoJulgador || '',
         grau: apiData.grau || '',
+        poloAtivo: apiData.poloAtivo || '',
+        poloPassivo: apiData.poloPassivo || '',
         tribunal: tribunalInfo,
         movimentacoes: apiData.movimentacoes || []
       }
