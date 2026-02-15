@@ -29,7 +29,7 @@ export function SyncStatusCard({ siglaTribunal, sistemaTribunal, lastSync, onSyn
   const StatusIcon = config.icon;
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
@@ -67,11 +67,12 @@ export function SyncStatusCard({ siglaTribunal, sistemaTribunal, lastSync, onSyn
         <Button
           onClick={onSync}
           disabled={syncing || !siglaTribunal}
-          className="w-full gap-2"
-          variant={syncStatus === "error" ? "destructive" : "default"}
+          variant="ghost"
+          size="icon"
+          className="absolute top-3 right-3 h-7 w-7 opacity-50 hover:opacity-100"
+          title={syncing ? "Sincronizando..." : "Sincronizar Agora"}
         >
-          <RefreshCw className={`w-4 h-4 ${syncing ? "animate-spin" : ""}`} />
-          {syncing ? "Sincronizando..." : "Sincronizar Agora"}
+          <RefreshCw className={`w-3.5 h-3.5 ${syncing ? "animate-spin" : ""}`} />
         </Button>
       </CardContent>
     </Card>
