@@ -11,7 +11,6 @@ import Index from "./pages/Index";
 import Processos from "./pages/Processos";
 import ProcessoDetail from "./pages/ProcessoDetail";
 import Prazos from "./pages/Prazos";
-
 import Clientes from "./pages/Clientes";
 import Utilitarios from "./pages/Utilitarios";
 import Relatorios from "./pages/Relatorios";
@@ -22,9 +21,7 @@ import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
 import EmailConfig from "./pages/EmailConfig";
-import Mensagens from "./pages/Mensagens";
 import Notifications from "./pages/Notifications";
-import Email from "./pages/Email";
 import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
@@ -37,22 +34,20 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <TooltipProvider>
-        <Toaster />
-        <AuthProvider>
-          <PermissionsProvider>
-            <BrowserRouter>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/cadastro" element={<Cadastro />} />
-
-                    {/* Protected routes */}
+      <ThemeContextProvider>
+        <TooltipProvider>
+          <Toaster />
+          <AuthProvider>
+            <PermissionsProvider>
+              <BrowserRouter>
+                <ErrorBoundary>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/cadastro" element={<Cadastro />} />
                     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                     <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
                     <Route path="/processos/:id" element={<ProtectedRoute><ProcessoDetail /></ProtectedRoute>} />
                     <Route path="/prazos" element={<ProtectedRoute><Prazos /></ProtectedRoute>} />
-
                     <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
                     <Route path="/utilitarios" element={<ProtectedRoute><Utilitarios /></ProtectedRoute>} />
                     <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
@@ -63,9 +58,9 @@ const App = () => (
                     <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
                     <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                     <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
-                    <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
+                    <Route path="/mensagens" element={<Navigate to="/comunicacoes" replace />} />
                     <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                    <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
+                    <Route path="/email" element={<Navigate to="/comunicacoes" replace />} />
                     <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                     <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
                     <Route path="*" element={<NotFound />} />
