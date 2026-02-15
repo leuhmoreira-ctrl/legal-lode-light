@@ -81,14 +81,29 @@ export default {
         },
       },
       borderRadius: {
-        lg: "12px",
+        lg: "16px", // Updated to 16px as per plan
         md: "8px",
         sm: "4px",
       },
+      spacing: {
+        // Enforcing the consistent scale
+        '4px': '4px',
+        '8px': '8px',
+        '16px': '16px',
+        '24px': '24px',
+        '32px': '32px',
+        '48px': '48px',
+        '64px': '64px',
+      },
       boxShadow: {
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'medium': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'large': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'xlarge': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        // Keeping existing for backward compatibility but mapped to new values where appropriate
         'card': '0 1px 3px rgba(0,0,0,0.1)',
-        'card-hover': '0 4px 12px rgba(0,0,0,0.15)',
-        'modal': '0 20px 60px rgba(0,0,0,0.3)',
+        'card-hover': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', // Mapped to large
+        'modal': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', // Mapped to xlarge
       },
       keyframes: {
         "accordion-down": {
