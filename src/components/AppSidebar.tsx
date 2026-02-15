@@ -20,7 +20,8 @@ import {
   Sun,
   Moon,
   Laptop,
-  Menu,
+  Mail,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -47,7 +48,9 @@ import { supabase } from "@/integrations/supabase/client";
 const mainNavItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Minhas Tarefas", url: "/minhas-tarefas", icon: ClipboardList },
-  { title: "Comunicações", url: "/comunicacoes", icon: MessageSquare },
+  { title: "Email", url: "/email", icon: Mail },
+  { title: "Mensagens", url: "/mensagens", icon: MessageSquare },
+  { title: "Notificações", url: "/notifications", icon: Bell },
   { title: "Prazos", url: "/prazos", icon: CalendarClock },
   { title: "Utilitários", url: "/utilitarios", icon: Wrench },
 ];
@@ -94,6 +97,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
     }
   });
   const [myProcessCount, setMyProcessCount] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const { user, signOut } = useAuth();
   const { profile, role, isAdmin, isSenior } = usePermissions();
   const navigate = useNavigate();
@@ -113,7 +117,31 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
         .or(`user_id.eq.${user.id},advogado_id.eq.${user.id}`);
       setMyProcessCount(count || 0);
     };
+
+    const fetchNotifications = async () => {
+      const { count } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .eq("archived", false);
+      setUnreadNotifications(count || 0);
+    };
+
     fetchCount();
+    fetchNotifications();
+
+    // Subscribe to notifications
+    const channel = supabase
+      .channel("sidebar-notifications")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => fetchNotifications()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   // Auto-expand if current route is inside Escritório
@@ -144,22 +172,22 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
   };
 
   const linkClass = cn(
-    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-white/5 hover:text-white",
+    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
     collapsed && "justify-center px-0"
   );
 
-  const activeLinkClass = "bg-primary/10 border-l-4 border-primary text-white font-medium";
+  const activeLinkClass = "bg-sidebar-accent border-l-4 border-primary text-sidebar-accent-foreground font-medium";
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-sidebar-background to-sidebar-background/95 text-sidebar-foreground">
+    <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border/50 relative">
         <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0">
-          <Gavel className="w-5 h-5 text-white" />
+          <Gavel className="w-5 h-5 text-primary-foreground" />
         </div>
         {!collapsed && (
           <div className="animate-fade-in-scale flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-white tracking-tight">
+            <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">
               JurisControl
             </h1>
             <p className="text-[11px] text-sidebar-foreground/60 font-medium">
@@ -208,7 +236,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
             className={cn(
               linkClass,
               "w-full",
-              escritorioOpen && !collapsed && "text-white"
+              escritorioOpen && !collapsed && "text-sidebar-foreground"
             )}
           >
             <Building2 className="w-5 h-5 shrink-0" />
@@ -242,6 +270,11 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                       {item.title === "Processos" && myProcessCount > 0 && (
                         <span className="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                           {myProcessCount}
+                        </span>
+                      )}
+                      {item.title === "Notificações" && unreadNotifications > 0 && (
+                        <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          {unreadNotifications}
                         </span>
                       )}
                     </div>
@@ -280,12 +313,12 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
       </nav>
 
       {/* User menu */}
-      <div className="border-t border-sidebar-border/50 p-4 bg-black/10">
+      <div className="border-t border-sidebar-border/50 p-4 bg-sidebar-muted/20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-all duration-200 group",
+                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-sidebar-accent transition-all duration-200 group",
                 collapsed && "justify-center p-0"
               )}
             >
@@ -297,7 +330,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
               />
               {!collapsed && (
                 <div className="flex flex-col items-start flex-1 min-w-0">
-                  <span className="truncate text-sm font-semibold text-white">
+                  <span className="truncate text-sm font-semibold text-sidebar-foreground">
                     {profile?.full_name || user?.email}
                   </span>
                   {role && (

@@ -23,7 +23,9 @@ import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
 import EmailConfig from "./pages/EmailConfig";
-import Comunicacoes from "./pages/Comunicacoes";
+import Mensagens from "./pages/Mensagens";
+import Notifications from "./pages/Notifications";
+import Email from "./pages/Email";
 import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
@@ -35,10 +37,11 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <AuthProvider>
+      <ThemeContextProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <AuthProvider>
           <PermissionsProvider>
             <BrowserRouter>
               <ErrorBoundary>
@@ -63,10 +66,9 @@ const App = () => (
                 <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                 <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
-                <Route path="/comunicacoes" element={<ProtectedRoute><Comunicacoes /></ProtectedRoute>} />
-                {/* Redirects from old routes */}
-                <Route path="/mensagens" element={<Navigate to="/comunicacoes" replace />} />
-                <Route path="/email" element={<Navigate to="/comunicacoes" replace />} />
+                <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
                 <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                 <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
@@ -75,7 +77,8 @@ const App = () => (
             </BrowserRouter>
           </PermissionsProvider>
         </AuthProvider>
-      </TooltipProvider>
+        </TooltipProvider>
+      </ThemeContextProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
