@@ -27,7 +27,7 @@ const FILTER_OPTIONS: { value: MovFilter; label: string }[] = [
 ];
 
 const CRITICAL_KEYWORDS = ["sentença", "liminar", "tutela", "intimação", "citação", "penhora", "arresto"];
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 function classifyMov(descricao: string): { icon: typeof Gavel; isCritical: boolean } {
   const lower = descricao.toLowerCase();
