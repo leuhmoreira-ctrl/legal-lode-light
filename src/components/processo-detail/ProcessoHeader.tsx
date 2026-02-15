@@ -10,6 +10,7 @@ interface ProcessoHeaderProps {
   processoId: string;
   numero: string;
   cliente: string;
+  parteContraria: string | null;
   vara: string;
   comarca: string;
   fase: string | null;
@@ -32,7 +33,7 @@ const faseColor: Record<string, string> = {
 };
 
 export function ProcessoHeader({
-  processoId, numero, cliente, vara, comarca, fase, siglaTribunal, sistemaTribunal,
+  processoId, numero, cliente, parteContraria, vara, comarca, fase, siglaTribunal, sistemaTribunal,
   syncActive, unreadMovCount, pendingPrazosCount, onScrollToTimeline,
   onNewTask, onViewTasks, onViewHistory,
 }: ProcessoHeaderProps) {
@@ -52,12 +53,15 @@ export function ProcessoHeader({
 
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-foreground font-mono">{numero}</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {cliente}{parteContraria ? ` × ${parteContraria}` : ''}
+          </h1>
+          <div className="flex items-center gap-1.5 mt-1">
+            <p className="text-sm text-muted-foreground font-mono">Processo nº {numero}</p>
             <CopyProcessNumber numero={numero} />
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {cliente} • {vara} — {comarca}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {vara} — {comarca}
           </p>
         </div>
 

@@ -100,6 +100,29 @@ serve(async (req) => {
 
     const processo = data.hits.hits[0]._source
 
+    // Extract parties (polo ativo / polo passivo)
+    const partes = processo.partes || processo.polos || []
+    let poloAtivo = ''
+    let poloPassivo = ''
+
+    const variacoesAtivo = ['AT', 'ATIVO', 'AUTOR', 'RECLAMANTE', 'REQUERENTE', 'EXEQUENTE', 'IMPETRANTE', 'EMBARGANTE', 'APELANTE']
+    const variacoesPassivo = ['PA', 'PASSIVO', 'REU', 'RÉU', 'RECLAMADO', 'REQUERIDO', 'EXECUTADO', 'IMPETRADO', 'EMBARGADO', 'APELADO']
+
+    for (const parte of partes) {
+      const polo = (parte.polo || parte.tipoParte || '').toUpperCase()
+      const nome = parte.nome || parte.pessoa?.nome || ''
+      if (!nome) continue
+
+      if (variacoesAtivo.some(v => polo.includes(v)) && !poloAtivo) {
+        poloAtivo = nome.trim()
+      }
+      if (variacoesPassivo.some(v => polo.includes(v)) && !poloPassivo) {
+        poloPassivo = nome.trim()
+      }
+    }
+
+    console.log('Partes extraídas:', { poloAtivo, poloPassivo, totalPartes: partes.length })
+
     const resultado = {
       numero: processo.numeroProcesso,
       classe: processo.classe?.nome || 'Não informado',
@@ -109,6 +132,8 @@ serve(async (req) => {
       valorCausa: processo.valorCausa || 0,
       comarca: processo.orgaoJulgador?.municipio?.nome || processo.orgaoJulgador?.municipio || '',
       orgaoJulgador: processo.orgaoJulgador?.nome || '',
+      poloAtivo,
+      poloPassivo,
       movimentacoes: (processo.movimentos || []).map((mov: any) => ({
         data: mov.dataHora,
         descricao: mov.nome,
