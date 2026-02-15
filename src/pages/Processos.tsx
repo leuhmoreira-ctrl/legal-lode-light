@@ -584,18 +584,6 @@ export default function Processos() {
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
 
-                    {/* Delete button - only for admin/senior */}
-                    {isSenior && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteTarget(proc)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Deletar
-                      </Button>
-                    )}
                   </div>
                 </Card>
               );
@@ -612,6 +600,11 @@ export default function Processos() {
             onSuccess={() => {
               setEditTarget(null);
               carregarProcessos();
+            }}
+            canDelete={isSenior}
+            onDelete={() => {
+              setDeleteTarget(editTarget);
+              setEditTarget(null);
             }}
           />
         )}
