@@ -34,7 +34,19 @@ export function useDeadlineNotifications() {
 
         if (!tasks || tasks.length === 0) return;
 
-        // 2. Process each task
+        // 2. Fetch all relevant notifications for today upfront
+        const { data: existingNotifications, error: notificationsError } = await supabase
+          .from("notifications")
+          .select("title, message")
+          .eq("user_id", user.id)
+          .gte("created_at", format(startOfDay(today), "yyyy-MM-dd'T'HH:mm:ss"));
+
+        if (notificationsError) {
+          console.error("Error fetching notifications:", notificationsError);
+          return;
+        }
+
+        // 3. Process each task
         for (const task of tasks) {
           if (!task.due_date) continue;
 
@@ -46,21 +58,18 @@ export function useDeadlineNotifications() {
             const storageKey = `deadline_checked_${task.id}_${daysRemaining}days_${format(today, 'yyyy-MM-dd')}`;
             if (localStorage.getItem(storageKey)) continue;
 
-            // Check DB to avoid duplicate notifications
-            const { data: existing } = await supabase
-              .from("notifications")
-              .select("id")
-              .eq("user_id", user.id)
-              .eq("title", notificationTitle)
-              .like("message", `%${daysRemaining} dia(s)%`)
-              .gte("created_at", format(startOfDay(today), "yyyy-MM-dd'T'HH:mm:ss"));
+            // Check against pre-fetched notifications to avoid N+1 query
+            const alreadyNotified = existingNotifications?.some(n =>
+              n.title === notificationTitle &&
+              n.message?.includes(`${daysRemaining} dia(s)`)
+            );
 
-            if (existing && existing.length > 0) {
+            if (alreadyNotified) {
                localStorage.setItem(storageKey, "true");
                continue;
             }
 
-            // 3. Send notification
+            // 4. Send notification
             const message = `O prazo para "${task.title}" vence em ${daysRemaining} dia(s).`;
 
             const { error: insertError } = await supabase.from("notifications").insert({

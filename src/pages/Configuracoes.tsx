@@ -66,26 +66,31 @@ export default function Configuracoes() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-      if (data) {
-        setProfile({
-          full_name: data.full_name || "",
-          avatar_url: (data as any).avatar_url || "",
-          phone: (data as any).phone || "",
-          oab_number: (data as any).oab_number || "",
-          oab_uf: (data as any).oab_uf || "",
-          cpf: (data as any).cpf || "",
-          address: (data as any).address || "",
-          city: (data as any).city || "",
-          state: (data as any).state || "",
-          zip_code: (data as any).zip_code || "",
-        });
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          setProfile({
+            full_name: data.full_name || "",
+            avatar_url: (data as any).avatar_url || "",
+            phone: (data as any).phone || "",
+            oab_number: (data as any).oab_number || "",
+            oab_uf: (data as any).oab_uf || "",
+            cpf: (data as any).cpf || "",
+            address: (data as any).address || "",
+            city: (data as any).city || "",
+            state: (data as any).state || "",
+            zip_code: (data as any).zip_code || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [user]);
 

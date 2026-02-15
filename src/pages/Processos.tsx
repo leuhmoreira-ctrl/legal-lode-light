@@ -36,7 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
 import { format, parseISO } from "date-fns";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   generateDeepLink,
@@ -51,10 +51,10 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { EditProcessoDialog } from "@/components/EditProcessoDialog";
 import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
-import { cn } from "@/lib/utils";
 import { useProcessos } from "@/hooks/useProcessos";
 import { ProcessosSkeleton } from "@/components/skeletons/ProcessosSkeleton";
 import { AnimatedTabContent } from "@/components/AnimatedTabContent";
+import { ProcessosToggle } from "@/components/processo/ProcessosToggle";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -148,28 +148,38 @@ export default function Processos() {
     localStorage.setItem("processos_view_mode", viewMode);
   }, [viewMode]);
 
-  const filtered = processos.filter((p) => {
-    const matchSearch =
-      p.numero.includes(search) ||
-      p.cliente.toLowerCase().includes(search.toLowerCase()) ||
-      (p.parte_contraria || '').toLowerCase().includes(search.toLowerCase()) ||
-      p.advogado.toLowerCase().includes(search.toLowerCase());
-    const matchFase = faseFilter === "all" || p.fase === faseFilter;
-    const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
+  const filtered = useMemo(() => {
+    const searchLower = search.toLowerCase();
 
-    let matchDate = true;
-    if (dateStart || dateEnd) {
-      if (!p.ultima_movimentacao) {
-        matchDate = false;
-      } else {
-        const movDate = p.ultima_movimentacao.split('T')[0]; // simple YYYY-MM-DD compare
-        if (dateStart && movDate < dateStart) matchDate = false;
-        if (dateEnd && movDate > dateEnd) matchDate = false;
+    return processos.filter((p) => {
+      const matchSearch =
+        p.numero.includes(search) ||
+        p.cliente.toLowerCase().includes(searchLower) ||
+        (p.parte_contraria || '').toLowerCase().includes(searchLower) ||
+        p.advogado.toLowerCase().includes(searchLower);
+
+      if (!matchSearch) return false;
+
+      const matchFase = faseFilter === "all" || p.fase === faseFilter;
+      if (!matchFase) return false;
+
+      const matchView = viewMode === "todos" || p.user_id === user?.id || p.advogado_id === user?.id;
+      if (!matchView) return false;
+
+      let matchDate = true;
+      if (dateStart || dateEnd) {
+        if (!p.ultima_movimentacao) {
+          matchDate = false;
+        } else {
+          const movDate = p.ultima_movimentacao.substring(0, 10); // simple YYYY-MM-DD compare
+          if (dateStart && movDate < dateStart) matchDate = false;
+          if (dateEnd && movDate > dateEnd) matchDate = false;
+        }
       }
-    }
 
-    return matchSearch && matchFase && matchView && matchDate;
-  });
+      return matchDate;
+    });
+  }, [processos, search, faseFilter, viewMode, user?.id, dateStart, dateEnd]);
 
   const getPortalLink = (proc: Processo) => {
     if (!proc.sigla_tribunal) return null;
@@ -235,42 +245,12 @@ export default function Processos() {
 
         {/* Toggle Switch - Segmented Control */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 py-2">
-          <div className="bg-muted p-1 rounded-lg inline-flex">
-            <button
-              onClick={() => handleTabChange("meus")}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
-                viewMode === "meus"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Meus Processos
-              <span className={cn(
-                "px-1.5 py-0.5 rounded-full text-[10px]",
-                viewMode === "meus" ? "bg-primary/10 text-primary" : "bg-muted-foreground/10"
-              )}>
-                {meusCount}
-              </span>
-            </button>
-            <button
-              onClick={() => handleTabChange("todos")}
-              className={cn(
-                "px-4 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-2",
-                viewMode === "todos"
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Todos
-              <span className={cn(
-                "px-1.5 py-0.5 rounded-full text-[10px]",
-                viewMode === "todos" ? "bg-primary/10 text-primary" : "bg-muted-foreground/10"
-              )}>
-                {todosCount}
-              </span>
-            </button>
-          </div>
+          <ProcessosToggle
+            viewMode={viewMode}
+            onViewModeChange={handleTabChange}
+            meusCount={meusCount}
+            todosCount={todosCount}
+          />
           <span className="text-xs text-muted-foreground hidden sm:inline-block">
             {viewMode === 'meus'
               ? `Mostrando apenas processos sob sua responsabilidade`

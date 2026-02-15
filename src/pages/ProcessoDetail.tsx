@@ -238,12 +238,12 @@ export default function ProcessoDetail() {
       <div className="space-y-6 animate-fade-up">
         {/* Header with badges */}
         <ProcessoHeader
-          processoId={processo.id}
-          numero={processo.numero}
-          cliente={processo.cliente}
+          processoId={processo.id || ""}
+          numero={processo.numero || ""}
+          cliente={processo.cliente || ""}
           parteContraria={processo.parte_contraria}
-          vara={processo.vara}
-          comarca={processo.comarca}
+          vara={processo.vara || ""}
+          comarca={processo.comarca || ""}
           fase={processo.fase}
           siglaTribunal={processo.sigla_tribunal}
           sistemaTribunal={processo.sistema_tribunal}

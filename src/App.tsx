@@ -22,11 +22,15 @@ import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
 import EmailConfig from "./pages/EmailConfig";
-import Comunicacoes from "./pages/Comunicacoes";
+import Mensagens from "./pages/Mensagens";
+import Notifications from "./pages/Notifications";
+import Email from "./pages/Email";
 import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ThemeContextProvider } from "@/contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -43,34 +47,35 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/cadastro" element={<Cadastro />} />
 
-                {/* Protected routes */}
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
-                <Route path="/processos/:id" element={<ProtectedRoute><ProcessoDetail /></ProtectedRoute>} />
-                <Route path="/prazos" element={<ProtectedRoute><Prazos /></ProtectedRoute>} />
+                    {/* Protected routes */}
+                    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                    <Route path="/processos" element={<ProtectedRoute><Processos /></ProtectedRoute>} />
+                    <Route path="/processos/:id" element={<ProtectedRoute><ProcessoDetail /></ProtectedRoute>} />
+                    <Route path="/prazos" element={<ProtectedRoute><Prazos /></ProtectedRoute>} />
 
-                <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
-                <Route path="/utilitarios" element={<ProtectedRoute><Utilitarios /></ProtectedRoute>} />
-                <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-                <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
-                <Route path="/minhas-tarefas" element={<ProtectedRoute><MinhasTarefas /></ProtectedRoute>} />
-                <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
-                <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
-                <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
-                <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
-                <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
-                <Route path="/comunicacoes" element={<ProtectedRoute><Comunicacoes /></ProtectedRoute>} />
-                {/* Redirects from old routes */}
-                <Route path="/mensagens" element={<Navigate to="/comunicacoes" replace />} />
-                <Route path="/email" element={<Navigate to="/comunicacoes" replace />} />
-                <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
-                <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </PermissionsProvider>
-        </AuthProvider>
-      </TooltipProvider>
+                    <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
+                    <Route path="/utilitarios" element={<ProtectedRoute><Utilitarios /></ProtectedRoute>} />
+                    <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
+                    <Route path="/kanban" element={<ProtectedRoute><Kanban /></ProtectedRoute>} />
+                    <Route path="/minhas-tarefas" element={<ProtectedRoute><MinhasTarefas /></ProtectedRoute>} />
+                    <Route path="/auditoria" element={<ProtectedRoute><Auditoria /></ProtectedRoute>} />
+                    <Route path="/equipe" element={<ProtectedRoute><Equipe /></ProtectedRoute>} />
+                    <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
+                    <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
+                    <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
+                    <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
+                    <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                    <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
+                    <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
+                    <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </ErrorBoundary>
+              </BrowserRouter>
+            </PermissionsProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeContextProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

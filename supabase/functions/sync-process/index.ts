@@ -117,10 +117,11 @@ serve(async (req) => {
       movimentacoes: (processo.movimentos || []).map((mov: any) => ({
         data: mov.dataHora,
         descricao: mov.nome,
-        complemento: mov.complementosTabelados?.[0]?.nome || ''
-      })).sort((a: any, b: any) =>
-        new Date(b.data).getTime() - new Date(a.data).getTime()
-      )
+        complemento: mov.complementosTabelados?.[0]?.nome || '',
+        _ts: new Date(mov.dataHora).getTime()
+      }))
+      .sort((a: any, b: any) => b._ts - a._ts)
+      .map(({ _ts, ...rest }: any) => rest)
     }
 
     return new Response(

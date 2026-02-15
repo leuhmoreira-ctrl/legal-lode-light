@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { AppLayout } from "@/components/AppLayout";
@@ -9,13 +9,13 @@ import { AlertCircle, Search, Shield } from "lucide-react";
 
 interface AuditLog {
   id: number;
-  record_id: string | null;
+  record_id: string;
   table_name: string;
   op: string;
   ts: string;
-  user_id: string | null;
-  old_record: Record<string, any> | null;
-  record: Record<string, any> | null;
+  user_id: string;
+  old_record: Record<string, unknown> | null;
+  record: Record<string, unknown> | null;
 }
 
 const opColor: Record<string, string> = {
@@ -36,15 +36,22 @@ export default function Auditoria() {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState("");
 
+  const loadLogs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.rpc("get_audit_logs");
+      if (error) throw error;
+      if (data) setLogs(data as unknown as AuditLog[]);
+    } catch (error) {
+      console.error("Erro ao carregar logs:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (isSenior) loadLogs();
-  }, [isSenior]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadLogs = async () => {
-    const { data } = await supabase.rpc("get_audit_logs" as any);
-    if (data) setLogs(data as unknown as AuditLog[]);
-    setLoading(false);
-  };
+  }, [isSenior, loadLogs]);
 
   const getUserName = (userId: string | null) => {
     if (!userId) return "Sistema";

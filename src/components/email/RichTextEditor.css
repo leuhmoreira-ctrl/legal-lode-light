@@ -1,0 +1,45 @@
+/* Custom Quill Overrides for Shadcn UI feel */
+.rich-text-editor .quill {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+}
+
+.rich-text-editor .ql-toolbar {
+  border: none !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  background-color: hsl(var(--muted) / 0.3);
+  padding: 8px !important;
+}
+
+.rich-text-editor .ql-container {
+  border: none !important;
+  font-family: inherit;
+  font-size: 0.875rem; /* text-sm */
+  flex: 1;
+  overflow-y: auto;
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 150px;
+  padding: 1rem;
+}
+
+.rich-text-editor .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+}
+
+/* Icons color update */
+.rich-text-editor .ql-stroke {
+  stroke: hsl(var(--foreground)) !important;
+}
+.rich-text-editor .ql-fill {
+  fill: hsl(var(--foreground)) !important;
+}
+.rich-text-editor .ql-picker {
+  color: hsl(var(--foreground)) !important;
+}
