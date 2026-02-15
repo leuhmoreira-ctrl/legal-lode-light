@@ -34,6 +34,7 @@ import {
   Trash2,
   User,
   Building2,
+  Pencil,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
@@ -52,6 +53,7 @@ import { NovoProcessoForm } from "@/components/NovoProcessoForm";
 import { DeleteProcessDialog } from "@/components/DeleteProcessDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { EditProcessoDialog } from "@/components/EditProcessoDialog";
 import { CopyProcessNumber } from "@/components/processo/CopyProcessNumber";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
 import { cn } from "@/lib/utils";
@@ -113,6 +115,7 @@ export default function Processos() {
   const [novoProcessoOpen, setNovoProcessoOpen] = useState(false);
   const [docsDialogOpen, setDocsDialogOpen] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Processo | null>(null);
+  const [editTarget, setEditTarget] = useState<Processo | null>(null);
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [processos, setProcessos] = useState<Processo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,10 +231,11 @@ export default function Processos() {
     // Reload movimentacoes
     await carregarUltimasMovimentacoes(procs.map((p) => p.id));
 
-    if (sucessos > 0 || erros > 0) {
+    if (erros > 0) {
       toast({
-        title: "✅ Sincronização concluída",
-        description: `${sucessos} processo(s) atualizado(s)${erros > 0 ? `, ${erros} erro(s)` : ""}`,
+        title: "⚠️ Sincronização com erros",
+        description: `${erros} processo(s) com erro`,
+        variant: "destructive",
       });
     }
   }, [toast, carregarUltimasMovimentacoes]);
@@ -569,6 +573,17 @@ export default function Processos() {
                       </DialogContent>
                     </Dialog>
 
+                    {/* Edit button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={() => setEditTarget(proc)}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Editar
+                    </Button>
+
                     {/* Delete button - only for admin/senior */}
                     {isSenior && (
                       <Button
@@ -586,6 +601,19 @@ export default function Processos() {
               );
             })}
           </div>
+        )}
+
+        {/* Edit process dialog */}
+        {editTarget && (
+          <EditProcessoDialog
+            processo={editTarget}
+            open={!!editTarget}
+            onOpenChange={(open) => { if (!open) setEditTarget(null); }}
+            onSuccess={() => {
+              setEditTarget(null);
+              carregarProcessos();
+            }}
+          />
         )}
 
         {/* Delete process dialog */}
