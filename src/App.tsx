@@ -24,6 +24,7 @@ import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
 import EmailConfig from "./pages/EmailConfig";
 import Mensagens from "./pages/Mensagens";
+import Notifications from "./pages/Notifications";
 import Email from "./pages/Email";
 import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
@@ -63,6 +64,7 @@ const App = () => (
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                 <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
                 <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
+                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
                 <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                 <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
