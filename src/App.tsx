@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -23,8 +23,7 @@ import Equipe from "./pages/Equipe";
 import AdvogadoDashboard from "./pages/AdvogadoDashboard";
 import Configuracoes from "./pages/Configuracoes";
 import EmailConfig from "./pages/EmailConfig";
-import Mensagens from "./pages/Mensagens";
-import Email from "./pages/Email";
+import Comunicacoes from "./pages/Comunicacoes";
 import Workflows from "./pages/Workflows";
 import WorkflowDetail from "./pages/WorkflowDetail";
 import NotFound from "./pages/NotFound";
@@ -62,8 +61,10 @@ const App = () => (
                 <Route path="/advogado/:id" element={<ProtectedRoute><AdvogadoDashboard /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                 <Route path="/configuracoes/email" element={<ProtectedRoute><EmailConfig /></ProtectedRoute>} />
-                <Route path="/mensagens" element={<ProtectedRoute><Mensagens /></ProtectedRoute>} />
-                <Route path="/email" element={<ProtectedRoute><Email /></ProtectedRoute>} />
+                <Route path="/comunicacoes" element={<ProtectedRoute><Comunicacoes /></ProtectedRoute>} />
+                {/* Redirects from old routes */}
+                <Route path="/mensagens" element={<Navigate to="/comunicacoes" replace />} />
+                <Route path="/email" element={<Navigate to="/comunicacoes" replace />} />
                 <Route path="/workflows" element={<ProtectedRoute><Workflows /></ProtectedRoute>} />
                 <Route path="/workflows/:id" element={<ProtectedRoute><WorkflowDetail /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />

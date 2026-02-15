@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentList } from "@/components/DocumentList";
 import { ProcessChat } from "@/components/chat/ProcessChat";
+import { ProcessoComunicacoesTab } from "@/components/processo-detail/ProcessoComunicacoesTab";
 import { ProcessoHeader } from "@/components/processo-detail/ProcessoHeader";
 import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid";
 import { EmailComposer } from "@/components/email/EmailComposer";
@@ -287,8 +288,7 @@ export default function ProcessoDetail() {
                 <TabsTrigger value="docs">Documentos</TabsTrigger>
                 <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
                 <TabsTrigger value="notas">📝 Notas</TabsTrigger>
-                <TabsTrigger value="comunicacoes">📧 Comunicações</TabsTrigger>
-                <TabsTrigger value="chat">Chat</TabsTrigger>
+                <TabsTrigger value="comunicacoes">💬 Comunicações</TabsTrigger>
               </TabsList>
               <TabsContent value="docs">
                 <div className="space-y-6">
@@ -311,21 +311,10 @@ export default function ProcessoDetail() {
                 <ProcessoNotes processoId={processo.id} />
               </TabsContent>
               <TabsContent value="comunicacoes">
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-semibold">Histórico de Comunicações</h3>
-                    <Button onClick={() => setEmailComposerOpen(true)} className="gap-2">
-                      <span className="text-lg">✉️</span> Novo Email
-                    </Button>
-                  </div>
-                  <div className="p-8 text-center border rounded-lg bg-muted/20 text-muted-foreground">
-                    <p>Nenhuma comunicação registrada para este processo.</p>
-                    <p className="text-xs mt-1">Emails trocados com o cliente aparecerão aqui.</p>
-                  </div>
-                </div>
-              </TabsContent>
-              <TabsContent value="chat">
-                <ProcessChat processoId={processo.id} processoNumero={processo.numero} />
+                <ProcessoComunicacoesTab
+                  processoId={processo.id}
+                  onNewEmail={() => setEmailComposerOpen(true)}
+                />
               </TabsContent>
             </Tabs>
           </div>
