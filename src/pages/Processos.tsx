@@ -290,13 +290,14 @@ export default function Processos() {
           </div>
           <div className="flex gap-2">
             <Button
-              variant="outline"
-              className="gap-2"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
               disabled={syncingAll || processos.length === 0}
               onClick={() => sincronizarTodos(processos)}
+              title={syncingAll ? "Sincronizando..." : "Atualizar Todos"}
             >
               <RefreshCw className={`w-4 h-4 ${syncingAll ? "animate-spin" : ""}`} />
-              {syncingAll ? "Sincronizando..." : "Atualizar Todos"}
             </Button>
             <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
               <DialogTrigger asChild>
