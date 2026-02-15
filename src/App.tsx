@@ -1,5 +1,4 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -38,18 +37,15 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <ThemeContextProvider>
-        <TooltipProvider>
-          <AuthProvider>
-            <PermissionsProvider>
-              <BrowserRouter>
-                <ErrorBoundary>
-                  <Toaster />
-                  <Sonner />
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/cadastro" element={<Cadastro />} />
+      <TooltipProvider>
+        <Toaster />
+        <AuthProvider>
+          <PermissionsProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/cadastro" element={<Cadastro />} />
 
                     {/* Protected routes */}
                     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
