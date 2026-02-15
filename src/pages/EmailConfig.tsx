@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Mail, Shield, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Mail, Shield, RefreshCw, CheckCircle2, Loader2 } from "lucide-react";
 import { EmailIntegration } from "@/types/email";
 
 export default function EmailConfig() {
@@ -27,103 +26,43 @@ export default function EmailConfig() {
   const [smtpPort, setSmtpPort] = useState("587");
   const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    if (user) loadConfig();
-  }, [user]);
-
-  const loadConfig = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("integracao_email")
-        .select("*")
-        .eq("user_id", user?.id)
-        .maybeSingle(); // Use maybeSingle to avoid error on 404
-
-      if (error) throw error;
-      if (data) {
-        setConfig(data as unknown as EmailIntegration); // Type assertion for now
-        setEmail(data.email_address);
-      }
-    } catch (err: any) {
-      console.error("Error loading email config:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleManualConnect = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate connection test
-    setTimeout(async () => {
-      try {
-        // In a real app, this would call an Edge Function to test IMAP/SMTP connection
-        const mockSuccess = true;
+    setTimeout(() => {
+      const newConfig: EmailIntegration = {
+        id: crypto.randomUUID(),
+        user_id: user?.id || "",
+        provider: "manual",
+        email_address: email,
+        imap_host: imapHost,
+        imap_port: parseInt(imapPort),
+        smtp_host: smtpHost,
+        smtp_port: parseInt(smtpPort),
+        sync_frequency: "manual",
+        sync_period_days: 30,
+        sync_only_clients: true,
+        // is_active is tracked locally
+        last_synced_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
 
-        if (!mockSuccess) throw new Error("Falha na conexão com servidor IMAP");
-
-        const payload = {
-          user_id: user?.id,
-          provider: 'manual',
-          email_address: email,
-          imap_host: imapHost,
-          imap_port: parseInt(imapPort),
-          smtp_host: smtpHost,
-          smtp_port: parseInt(smtpPort),
-          // Password would be encrypted on server side in real implementation
-          // For this demo we just pretend
-          sync_frequency: 'manual',
-          sync_period_days: 30,
-          sync_only_clients: true
-        };
-
-        const { error } = await supabase
-          .from("integracao_email")
-          .upsert(payload, { onConflict: 'user_id' });
-
-        if (error) throw error;
-
-        toast({
-          title: "Conectado com sucesso",
-          description: `Email ${email} configurado corretamente.`,
-          variant: "success"
-        });
-
-        loadConfig();
-      } catch (err: any) {
-        toast({
-          title: "Erro na conexão",
-          description: err.message,
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
+      setConfig(newConfig);
+      setLoading(false);
+      toast({
+        title: "Conectado com sucesso",
+        description: `Email ${email} configurado corretamente.`,
+      });
     }, 1500);
   };
 
-  const handleDisconnect = async () => {
-    if (!config) return;
-    try {
-      setLoading(true);
-      const { error } = await supabase
-        .from("integracao_email")
-        .delete()
-        .eq("id", config.id);
-
-      if (error) throw error;
-
-      setConfig(null);
-      setEmail("");
-      setPassword("");
-      toast({ title: "Conta desconectada" });
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
+  const handleDisconnect = () => {
+    setConfig(null);
+    setEmail("");
+    setPassword("");
+    toast({ title: "Conta desconectada" });
   };
 
   return (
@@ -292,7 +231,6 @@ export default function EmailConfig() {
         </Tabs>
       )}
 
-      {/* Sync Preferences (Visible only if connected or just as preview) */}
       <Card>
         <CardHeader>
           <CardTitle>Preferências de Sincronização</CardTitle>

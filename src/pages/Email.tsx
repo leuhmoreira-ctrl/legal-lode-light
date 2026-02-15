@@ -136,9 +136,9 @@ export default function Email() {
                 <Input placeholder="Buscar emails..." className="pl-9 h-9" />
               </div>
               <div className="flex gap-2">
-                <Button variant="secondary" size="xs" className="flex-1 text-xs">Não lidos</Button>
-                <Button variant="ghost" size="xs" className="flex-1 text-xs">Com anexo</Button>
-                <Button variant="ghost" size="xs" className="flex-1 text-xs"><Filter className="w-3 h-3" /></Button>
+                <Button variant="secondary" size="sm" className="flex-1 text-xs">Não lidos</Button>
+                <Button variant="ghost" size="sm" className="flex-1 text-xs">Com anexo</Button>
+                <Button variant="ghost" size="sm" className="flex-1 text-xs"><Filter className="w-3 h-3" /></Button>
               </div>
             </div>
 
@@ -222,7 +222,7 @@ export default function Email() {
 
                           <div className="flex gap-2 mt-1 px-1">
                             {!msg.is_sent && (
-                              <Button variant="ghost" size="xs" className="h-6 gap-1 text-muted-foreground">
+                              <Button variant="ghost" size="sm" className="h-6 gap-1 text-muted-foreground">
                                 <Reply className="w-3 h-3" /> Responder
                               </Button>
                             )}
