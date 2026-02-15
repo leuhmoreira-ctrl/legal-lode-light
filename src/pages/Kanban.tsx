@@ -127,6 +127,27 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     return () => { supabase.removeChannel(channel); };
   }, [loadTasks]);
 
+  // Auto-clear "Para Fazer Hoje" at midnight
+  useEffect(() => {
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setHours(24, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    const timeout = setTimeout(async () => {
+      const todayTasks = tasks.filter(t => t.marked_for_today);
+      if (todayTasks.length > 0) {
+        await supabase
+          .from("kanban_tasks")
+          .update({ marked_for_today: false, marked_for_today_at: null })
+          .in("id", todayTasks.map(t => t.id));
+        loadTasks();
+      }
+    }, msUntilMidnight);
+
+    return () => clearTimeout(timeout);
+  }, [tasks, loadTasks]);
+
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     const { draggableId, destination } = result;

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,8 @@ import {
   ArrowUpRight,
   Clock,
   Scale,
+  Star,
+  Loader2,
 } from "lucide-react";
 import {
   BarChart,
@@ -25,6 +28,9 @@ import {
 import { prazosMock, processosMock, tarefasMock } from "@/data/mockData";
 import { format, parseISO, isAfter, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/contexts/PermissionsContext";
 
 const faseData = [
   { name: "Conhecimento", value: 3 },
@@ -62,6 +68,30 @@ const statusClass: Record<string, string> = {
 
 export default function Dashboard() {
   const hoje = new Date();
+  const { user } = useAuth();
+  const { teamMembers } = usePermissions();
+  const [todayTasks, setTodayTasks] = useState<any[]>([]);
+  const [loadingToday, setLoadingToday] = useState(true);
+
+  useEffect(() => {
+    const loadTodayTasks = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("kanban_tasks")
+        .select("*")
+        .eq("marked_for_today", true)
+        .neq("status", "done")
+        .or(`assigned_to.eq.${user.id},user_id.eq.${user.id}`)
+        .order("marked_for_today_at", { ascending: true });
+      setTodayTasks(data || []);
+      setLoadingToday(false);
+    };
+    loadTodayTasks();
+  }, [user]);
+
+  const getMemberName = (id: string | null) =>
+    teamMembers.find((m) => m.id === id)?.full_name || "—";
+
   const prazosUrgentes = prazosMock.filter(
     (p) => p.status === "urgente" || p.status === "proximo"
   );
@@ -81,6 +111,37 @@ export default function Dashboard() {
             {format(hoje, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
+
+        {/* Meu Foco Hoje */}
+        {loadingToday ? (
+          <Card className="p-4">
+            <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" />
+          </Card>
+        ) : todayTasks.length > 0 && (
+          <Card className="p-5 border-yellow-400/30 bg-yellow-50/20 dark:bg-yellow-900/10">
+            <div className="flex items-center gap-2 mb-3">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+              <h3 className="text-sm font-semibold text-foreground">Meu Foco Hoje ({todayTasks.length} tarefas)</h3>
+            </div>
+            <div className="space-y-2">
+              {todayTasks.map((task) => (
+                <div key={task.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-background/80 border border-yellow-200/30">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {getMemberName(task.assigned_to)}
+                      {task.due_date && ` • ${format(new Date(task.due_date), "dd/MM")}`}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className={`text-[10px] ${task.priority === 'high' ? 'urgency-high' : task.priority === 'medium' ? 'urgency-medium' : 'urgency-low'}`}>
+                    {task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Média' : 'Baixa'}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
