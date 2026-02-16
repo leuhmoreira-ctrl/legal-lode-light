@@ -53,7 +53,7 @@ interface Acao {
 
 interface Versao {
     numero_versao: number;
-    storage_path: string | null;
+    storage_path?: string | null;
 }
 
 interface WorkflowDetail {
