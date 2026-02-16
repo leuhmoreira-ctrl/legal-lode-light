@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertTriangle,
   CalendarDays,
@@ -110,256 +108,314 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
+      <div className="space-y-8 animate-fade-up pb-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Visão geral do escritório •{" "}
-            {format(hoje, "EEEE, d 'de' MMMM", { locale: ptBR })}
+          <h1 className="text-[34px] font-bold tracking-[-0.7px] text-[#1D1D1F] dark:text-white">Dashboard</h1>
+          <p className="text-[15px] font-normal tracking-[-0.2px] text-[#6E6E73] dark:text-white/60 mt-1 flex items-center gap-2">
+            Visão geral do escritório <span className="text-[#86868B]">•</span> {format(hoje, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
 
         {/* Meu Foco Hoje */}
         {loadingToday ? (
-          <Card className="p-4">
+          <div className="p-4">
             <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" />
-          </Card>
+          </div>
         ) : todayTasks.length > 0 && (
-          <Card className="p-5 border-yellow-400/30 bg-yellow-50/20 dark:bg-yellow-900/10">
-            <div className="flex items-center gap-2 mb-3">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <h3 className="text-sm font-semibold text-foreground">Meu Foco Hoje ({todayTasks.length} tarefas)</h3>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 fill-[#FF9500] text-[#FF9500]" />
+              <h3 className="text-[20px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">Meu Foco Hoje</h3>
             </div>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-3">
               {todayTasks.map((task) => (
-                <div key={task.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-background/80 border border-yellow-200/30">
-                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                <div
+                  key={task.id}
+                  className="group flex items-center gap-3 p-4 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.08] hover:border-blue-500/20 transition-all duration-200 hover:translate-x-1 cursor-pointer"
+                >
+                  <Star className="w-4 h-4 text-[#FF9500]" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{task.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {getMemberName(task.assigned_to)}
-                      {task.due_date && ` • ${format(new Date(task.due_date), "dd/MM")}`}
+                    <p className="text-[17px] font-medium tracking-[-0.4px] text-[#1D1D1F] dark:text-white truncate">{task.title}</p>
+                    <p className="text-[13px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-0.5">
+                      {getMemberName(task.assigned_to)} <span className="text-[#86868B] mx-1">•</span> {task.due_date && format(new Date(task.due_date), "dd/MM")}
                     </p>
                   </div>
-                  <Badge variant="outline" className={`text-[10px] ${task.priority === 'high' ? 'urgency-high' : task.priority === 'medium' ? 'urgency-medium' : 'urgency-low'}`}>
+                  <span className={`px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors ${
+                    task.priority === 'high'
+                      ? 'bg-[#FF3B30]/12 text-[#FF3B30] group-hover:bg-[#FF3B30]/20'
+                      : task.priority === 'medium'
+                        ? 'bg-[#FF9500]/12 text-[#FF9500] group-hover:bg-[#FF9500]/20'
+                        : 'bg-[#34C759]/12 text-[#34C759] group-hover:bg-[#34C759]/20'
+                  }`}>
                     {task.priority === 'high' ? 'Alta' : task.priority === 'medium' ? 'Média' : 'Baixa'}
-                  </Badge>
+                  </span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="stat-card">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Prazos Urgentes */}
+          <div className="apple-card p-6 group cursor-pointer">
+            <div className="flex flex-col h-full justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Prazos Urgentes
-                </p>
-                <p className="text-3xl font-bold text-foreground mt-2">
+                </span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-urgent shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <AlertTriangle className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div>
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
                   {prazosUrgentes.length}
-                </p>
-                <p className="text-xs text-urgent mt-1 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" />
+                </div>
+                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
+                  <CalendarDays className="w-3.5 h-3.5 text-[#86868B]" />
                   Próximos 7 dias
-                </p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-urgent/10">
-                <AlertTriangle className="w-5 h-5 text-urgent" />
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="stat-card">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {/* Processos Ativos */}
+          <div className="apple-card p-6 group cursor-pointer">
+            <div className="flex flex-col h-full justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Processos Ativos
-                </p>
-                <p className="text-3xl font-bold text-foreground mt-2">
+                </span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-active shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <Scale className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div>
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
                   {processosMock.length}
-                </p>
-                <p className="text-xs text-success mt-1 flex items-center gap-1">
-                  <ArrowUpRight className="w-3 h-3" />2 novos este mês
-                </p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-primary/10">
-                <Scale className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
+                  <ArrowUpRight className="w-3.5 h-3.5 text-[#34C759]" />
+                  <span className="text-[#34C759]">2 novos</span> este mês
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
 
-          <Card className="stat-card">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          {/* Tarefas Pendentes */}
+          <div className="apple-card p-6 group cursor-pointer">
+            <div className="flex flex-col h-full justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Tarefas Pendentes
-                </p>
-                <p className="text-3xl font-bold text-foreground mt-2">
-                  {tarefasPendentes.length}
-                </p>
-                <p className="text-xs text-warning mt-1 flex items-center gap-1">
-                  <Clock className="w-3 h-3" />3 de alta prioridade
-                </p>
+                </span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-pending shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <ListChecks className="w-4 h-4 text-white" />
+                </div>
               </div>
-              <div className="p-2.5 rounded-lg bg-warning/10">
-                <ListChecks className="w-5 h-5 text-warning" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="stat-card">
-            <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Audiências Semana
-                </p>
-                <p className="text-3xl font-bold text-foreground mt-2">2</p>
-                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                  <CalendarDays className="w-3 h-3" />
-                  Próxima em 3 dias
-                </p>
-              </div>
-              <div className="p-2.5 rounded-lg bg-accent/10">
-                <CalendarDays className="w-5 h-5 text-accent" />
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
+                  {tarefasPendentes.length}
+                </div>
+                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#FF9500]" />
+                  <span className="text-[#FF9500]">3 de alta</span> prioridade
+                </div>
               </div>
             </div>
-          </Card>
+          </div>
+
+          {/* Audiências */}
+          <div className="apple-card p-6 group cursor-pointer">
+            <div className="flex flex-col h-full justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
+                  Audiências
+                </span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-audience shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <CalendarDays className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div>
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
+                  2
+                </div>
+                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
+                  <CalendarDays className="w-3.5 h-3.5 text-[#86868B]" />
+                  Próxima em 3 dias
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="stat-card lg:col-span-2">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="apple-card p-6 lg:col-span-2">
+            <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-6 tracking-[-0.4px]">
               Produtividade Mensal
             </h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={produtividadeData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,90%)" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
-                <Tooltip />
-                <Bar dataKey="tarefas" radius={[4, 4, 0, 0]}>
-                  {produtividadeData.map((entry, index) => (
-                    <Cell key={index} fill={getProductivityColor(entry.tarefas)} />
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={produtividadeData} barGap={16}>
+                <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" strokeDasharray="0" />
+                <XAxis
+                  dataKey="mes"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 13, fill: '#6E6E73', fontWeight: 500 }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: '#86868B', fontWeight: 500 }}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                />
+                <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={32}>
+                  {produtividadeData.map((_, index) => (
+                    <Cell
+                      key={index}
+                      fill={["#5AC8FA", "#007AFF", "#0A84FF", "#34C759", "#30D158", "#00C7BE"][index % 6]}
+                      className="transition-all duration-200 hover:brightness-110 hover:-translate-y-1"
+                    />
                   ))}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-          </Card>
+          </div>
 
-          <Card className="stat-card">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
+          <div className="apple-card p-6 flex flex-col">
+            <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-6 tracking-[-0.4px]">
               Processos por Fase
             </h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={faseData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {faseData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex flex-wrap gap-2 mt-2 justify-center">
-              {faseData.map((item, i) => (
-                <div key={item.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: PIE_COLORS[i] }}
+            <div className="flex-1 min-h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={faseData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="60%"
+                    outerRadius="100%"
+                    paddingAngle={0}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {faseData.map((_, i) => (
+                      <Cell
+                        key={i}
+                        fill={["#1D1D1F", "#007AFF", "#FF9500"][i % 3]}
+                        strokeWidth={0}
+                        style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.1))' }}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                   />
-                  {item.name}
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-4 mt-6 justify-center">
+              {faseData.map((item, i) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: ["#1D1D1F", "#007AFF", "#FF9500"][i % 3] }}
+                  />
+                  <span className="text-[13px] font-medium text-[#1D1D1F] dark:text-white tracking-[-0.1px]">
+                    {item.name}
+                  </span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Prazos */}
-          <Card className="stat-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">
+          <div className="apple-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.4px]">
                 Próximos Prazos
               </h3>
-              <Badge variant="secondary" className="text-xs">
+              <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[12px] font-medium">
                 {prazosUrgentes.length} pendentes
-              </Badge>
+              </span>
             </div>
             <div className="space-y-3">
               {prazosMock.slice(0, 5).map((prazo) => (
                 <div
                   key={prazo.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                  className="flex items-start gap-3 p-3 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors duration-200"
                 >
                   <div
-                    className={`mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${statusClass[prazo.status]}`}
+                    className={`mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border-0 ${
+                      prazo.status === 'urgente'
+                        ? 'bg-[#FF3B30]/12 text-[#FF3B30]'
+                        : prazo.status === 'proximo'
+                          ? 'bg-[#FF9500]/12 text-[#FF9500]'
+                          : 'bg-[#34C759]/12 text-[#34C759]'
+                    }`}
                   >
-                    {statusLabel[prazo.status]}
+                    {statusLabel[prazo.status].toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
                       {prazo.descricao}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {prazo.processoNumero} • {prazo.responsavel}
+                    <p className="text-[12px] text-[#6E6E73] mt-0.5">
+                      {prazo.processoNumero} <span className="mx-1">•</span> {prazo.responsavel}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="text-[12px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-2 py-1 rounded-md shadow-sm border border-black/5">
                     {format(parseISO(prazo.dataVencimento), "dd/MM")}
                   </span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
 
           {/* Movimentações */}
-          <Card className="stat-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-foreground">
+          <div className="apple-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.4px]">
                 Movimentações Recentes
               </h3>
-              <Badge variant="secondary" className="text-xs">
+              <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[12px] font-medium">
                 Últimas 3
-              </Badge>
+              </span>
             </div>
             <div className="space-y-3">
               {movimentacoesRecentes.map((proc) => (
                 <div
                   key={proc.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                  className="flex items-start gap-3 p-3 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors duration-200"
                 >
-                  <div className="p-1.5 rounded bg-primary/10">
-                    <FileText className="w-3.5 h-3.5 text-primary" />
+                  <div className="p-2 rounded-full bg-[#007AFF]/10">
+                    <FileText className="w-3.5 h-3.5 text-[#007AFF]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
                       {proc.descricaoMovimentacao}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {proc.numero} • {proc.cliente}
+                    <p className="text-[12px] text-[#6E6E73] mt-0.5">
+                      {proc.numero} <span className="mx-1">•</span> {proc.cliente}
                     </p>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="text-[12px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-2 py-1 rounded-md shadow-sm border border-black/5">
                     {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
                   </span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </AppLayout>
