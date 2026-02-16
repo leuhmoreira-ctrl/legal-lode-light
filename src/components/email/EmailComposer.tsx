@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Send, Loader2, Maximize2, Minimize2, MoreVertical, Save, Clock, AlertTriangle } from "lucide-react";
+import { Send, X, Loader2, Maximize2, Minimize2, MoreVertical, Save, Clock, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RecipientInput } from "./RecipientInput";
 import { AttachmentManager } from "./AttachmentManager";
@@ -141,7 +141,7 @@ export function EmailComposer({ open, onOpenChange, initialTo = "", initialSubje
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent
         className={cn(
-          "flex flex-col p-0 gap-0 transition-all duration-300",
+          "flex flex-col p-0 gap-0 transition-all duration-300 [&>button:last-child]:hidden",
           isExpanded ? "w-[95vw] h-[95vh] max-w-none" : "max-w-3xl h-[85vh]"
         )}
         onInteractOutside={(e) => e.preventDefault()}
@@ -149,9 +149,12 @@ export function EmailComposer({ open, onOpenChange, initialTo = "", initialSubje
         {/* Header */}
         <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0">
           <DialogTitle>Nova Mensagem</DialogTitle>
-          <div className="flex items-center gap-2 mr-6">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpanded(!isExpanded)}>
               {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleClose}>
+              <X className="w-4 h-4" />
             </Button>
           </div>
         </DialogHeader>
