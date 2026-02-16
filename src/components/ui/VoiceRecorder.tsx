@@ -260,30 +260,28 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
       </div>
 
       <Dialog open={showModal} onOpenChange={(open) => { if (!open) cleanup(); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Gravação Finalizada</DialogTitle>
+        <DialogContent className="sm:max-w-sm p-6 gap-3">
+          <DialogHeader className="pb-0">
+            <DialogTitle className="text-lg">Gravação Finalizada</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="bg-muted p-3 rounded-lg space-y-2">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">Duração: {formatTime(timer)}</p>
-              </div>
+          <div className="space-y-3">
+            <div className="bg-muted p-3 rounded-lg flex items-center gap-3">
               {audioUrl && (
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={togglePreview}>
-                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  </Button>
-                  <span className="text-xs text-muted-foreground">{isPlaying ? "Reproduzindo..." : "Ouvir gravação"}</span>
-                  <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} className="hidden" />
-                </div>
+                <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-full" onClick={togglePreview}>
+                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                </Button>
               )}
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm font-medium">Duração: {formatTime(timer)}</p>
+                <span className="text-xs text-muted-foreground">{isPlaying ? "Reproduzindo..." : "Ouvir gravação"}</span>
+              </div>
+              <audio ref={audioRef} src={audioUrl ?? undefined} onEnded={() => setIsPlaying(false)} className="hidden" />
             </div>
 
             {editableText ? (
               <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground uppercase font-medium">Transcrição (editável):</p>
+                <p className="text-xs text-muted-foreground font-medium">Transcrição (editável):</p>
                 <Textarea
                   value={editableText}
                   onChange={(e) => setEditableText(e.target.value)}
@@ -292,25 +290,23 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
                 />
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <AlertTriangle className="w-3 h-3 shrink-0" />
-                <span>Transcrição não disponível (navegador pode não suportar).</span>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>Transcrição não disponível neste navegador.</span>
               </div>
             )}
-
-            <p className="text-sm text-center text-muted-foreground">O que deseja fazer?</p>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
-            <Button variant="outline" className="flex-1 gap-2 text-sm" onClick={() => handleAction("transcribe")} disabled={!editableText.trim()}>
-              <Type className="w-4 h-4" />
-              Apenas Texto
+          <DialogFooter className="grid grid-cols-3 gap-2 pt-1">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("transcribe")} disabled={!editableText.trim()}>
+              <Type className="w-3.5 h-3.5 shrink-0" />
+              Texto
             </Button>
-            <Button variant="outline" className="flex-1 gap-2 text-sm" onClick={() => handleAction("attach")}>
-              <FileAudio className="w-4 h-4" />
-              Apenas Áudio
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("attach")}>
+              <FileAudio className="w-3.5 h-3.5 shrink-0" />
+              Áudio
             </Button>
-            <Button className="flex-1 gap-2 text-sm" onClick={() => handleAction("both")}>
+            <Button size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("both")}>
               Ambos
             </Button>
           </DialogFooter>
