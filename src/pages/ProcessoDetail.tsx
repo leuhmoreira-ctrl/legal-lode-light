@@ -19,9 +19,8 @@ import { ProcessoTaskHistory } from "@/components/processo-detail/ProcessoTaskHi
 import { differenceInDays, format } from "date-fns";
 
 // V2 Components
-import { ProcessHeader } from "@/components/processo-detail/v2/ProcessHeader";
+import { ProcessHeaderUnified } from "@/components/processo-detail/v2/ProcessHeaderUnified";
 import { ProcessStatusCard } from "@/components/processo-detail/v2/ProcessStatusCard";
-import { ProcessPartiesHeader } from "@/components/processo-detail/v2/ProcessPartiesHeader";
 import { ProcessDocuments } from "@/components/processo-detail/v2/ProcessDocuments";
 
 interface Processo {
@@ -180,36 +179,27 @@ export default function ProcessoDetail() {
     <AppLayout>
       <div className="space-y-8 animate-fade-up max-w-[1600px] mx-auto pb-12">
         {/* Sticky Header Container */}
-        <div className="sticky top-0 z-40 -mx-6 shadow-sm">
-          <div className="bg-background px-6">
-            <div className="max-w-[1600px] mx-auto">
-              <ProcessHeader
-                processoId={processo.id}
-                numero={processo.numero}
-                cliente={processo.cliente}
-                parteContraria={processo.parte_contraria}
-                siglaTribunal={processo.sigla_tribunal}
-                sistemaTribunal={processo.sistema_tribunal}
-                dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
-                movimentacoesCount={movimentacoes.length}
-                fase={processo.fase}
-                onNewTask={() => setNovaTarefaOpen(true)}
-                onViewTasks={() => setActiveTab("tarefas")}
-                onDelete={handleDeleteProcess}
-                onEdit={() => toast({ title: "Em breve", description: "Edição rápida em desenvolvimento" })}
-              />
-            </div>
-          </div>
-          <ProcessPartiesHeader
-            cliente={processo.cliente}
-            parteContraria={processo.parte_contraria}
-            advogado={processo.advogado}
-            vara={processo.vara}
-            comarca={processo.comarca}
-            tipoAcao={processo.tipo_acao}
-            dataDistribuicao={processo.data_distribuicao}
-          />
-        </div>
+        <ProcessHeaderUnified
+          processoId={processo.id}
+          numero={processo.numero}
+          cliente={processo.cliente}
+          parteContraria={processo.parte_contraria}
+          advogado={processo.advogado}
+          vara={processo.vara}
+          comarca={processo.comarca}
+          tipoAcao={processo.tipo_acao}
+          dataDistribuicao={processo.data_distribuicao}
+          siglaTribunal={processo.sigla_tribunal}
+          sistemaTribunal={processo.sistema_tribunal}
+          dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
+          movimentacoesCount={movimentacoes.length}
+          fase={processo.fase}
+          onNewTask={() => setNovaTarefaOpen(true)}
+          onViewTasks={() => setActiveTab("tarefas")}
+          onDelete={handleDeleteProcess}
+          onEdit={() => toast({ title: "Em breve", description: "Edição rápida em desenvolvimento" })}
+          className="-mx-6"
+        />
 
         {/* Status Section */}
         <div>
