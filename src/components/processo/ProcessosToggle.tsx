@@ -17,11 +17,11 @@ export const ProcessosToggle = ({
   todosCount = 0,
 }: ProcessosToggleProps) => {
   return (
-    <div className="inline-flex items-center gap-2 bg-muted p-1 rounded-lg">
+    <div className="inline-flex w-full sm:w-auto items-center gap-2 bg-muted p-1 rounded-lg">
       <button
         onClick={() => onViewModeChange('meus')}
         className={cn(
-          "relative px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 z-10 flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "relative min-h-[44px] flex-1 sm:flex-none px-4 py-2 rounded-md text-[14px] font-medium transition-colors duration-200 z-10 flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           viewMode === 'meus'
             ? "text-foreground"
             : "text-muted-foreground hover:text-foreground"
@@ -58,7 +58,7 @@ export const ProcessosToggle = ({
       <button
         onClick={() => onViewModeChange('todos')}
         className={cn(
-          "relative px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 z-10 flex items-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "relative min-h-[44px] flex-1 sm:flex-none px-4 py-2 rounded-md text-[14px] font-medium transition-colors duration-200 z-10 flex items-center justify-center gap-2 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           viewMode === 'todos'
             ? "text-foreground"
             : "text-muted-foreground hover:text-foreground"

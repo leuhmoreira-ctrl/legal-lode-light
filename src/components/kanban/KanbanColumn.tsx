@@ -29,15 +29,15 @@ export function KanbanColumn({
   return (
     <div className={cn("flex flex-col h-full rounded-xl transition-colors duration-300", bgColor)}>
       {/* Header */}
-      <div className={cn("px-4 py-3 rounded-t-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border-t-[3px]", borderColor)}>
+      <div className={cn("px-3 sm:px-4 py-3 rounded-t-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border-t-[3px]", borderColor)}>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+          <h3 className="font-bold text-[16px] text-foreground flex items-center gap-2">
             {title}
-            <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium">
+            <span className="bg-gray-200 text-gray-700 text-[13px] px-2 py-0.5 rounded-full font-medium">
               {count}
             </span>
           </h3>
-          <span className="text-xs text-muted-foreground font-medium">{percentage}%</span>
+          <span className="text-[13px] text-muted-foreground font-medium">{percentage}%</span>
         </div>
 
         {/* Custom Progress Bar */}
@@ -50,7 +50,7 @@ export function KanbanColumn({
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-3 overflow-y-auto min-h-[100px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent space-y-3">
+      <div className="flex-1 p-2 sm:p-3 overflow-y-auto min-h-[100px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent space-y-3">
         {children}
       </div>
     </div>

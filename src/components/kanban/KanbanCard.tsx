@@ -91,15 +91,15 @@ export function KanbanCard({
           task.marked_for_today && "ring-2 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10",
           isDragging && "shadow-xl rotate-2 scale-105",
           `border-l-[${priority.color}]`,
-          isCompact ? "p-2 min-h-[50px] flex items-center" : "p-3.5"
+          isCompact ? "p-3 min-h-[56px] flex items-center" : "p-4"
         )}
         style={{ borderLeftColor: priority.color }}
         onClick={onClick}
       >
         {/* Quick Actions Overlay (Hover) - Hide in compact to save space */}
         {!isDragging && !isCompact && task.status !== 'done' && (
-           <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-             <Button variant="secondary" size="icon" className="h-7 w-7 bg-white/90 hover:bg-white shadow-sm" onClick={(e) => { e.stopPropagation(); onComplete(task.id); }} title="Concluir">
+           <div className="absolute top-2 right-2 hidden md:flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+             <Button variant="secondary" size="icon" className="h-8 w-8 bg-white/90 hover:bg-white shadow-sm" onClick={(e) => { e.stopPropagation(); onComplete(task.id); }} title="Concluir">
                <Check className="w-3.5 h-3.5 text-green-600" />
              </Button>
            </div>
@@ -108,24 +108,24 @@ export function KanbanCard({
         {/* Navigation Arrows (Hover) - Hide in compact */}
         {!isCompact && !isDragging && (
            <>
-             <div className="absolute -left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+             <div className="absolute -left-3 top-1/2 -translate-y-1/2 hidden md:block opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
                {task.status !== 'todo' && (
                  <Button
                    variant="outline"
                    size="icon"
-                   className="h-6 w-6 rounded-full bg-background shadow-md border hover:bg-accent"
+                   className="h-8 w-8 rounded-full bg-background shadow-md border hover:bg-accent"
                    onClick={(e) => { e.stopPropagation(); onMove(task.id, 'left'); }}
                  >
                    <ArrowLeft className="w-3 h-3" />
                  </Button>
                )}
              </div>
-             <div className="absolute -right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
+             <div className="absolute -right-3 top-1/2 -translate-y-1/2 hidden md:block opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20">
                {task.status !== 'done' && (
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-6 w-6 rounded-full bg-background shadow-md border hover:bg-accent"
+                    className="h-8 w-8 rounded-full bg-background shadow-md border hover:bg-accent"
                     onClick={(e) => { e.stopPropagation(); onMove(task.id, 'right'); }}
                   >
                     <ArrowRight className="w-3 h-3" />
@@ -136,7 +136,7 @@ export function KanbanCard({
         )}
 
         <div className="flex items-start gap-2 w-full">
-          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing", isCompact ? "mt-0.5" : "mt-1", dragHandleProps?.className)}>
+          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing flex h-11 w-8 items-center justify-center", isCompact ? "mt-0" : "mt-0.5", dragHandleProps?.className)}>
             <GripVertical className="w-4 h-4 text-muted-foreground/40" />
           </div>
 
@@ -153,7 +153,7 @@ export function KanbanCard({
                     <Star className={cn("w-3.5 h-3.5", task.marked_for_today ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40 hover:text-yellow-400")} />
                   </button>
                 )}
-                <p className="text-sm font-semibold text-foreground leading-tight truncate">
+                <p className="text-[14px] font-semibold text-foreground leading-tight truncate">
                    {task.title}
                 </p>
               </div>
@@ -163,10 +163,10 @@ export function KanbanCard({
             {/* Compact Mode Content */}
             {isCompact && (
                <div className="flex items-center gap-2 mt-1">
-                  <Badge className={cn("px-1.5 py-0 text-[9px] font-bold uppercase tracking-wide border-none", priority.badgeClass)}>
+                  <Badge className={cn("px-1.5 py-0 text-[12px] font-bold uppercase tracking-wide border-none", priority.badgeClass)}>
                     {priority.label}
                   </Badge>
-                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground ml-auto">
+                  <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground ml-auto">
                     <UserAvatar
                       name={getMember(task.assigned_to)?.full_name}
                       avatarUrl={getMember(task.assigned_to)?.avatar_url}
@@ -190,7 +190,7 @@ export function KanbanCard({
                <>
                   {/* Time in Stage */}
                   {timeInStage && (
-                    <div className={cn("flex items-center gap-1 text-[10px] font-medium mb-2 w-fit px-1.5 py-0.5 rounded", getTimeBadgeColor(timeInStage.days))}>
+                    <div className={cn("flex items-center gap-1 text-[12px] font-medium mb-2 w-fit px-1.5 py-0.5 rounded", getTimeBadgeColor(timeInStage.days))}>
                       <Clock className="w-3 h-3" />
                       {timeInStage.label}
                     </div>
@@ -198,26 +198,26 @@ export function KanbanCard({
 
                   {/* Process Info */}
                   {task.processo && (
-                    <div className="text-[11px] text-primary font-medium truncate mb-1">
+                    <div className="text-[13px] text-primary font-medium truncate mb-1">
                       {task.processo.numero}
                     </div>
                   )}
 
                   {/* Description Preview */}
                   {task.description && (
-                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                    <p className="text-[13px] text-muted-foreground mb-3 line-clamp-2">
                        {task.description}
                     </p>
                   )}
 
                   {/* Footer: Badges, Avatar, Date */}
                   <div className="flex items-center gap-2 flex-wrap mt-auto pt-2 border-t border-dashed">
-                    <Badge className={cn("px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide border-none gap-1", priority.badgeClass)}>
+                    <Badge className={cn("px-1.5 py-0.5 text-[12px] font-bold uppercase tracking-wide border-none gap-1", priority.badgeClass)}>
                       <PriorityIcon className="w-3 h-3" />
                       {priority.label}
                     </Badge>
 
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground ml-auto">
+                    <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground ml-auto">
                       <UserAvatar
                         name={getMember(task.assigned_to)?.full_name}
                         avatarUrl={getMember(task.assigned_to)?.avatar_url}

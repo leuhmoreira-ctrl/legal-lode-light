@@ -113,7 +113,7 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
         {/* Número do Processo */}
         <div className="space-y-1.5">
           <Label>Número do Processo (CNJ) *</Label>
@@ -124,7 +124,7 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
               onChange={(e) => setNumero(e.target.value)}
               className="pr-10"
             />
-            <div className="absolute right-3 top-2.5">
+            <div className="absolute right-3 top-3.5">
               {loadingAutofill && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
               {autofillData && <CheckCircle className="w-4 h-4 text-primary" />}
             </div>
@@ -206,13 +206,13 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
       </div>
 
       {/* Botões */}
-      <div className="p-4 border-t bg-background/50 backdrop-blur-sm mt-auto">
-        <div className="flex gap-3">
+      <div className="p-4 border-t bg-background/95 backdrop-blur-sm mt-auto sticky bottom-0 z-10">
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button type="submit" className="flex-1" disabled={submitting}>
             {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : 'Cadastrar Processo'}
           </Button>
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={onCancel}>
               Cancelar
             </Button>
           )}

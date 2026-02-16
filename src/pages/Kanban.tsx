@@ -23,6 +23,7 @@ import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { useAnimationOrigin } from "@/contexts/AnimationOriginContext";
 import { KanbanCard } from "@/components/kanban/KanbanCard";
 import { KanbanColumn } from "@/components/kanban/KanbanColumn";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { KanbanTask, TaskActivity, ViewMode, KANBAN_COLUMNS as COLUMNS } from "@/types/kanban";
 import { getStageEntryDate, getTaskStartDate, getTaskCompletionDate } from "@/utils/kanbanUtils";
@@ -36,6 +37,7 @@ interface KanbanProps {
 }
 
 export default function Kanban({ personalOnly = false }: KanbanProps) {
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { teamMembers, isAdmin } = usePermissions();
   const { toast } = useToast();
@@ -332,9 +334,9 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-up">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="mobile-page-title font-bold text-foreground">
               {personalOnly ? "Minhas Tarefas" : "Tarefas do Escritório"}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -342,12 +344,12 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               {personalOnly ? " atribuídas a você" : " no total"}
             </p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
              <div className="flex bg-muted p-1 rounded-lg border">
                 <Button
                    variant={viewMode === 'compact' ? 'secondary' : 'ghost'}
                    size="icon"
-                   className="h-7 w-7"
+                   className="h-11 w-11 sm:h-9 sm:w-9"
                    onClick={() => setViewMode('compact')}
                    title="Modo Compacto"
                 >
@@ -356,7 +358,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                 <Button
                    variant={viewMode === 'normal' ? 'secondary' : 'ghost'}
                    size="icon"
-                   className="h-7 w-7"
+                   className="h-11 w-11 sm:h-9 sm:w-9"
                    onClick={() => setViewMode('normal')}
                    title="Modo Normal"
                 >
@@ -368,10 +370,10 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
         </div>
 
         {/* Process filter */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={filtroProcesso} onValueChange={setFiltroProcesso}>
-            <SelectTrigger className="w-72">
+            <SelectTrigger className="w-full sm:w-72">
               <SelectValue placeholder="Filtrar por processo..." />
             </SelectTrigger>
             <SelectContent>
@@ -382,7 +384,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
             </SelectContent>
           </Select>
           {filtroProcesso && filtroProcesso !== "all" && (
-            <Button variant="ghost" size="sm" onClick={() => setFiltroProcesso("")}>
+            <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={() => setFiltroProcesso("")}>
               <X className="w-4 h-4 mr-1" /> Limpar
             </Button>
           )}
@@ -398,7 +400,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   Para Fazer Hoje ({todayTasks.length})
                 </h3>
-                <Button variant="ghost" size="sm" className="text-xs" onClick={async () => {
+                <Button variant="ghost" size="sm" className="text-[13px]" onClick={async () => {
                   await supabase.from("kanban_tasks").update({ marked_for_today: false, marked_for_today_at: null }).in("id", todayTasks.map(t => t.id));
                   loadTasks();
                 }}>Limpar lista</Button>
@@ -421,9 +423,16 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           </div>
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)] min-h-[500px]">
+            <div
+              className={cn(
+                "gap-4 lg:gap-6",
+                isMobile
+                  ? "grid grid-flow-col auto-cols-[85vw] overflow-x-auto snap-x snap-mandatory pb-2 min-h-[420px]"
+                  : "grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-250px)] min-h-[500px]"
+              )}
+            >
               {COLUMNS.map((col) => (
-                <div key={col.id} className="h-full">
+                <div key={col.id} className={cn("h-full", isMobile && "snap-start")}>
                   <KanbanColumn
                     id={col.id}
                     title={col.title}

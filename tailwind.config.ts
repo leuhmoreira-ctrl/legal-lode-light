@@ -13,6 +13,12 @@ export default {
       },
     },
     extend: {
+      screens: {
+        "mobile-sm": { max: "479px" },
+        mobile: "480px",
+        tablet: "768px",
+        desktop: "1024px",
+      },
       fontFamily: {
         sans: ["SF Pro Display", "SF Pro Text", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Inter", "sans-serif"],
       },

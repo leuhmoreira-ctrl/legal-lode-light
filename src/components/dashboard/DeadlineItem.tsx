@@ -131,11 +131,11 @@ export function DeadlineItem({ prazo }: DeadlineItemProps) {
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
       transition={{ duration: 0.2 }}
-      className="relative flex flex-col justify-between min-h-[85px] px-5 py-4 bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.06] rounded-xl mb-3 hover:border-blue-500/20 transition-all group"
+      className="relative flex flex-col justify-between min-h-[100px] px-4 sm:px-5 py-4 bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.06] rounded-xl mb-3 hover:border-blue-500/20 transition-all group"
     >
       {/* Row 1: Header Info */}
-      <div className="flex items-center gap-3 mb-2">
-        <Badge className={cn("px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider h-6 flex items-center gap-1 shrink-0", badgeVariant)}>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <Badge className={cn("px-2.5 py-0.5 text-[13px] font-bold uppercase tracking-wide h-6 flex items-center gap-1 shrink-0", badgeVariant)}>
           {statusIcon}
           {statusText}
         </Badge>
@@ -149,7 +149,7 @@ export function DeadlineItem({ prazo }: DeadlineItemProps) {
 
         <div className="flex items-center gap-2 min-w-0">
             <Icon className="w-4 h-4 text-[#86868B] shrink-0" />
-            <h3 className="text-[15px] font-bold text-[#1D1D1F] dark:text-white truncate">
+            <h3 className="text-[15px] sm:text-[16px] font-bold text-[#1D1D1F] dark:text-white truncate">
             {prazo.descricao}
             </h3>
         </div>
@@ -161,7 +161,7 @@ export function DeadlineItem({ prazo }: DeadlineItemProps) {
       </div>
 
       {/* Row 3: Footer Details */}
-      <div className="flex items-center justify-between mt-auto pt-2 border-t border-dashed border-gray-100 dark:border-gray-800">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-auto pt-2 border-t border-dashed border-gray-100 dark:border-gray-800">
          <div className="flex items-center gap-3">
             <Avatar className="w-8 h-8 ring-2 ring-white dark:ring-[#1C1C1E]">
                 <AvatarFallback className={cn("text-[10px] font-bold text-white", getAvatarColor(prazo.responsavel))}>
@@ -175,21 +175,21 @@ export function DeadlineItem({ prazo }: DeadlineItemProps) {
             </div>
          </div>
 
-         <div className="flex items-center gap-6">
+         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <span className="text-[13px] text-[#6E6E73] font-medium flex items-center gap-1.5">
                <Calendar className="w-3.5 h-3.5 text-[#86868B]" />
                {format(dueDate, "dd/MM")}
             </span>
 
             {/* Progress Bar */}
-             <div className="flex items-center gap-2 w-[120px]">
+             <div className="flex items-center gap-2 w-full sm:w-[120px]">
                 <div className="flex-1 h-1.5 bg-[#E5E5EA] dark:bg-[#38383A] rounded-full overflow-hidden">
                    <div
                       className={cn("h-full rounded-full transition-all duration-1000 ease-out", progressClass)}
                       style={{ width: `${progress}%` }}
                    />
                 </div>
-                <span className="text-[11px] font-medium text-[#86868B] w-8 text-right">{Math.round(progress)}%</span>
+                <span className="text-[13px] font-medium text-[#86868B] w-9 text-right">{Math.round(progress)}%</span>
              </div>
          </div>
       </div>

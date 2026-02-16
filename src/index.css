@@ -90,6 +90,12 @@
     --status-error-bg: rgba(255, 59, 48, 0.12);
     --status-error-text: #FF3B30;
     --status-error-border: transparent;
+
+    /* Responsive spacing variables */
+    --app-container-x: 16px;
+    --app-container-top: calc(env(safe-area-inset-top, 0px) + 64px);
+    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    --section-gap: 32px;
   }
 
   .dark {
@@ -182,9 +188,23 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI', 'Inter', sans-serif;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Scrollbar - macOS Style */
@@ -369,6 +389,89 @@
 
   .bg-gradient-audience {
     background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+  }
+
+  .mobile-page-title {
+    font-size: clamp(24px, 6vw, 34px);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .mobile-page-subtitle {
+    font-size: clamp(14px, 3.8vw, 16px);
+    line-height: 1.55;
+  }
+}
+
+@media (max-width: 479px) {
+  :root {
+    --app-container-x: 12px;
+    --app-container-top: calc(env(safe-area-inset-top, 0px) + 60px);
+    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+    --section-gap: 28px;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  :root {
+    --app-container-x: 16px;
+    --app-container-top: calc(env(safe-area-inset-top, 0px) + 64px);
+    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
+    --section-gap: 32px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  :root {
+    --app-container-x: 24px;
+    --app-container-top: 24px;
+    --app-container-bottom: 28px;
+    --section-gap: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-container-x: 32px;
+    --app-container-top: 24px;
+    --app-container-bottom: 32px;
+    --section-gap: 48px;
+  }
+}
+
+@media (max-width: 767px) {
+  .apple-card {
+    border-radius: 12px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .apple-card:hover {
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .text-\[10px\],
+  .text-\[11px\],
+  .text-\[12px\],
+  .text-xs {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .text-sm {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

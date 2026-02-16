@@ -31,6 +31,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { CountUp } from "@/components/ui/count-up";
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const faseData = [
   { name: "Conhecimento", value: 3 },
@@ -76,6 +77,7 @@ const statusClass: Record<string, string> = {
 
 export default function Dashboard() {
   const hoje = new Date();
+  const isMobile = useIsMobile();
   const { user } = useAuth();
   const { teamMembers } = usePermissions();
   const [todayTasks, setTodayTasks] = useState<any[]>([]);
@@ -110,11 +112,11 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-8 animate-fade-up pb-8">
+      <div className="space-y-6 md:space-y-8 animate-fade-up pb-8">
         {/* Header */}
         <div>
-          <h1 className="text-[34px] font-bold tracking-[-0.7px] text-[#1D1D1F] dark:text-white">Dashboard</h1>
-          <p className="text-[15px] font-normal tracking-[-0.2px] text-[#6E6E73] dark:text-white/60 mt-1 flex items-center gap-2">
+          <h1 className="mobile-page-title font-bold text-[#1D1D1F] dark:text-white">Dashboard</h1>
+          <p className="mobile-page-subtitle font-normal text-[#6E6E73] dark:text-white/60 mt-1 flex flex-wrap items-center gap-2">
             Visão geral do escritório <span className="text-[#86868B]">•</span> {format(hoje, "EEEE, d 'de' MMMM", { locale: ptBR })}
           </p>
         </div>
@@ -128,18 +130,18 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 fill-[#FF9500] text-[#FF9500]" />
-              <h3 className="text-[20px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">Meu Foco Hoje</h3>
+              <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">Meu Foco Hoje</h3>
             </div>
             <div className="grid grid-cols-1 gap-3">
               {todayTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="group flex items-center gap-3 p-4 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.08] hover:border-blue-500/20 transition-all duration-200 hover:translate-x-1 cursor-pointer"
+                  className="group flex items-center gap-3 p-4 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.08] hover:border-blue-500/20 transition-all duration-200 md:hover:translate-x-1 cursor-pointer"
                 >
                   <Star className="w-4 h-4 text-[#FF9500]" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[17px] font-medium tracking-[-0.4px] text-[#1D1D1F] dark:text-white truncate">{task.title}</p>
-                    <p className="text-[13px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-0.5">
+                    <p className="text-[16px] sm:text-[17px] font-medium tracking-[-0.3px] text-[#1D1D1F] dark:text-white truncate">{task.title}</p>
+                    <p className="text-[13px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-0.5">
                       {getMemberName(task.assigned_to)} <span className="text-[#86868B] mx-1">•</span> {task.due_date && format(new Date(task.due_date), "dd/MM")}
                     </p>
                   </div>
@@ -161,7 +163,7 @@ export default function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Prazos Urgentes */}
-          <div className="apple-card p-6 group cursor-pointer">
+          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
@@ -172,7 +174,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={prazosUrgentes.length} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
@@ -184,7 +186,7 @@ export default function Dashboard() {
           </div>
 
           {/* Processos Ativos */}
-          <div className="apple-card p-6 group cursor-pointer">
+          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
@@ -195,7 +197,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={processosMock.length} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
@@ -207,7 +209,7 @@ export default function Dashboard() {
           </div>
 
           {/* Tarefas Pendentes */}
-          <div className="apple-card p-6 group cursor-pointer">
+          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
@@ -218,7 +220,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={tarefasPendentes.length} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
@@ -230,7 +232,7 @@ export default function Dashboard() {
           </div>
 
           {/* Audiências */}
-          <div className="apple-card p-6 group cursor-pointer">
+          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
@@ -241,7 +243,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={2} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
@@ -255,30 +257,30 @@ export default function Dashboard() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="apple-card p-6 lg:col-span-2">
-            <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-6 tracking-[-0.4px]">
+          <div className="apple-card p-4 sm:p-6 lg:col-span-2">
+            <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-5 sm:mb-6 tracking-[-0.3px]">
               Produtividade Mensal
             </h3>
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
               <BarChart data={produtividadeData} barGap={16}>
                 <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" strokeDasharray="0" />
                 <XAxis
                   dataKey="mes"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 13, fill: '#6E6E73', fontWeight: 500 }}
+                  tick={{ fontSize: isMobile ? 11 : 13, fill: '#6E6E73', fontWeight: 500 }}
                   dy={10}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 12, fill: '#86868B', fontWeight: 500 }}
+                  tick={{ fontSize: isMobile ? 10 : 12, fill: '#86868B', fontWeight: 500 }}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
-                <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={32}>
+                <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={isMobile ? 22 : 32}>
                   {produtividadeData.map((_, index) => (
                     <Cell
                       key={index}
@@ -291,11 +293,11 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          <div className="apple-card p-6 flex flex-col">
-            <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-6 tracking-[-0.4px]">
+          <div className="apple-card p-4 sm:p-6 flex flex-col">
+            <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-5 sm:mb-6 tracking-[-0.3px]">
               Processos por Fase
             </h3>
-            <div className="flex-1 min-h-[200px]">
+            <div className="flex-1 min-h-[160px] sm:min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -344,12 +346,12 @@ export default function Dashboard() {
           <UpcomingDeadlines />
 
           {/* Movimentações Recentes */}
-          <div className="apple-card p-6">
+          <div className="apple-card p-4 sm:p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.4px]">
+              <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.3px]">
                 Movimentações Recentes
               </h3>
-              <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[12px] font-medium">
+              <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[13px] font-medium">
                 Últimas 3
               </span>
             </div>

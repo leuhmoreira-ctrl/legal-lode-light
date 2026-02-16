@@ -141,17 +141,17 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" /> Nova Tarefa
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg h-[90vh] p-0 overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b">
+      <DialogContent className="w-full max-w-lg h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">
+        <div className="px-4 sm:px-6 py-4 border-b bg-background sticky top-0 z-10">
           <DialogHeader className="p-0">
             <DialogTitle>Criar Nova Tarefa</DialogTitle>
           </DialogHeader>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <form id="nova-tarefa-form" onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label>Título *</Label>
@@ -163,7 +163,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
               <Textarea placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Prioridade</Label>
                 <Select value={prioridade} onValueChange={setPrioridade}>
@@ -212,21 +212,21 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
             <div className="border-t pt-4 space-y-3">
               <Label className="text-sm font-semibold">Tipo de Evento *</Label>
               <RadioGroup value={eventCategory} onValueChange={(v) => setEventCategory(v as any)}>
-                <div className="flex items-center space-x-2">
+                <div className="flex min-h-[44px] items-center space-x-2">
                   <RadioGroupItem value="processual" id="cat-processual" />
                   <Label htmlFor="cat-processual" className="font-normal cursor-pointer flex items-center gap-1.5">
                     <Scale className="h-3.5 w-3.5 text-orange-500" /> Prazo Processual
                     <span className="text-[10px] text-muted-foreground ml-1">— vinculado a processo judicial</span>
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex min-h-[44px] items-center space-x-2">
                   <RadioGroupItem value="escritorio" id="cat-escritorio" />
                   <Label htmlFor="cat-escritorio" className="font-normal cursor-pointer flex items-center gap-1.5">
                     <Briefcase className="h-3.5 w-3.5 text-blue-500" /> Escritório
                     <span className="text-[10px] text-muted-foreground ml-1">— visível para toda a equipe</span>
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex min-h-[44px] items-center space-x-2">
                   <RadioGroupItem value="pessoal" id="cat-pessoal" />
                   <Label htmlFor="cat-pessoal" className="font-normal cursor-pointer flex items-center gap-1.5">
                     <UserRound className="h-3.5 w-3.5 text-violet-500" /> Pessoal
@@ -240,14 +240,14 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
             <div className="border-t pt-4 space-y-3">
               <Label className="text-sm font-semibold">Vincular a Processo (opcional)</Label>
               <RadioGroup value={vinculoOpcao} onValueChange={(v) => { setVinculoOpcao(v); if (v === "nenhum") setProcessoSelecionado(""); }}>
-                <div className="flex items-center space-x-2">
+                <div className="flex min-h-[44px] items-center space-x-2">
                   <RadioGroupItem value="nenhum" id="nenhum" />
                   <Label htmlFor="nenhum" className="font-normal cursor-pointer flex items-center gap-1.5">
                     <X className="h-3.5 w-3.5" /> Não vincular
                   </Label>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex min-h-[44px] items-center space-x-2">
                   <RadioGroupItem value="existente" id="existente" />
                   <Label htmlFor="existente" className="font-normal cursor-pointer flex items-center gap-1.5">
                     <Link2 className="h-3.5 w-3.5" /> Processo existente
@@ -269,7 +269,7 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
                   </div>
                 )}
 
-                <div className="flex items-center space-x-2">
+                <div className="flex min-h-[44px] items-center space-x-2">
                   <RadioGroupItem value="novo" id="novo" />
                   <Label htmlFor="novo" className="font-normal cursor-pointer flex items-center gap-1.5">
                     <PlusCircle className="h-3.5 w-3.5" /> Criar novo processo
@@ -287,8 +287,8 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
                             <PlusCircle className="h-3.5 w-3.5" /> Cadastrar Processo
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl h-[90vh] p-0 overflow-hidden flex flex-col">
-                          <div className="px-6 py-4 border-b">
+                        <DialogContent className="w-full max-w-3xl h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">
+                          <div className="px-4 sm:px-6 py-4 border-b">
                             <DialogHeader className="p-0">
                               <DialogTitle>Cadastrar Novo Processo</DialogTitle>
                             </DialogHeader>
@@ -308,8 +308,8 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
             </div>
           </form>
         </div>
-        <div className="p-4 border-t bg-background/50 backdrop-blur-sm">
-          <div className="flex gap-3">
+        <div className="p-4 border-t bg-background/95 backdrop-blur-sm sticky bottom-0 z-10">
+          <div className="flex flex-col-reverse sm:flex-row gap-3">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
               Cancelar
             </Button>

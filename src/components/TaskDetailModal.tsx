@@ -392,8 +392,8 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
-        <div className="overflow-y-auto max-h-[90vh]">
+      <DialogContent className="w-full max-w-4xl h-[100dvh] sm:max-h-[90vh] overflow-hidden p-0">
+        <div className="overflow-y-auto h-full sm:max-h-[90vh]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -403,7 +403,7 @@ export function TaskDetailModal({
         ) : (
           <>
             {/* Header */}
-            <DialogHeader className="p-6 pb-0">
+            <DialogHeader className="p-4 sm:p-6 pb-0 sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
               {editingTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
@@ -429,12 +429,12 @@ export function TaskDetailModal({
 
             {/* Process Info Card */}
             {task.processo_id && (
-              <div className="px-6 pt-3">
+              <div className="px-4 sm:px-6 pt-3">
                 <ProcessInfoCard processoId={task.processo_id} />
               </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6 p-6 pt-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6 p-4 sm:p-6 pt-4">
               {/* Main column */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Description */}
@@ -455,7 +455,7 @@ export function TaskDetailModal({
                   {editingDesc ? (
                     <div className="space-y-2">
                       <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={4} autoFocus />
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Button size="sm" onClick={handleSaveDesc}>Salvar</Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditingDesc(false); setEditDesc(task.description || ""); }}>Cancelar</Button>
                       </div>
@@ -482,12 +482,12 @@ export function TaskDetailModal({
                   {checklist.length > 0 && <Progress value={checklistProgress} className="h-2 mb-3" />}
                   <div className="space-y-2 mb-3">
                     {checklist.map((item) => (
-                      <div key={item.id} className="flex items-center gap-2 group">
+                      <div key={item.id} className="flex min-h-[44px] items-center gap-2 group">
                         <Checkbox checked={item.completed} onCheckedChange={() => handleToggleCheck(item)} />
                         <span className={`flex-1 text-sm ${item.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>
                           {item.title}
                         </span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteCheckItem(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-8 sm:w-8 opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={() => handleDeleteCheckItem(item.id)}>
                           <Trash2 className="w-3 h-3 text-destructive" />
                         </Button>
                       </div>
@@ -556,7 +556,7 @@ export function TaskDetailModal({
               </div>
 
               {/* Sidebar */}
-              <div className="space-y-5 lg:border-l lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0">
+              <div className="space-y-5 lg:border-l lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0 pb-4">
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</h4>
                   <Select value={task.status} onValueChange={handleStatusChange}>

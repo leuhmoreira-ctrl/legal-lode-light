@@ -195,16 +195,16 @@ export default function Processos() {
       <div className="space-y-6 animate-fade-up">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Processos</h1>
+            <h1 className="mobile-page-title font-bold text-foreground">Processos</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {filtered.length} processo{filtered.length !== 1 ? "s" : ""} cadastrado{filtered.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full sm:w-auto gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9"
+              className="h-11 w-11 sm:h-9 sm:w-9"
               disabled={syncMutation.isPending || processos.length === 0}
               onClick={handleSyncAll}
               title={syncMutation.isPending ? "Sincronizando..." : "Atualizar Todos"}
@@ -213,12 +213,12 @@ export default function Processos() {
             </Button>
             <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
+                <Button className="gap-2 w-full sm:w-auto">
                   <Plus className="w-4 h-4" /> Novo Processo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl h-[90vh] p-0 overflow-hidden flex flex-col">
-                <div className="px-6 py-4 border-b">
+              <DialogContent className="w-full max-w-2xl h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">
+                <div className="px-4 sm:px-6 py-4 border-b">
                   <DialogHeader className="p-0">
                     <DialogTitle>Cadastrar Novo Processo</DialogTitle>
                   </DialogHeader>
@@ -263,18 +263,18 @@ export default function Processos() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col lg:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
             <Input
               placeholder="Buscar por número, cliente ou advogado..."
-              className="pl-9"
+              className="pl-10"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
           <Select value={faseFilter} onValueChange={setFaseFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full lg:w-[220px]">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Fase" />
             </SelectTrigger>
@@ -286,10 +286,10 @@ export default function Processos() {
               <SelectItem value="Encerrado">Encerrado</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex gap-2 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center w-full lg:w-auto">
              <Input
                type="date"
-               className="w-auto"
+               className="w-full"
                value={dateStart}
                onChange={e => setDateStart(e.target.value)}
                title="Data Início (Última Movimentação)"
@@ -297,7 +297,7 @@ export default function Processos() {
              <span className="text-muted-foreground">-</span>
              <Input
                type="date"
-               className="w-auto"
+               className="w-full"
                value={dateEnd}
                onChange={e => setDateEnd(e.target.value)}
                title="Data Fim (Última Movimentação)"
@@ -338,9 +338,9 @@ export default function Processos() {
 
               return (
                 <Card key={proc.id} className="apple-card p-0 cursor-pointer overflow-hidden border-border/60" onClick={() => navigate(`/processos/${proc.id}`)}>
-                  <div className="p-5">
+                  <div className="p-4 sm:p-5">
                     {/* Header */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 shrink-0">
                           <FileText className="w-5 h-5 text-primary" />
@@ -369,7 +369,7 @@ export default function Processos() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-row sm:flex-col items-start sm:items-end gap-2">
                         <DiasParadoBadge ultimaMovimentacao={proc.ultima_movimentacao} />
                         {proc.sigla_tribunal && (
                           <div className="flex items-center gap-1">
@@ -387,7 +387,7 @@ export default function Processos() {
                     </div>
 
                     {/* Content Body */}
-                    <div className="mt-4 pl-12">
+                    <div className="mt-4 pl-0 sm:pl-12">
                       {proc.ultima_movimentacao ? (
                         <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                           <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
@@ -409,11 +409,11 @@ export default function Processos() {
                   </div>
 
                   {/* Footer Actions */}
-                  <div className="flex items-center justify-between bg-muted/30 px-5 py-3 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-muted/30 px-4 sm:px-5 py-3 border-t border-border/50" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                        <span className="font-medium">Responsável:</span> {proc.advogado}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
 
                     {syncResult && (
                       <Dialog
@@ -421,18 +421,18 @@ export default function Processos() {
                         onOpenChange={(open) => setDialogOpen(open ? proc.id : null)}
                       >
                         <DialogTrigger asChild>
-                          <Button variant="secondary" size="sm" className="h-8 text-xs gap-1.5">
+                          <Button variant="secondary" size="sm" className="h-11 sm:h-10 text-[13px] gap-1.5 w-full sm:w-auto">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Ver Movimentações
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh] p-0 overflow-hidden flex flex-col">
-                          <div className="px-6 py-4 border-b">
+                        <DialogContent className="w-full max-w-2xl max-h-[100dvh] sm:max-h-[80vh] p-0 overflow-hidden flex flex-col">
+                          <div className="px-4 sm:px-6 py-4 border-b">
                             <DialogHeader className="p-0">
                               <DialogTitle className="text-lg">Movimentações — {proc.numero}</DialogTitle>
                             </DialogHeader>
                           </div>
-                          <div className="flex-1 overflow-y-auto p-6">
+                          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                             <div className="space-y-2">
                               <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                                 <div>
@@ -480,18 +480,18 @@ export default function Processos() {
                       onOpenChange={(open) => setDocsDialogOpen(open ? proc.id : null)}
                     >
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                        <Button variant="outline" size="sm" className="h-11 sm:h-10 text-[13px] gap-1.5 w-full sm:w-auto">
                           <Paperclip className="w-3.5 h-3.5" />
                           Documentos
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-3xl h-[90vh] p-0 overflow-hidden flex flex-col">
-                        <div className="px-6 py-4 border-b">
+                      <DialogContent className="w-full max-w-3xl h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">
+                        <div className="px-4 sm:px-6 py-4 border-b">
                           <DialogHeader className="p-0">
                             <DialogTitle>Documentos — {proc.numero}</DialogTitle>
                           </DialogHeader>
                         </div>
-                        <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                        <div className="flex-1 overflow-hidden p-4 sm:p-6 flex flex-col">
                           <Tabs defaultValue="list" className="flex-1 flex flex-col overflow-hidden">
                             <TabsList className="shrink-0">
                               <TabsTrigger value="list">Documentos</TabsTrigger>
@@ -515,7 +515,7 @@ export default function Processos() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 opacity-50 hover:opacity-100"
+                      className="h-11 w-11 sm:h-9 sm:w-9 opacity-60 hover:opacity-100"
                       onClick={() => setEditTarget(proc)}
                       title="Editar processo"
                     >

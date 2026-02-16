@@ -6,11 +6,11 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-[17px] font-semibold tracking-[-0.4px] ring-offset-background transition-all duration-200 ease-apple-ease focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-[16px] font-semibold tracking-[-0.3px] ring-offset-background transition-all duration-200 ease-apple-ease focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "btn-primary-light dark:btn-primary-dark hover:-translate-y-px",
+        default: "btn-primary-light dark:btn-primary-dark md:hover:-translate-y-px",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-md",
         outline:
@@ -21,8 +21,8 @@ const buttonVariants = cva(
         link: "text-blue underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-[44px] px-[22px] py-[11px]",
-        sm: "h-[36px] rounded-md px-3 text-[13px]",
+        default: "min-h-[44px] min-w-[44px] px-5 py-3",
+        sm: "min-h-[44px] min-w-[44px] rounded-md px-4 text-[14px]",
         lg: "h-[50px] rounded-xl px-8 text-[17px]",
         icon: "h-[44px] w-[44px]",
       },

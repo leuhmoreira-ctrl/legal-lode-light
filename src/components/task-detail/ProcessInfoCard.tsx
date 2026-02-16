@@ -54,7 +54,7 @@ export function ProcessInfoCard({ processoId }: ProcessInfoCardProps) {
 
   return (
     <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="flex items-center gap-2">
           <Scale className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">Processo Vinculado</span>
@@ -62,7 +62,7 @@ export function ProcessInfoCard({ processoId }: ProcessInfoCardProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="gap-1 text-xs text-primary hover:text-primary"
+          className="gap-1 text-[13px] text-primary hover:text-primary w-full sm:w-auto justify-start sm:justify-center"
           onClick={() => navigate("/processos")}
         >
           Ver processo <ArrowRight className="w-3 h-3" />
@@ -71,7 +71,7 @@ export function ProcessInfoCard({ processoId }: ProcessInfoCardProps) {
 
       <p className="text-sm font-mono font-medium text-foreground">{processo.numero}</p>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
         <div>
           <span className="text-muted-foreground">Autor:</span>{" "}
           <span className="font-medium text-foreground">{processo.cliente}</span>

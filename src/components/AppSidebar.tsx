@@ -20,8 +20,6 @@ import {
   Sun,
   Moon,
   Laptop,
-  Mail,
-  Bell,
   Menu,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -170,7 +168,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
   };
 
   const linkClass = cn(
-    "flex items-center gap-3 px-3 py-3 rounded-lg text-sm transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    "flex min-h-12 items-center gap-3 rounded-lg px-4 py-3 text-[14px] transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
     collapsed && "justify-center px-0"
   );
 
@@ -179,16 +177,16 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border/50 relative">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0">
+      <div className={cn("flex items-center gap-3 border-b border-sidebar-border/50 relative", isMobile ? "h-16 px-4" : "h-20 px-6")}>
+        <div className={cn("flex items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0", isMobile ? "w-9 h-9" : "w-10 h-10")}>
           <Gavel className="w-5 h-5 text-primary-foreground" />
         </div>
         {!collapsed && (
           <div className="animate-fade-in-scale flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">
+            <h1 className="text-[18px] font-bold text-sidebar-foreground tracking-tight">
               JurisControl
             </h1>
-            <p className="text-[11px] text-sidebar-foreground/60 font-medium">
+            <p className="text-[13px] text-sidebar-foreground/60 font-medium">
               Gestão Jurídica
             </p>
           </div>
@@ -198,19 +196,19 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
 
       {/* Search */}
       {!collapsed && (
-        <div className="px-4 py-4">
+        <div className="px-4 py-3">
           <div className="relative group">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-sidebar-foreground/40 group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-3 top-3.5 h-5 w-5 text-sidebar-foreground/40 group-focus-within:text-primary transition-colors" />
             <Input
               placeholder="Buscar..."
-              className="h-10 pl-9 text-sm bg-sidebar-muted/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 focus-visible:bg-sidebar-muted focus-visible:ring-primary/30"
+              className="h-12 pl-10 text-[15px] bg-sidebar-muted/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 focus-visible:bg-sidebar-muted focus-visible:ring-primary/30"
             />
           </div>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-2 space-y-1.5 overflow-y-auto">
         {/* Main items */}
         {mainNavItems.map((item) => (
           <NavLink
@@ -228,7 +226,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
 
         {/* Escritório group */}
         <div className="pt-4 mt-2 border-t border-sidebar-border/30">
-          {!collapsed && <p className="px-4 pb-2 text-[10px] font-bold uppercase tracking-wider text-sidebar-foreground/40">Gestão</p>}
+          {!collapsed && <p className="px-4 pb-2 text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40">Gestão</p>}
           <button
             onClick={() => setEscritorioOpen(!escritorioOpen)}
             className={cn(
@@ -266,12 +264,12 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                     <div className="flex items-center justify-between flex-1 min-w-0">
                       <span>{item.title}</span>
                       {item.title === "Processos" && myProcessCount > 0 && (
-                        <span className="bg-primary/20 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        <span className="bg-primary/20 text-primary text-[12px] font-bold px-2 py-0.5 rounded-full">
                           {myProcessCount}
                         </span>
                       )}
                       {item.title === "Notificações" && unreadNotifications > 0 && (
-                        <span className="bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                        <span className="bg-destructive text-destructive-foreground text-[12px] font-bold px-2 py-0.5 rounded-full">
                           {unreadNotifications}
                         </span>
                       )}
@@ -316,7 +314,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-sidebar-accent transition-all duration-200 group",
+                "flex min-h-12 items-center gap-3 w-full p-2 rounded-xl hover:bg-sidebar-accent transition-all duration-200 group",
                 collapsed && "justify-center p-0"
               )}
             >
@@ -332,7 +330,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                     {profile?.full_name || user?.email}
                   </span>
                   {role && (
-                    <Badge variant="outline" className={`text-[9px] px-1.5 py-0 mt-0.5 h-4 border-sidebar-border text-sidebar-foreground/70 bg-sidebar-muted/30`}>
+                    <Badge variant="outline" className={`text-[11px] px-2 py-0 mt-0.5 h-5 border-sidebar-border text-sidebar-foreground/70 bg-sidebar-muted/30`}>
                       {roleLabels[role]}
                     </Badge>
                   )}
@@ -415,12 +413,12 @@ export function AppSidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="fixed top-4 left-4 z-50 bg-sidebar-background/80 backdrop-blur-sm text-sidebar-foreground shadow-md hover:bg-sidebar-background border border-sidebar-border"
+              className="fixed left-3 top-[max(12px,env(safe-area-inset-top))] z-50 h-11 w-11 bg-sidebar-background/80 backdrop-blur-sm text-sidebar-foreground shadow-md hover:bg-sidebar-background border border-sidebar-border"
             >
               <Menu className="w-5 h-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground">
+          <SheetContent side="left" className="p-0 w-[80vw] max-w-[320px] border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground">
             <SidebarContent
               collapsed={false}
               isMobile={true}

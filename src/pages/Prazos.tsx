@@ -242,17 +242,17 @@ export default function Prazos() {
         {/* Header with segmented control */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Prazos</h1>
+            <h1 className="mobile-page-title font-bold text-foreground">Prazos</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Calendário e controle de prazos processuais
             </p>
           </div>
 
-          <div className="flex items-center rounded-lg bg-muted p-1 gap-1">
+          <div className="flex items-center rounded-lg bg-muted p-1 gap-1 w-full sm:w-auto">
             <button
               onClick={() => setViewMode("personal")}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
+                "min-h-[44px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-[14px] font-medium transition-all",
                 viewMode === "personal"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -265,7 +265,7 @@ export default function Prazos() {
               <button
                 onClick={() => setViewMode("office")}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
+                  "min-h-[44px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-[14px] font-medium transition-all",
                   viewMode === "office"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -279,7 +279,7 @@ export default function Prazos() {
         </div>
 
         {/* Category Filters */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           {(Object.entries(CATEGORY_CONFIG) as [EventCategory, typeof CATEGORY_CONFIG[EventCategory]][]).map(
             ([key, cfg]) => {
               const Icon = cfg.icon;
@@ -288,7 +288,7 @@ export default function Prazos() {
                 <label
                   key={key}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-all select-none",
+                    "flex min-h-[44px] items-center gap-2 px-3 py-2 rounded-full border text-[14px] cursor-pointer transition-all select-none",
                     filters[key]
                       ? cfg.badgeClass
                       : "bg-muted/50 text-muted-foreground border-border opacity-60"
@@ -297,11 +297,11 @@ export default function Prazos() {
                   <Checkbox
                     checked={filters[key]}
                     onCheckedChange={() => toggleFilter(key)}
-                    className="h-3.5 w-3.5"
+                    className="h-4 w-4"
                   />
                   <Icon className="w-3.5 h-3.5" />
                   <span className="font-medium">{cfg.label}</span>
-                  <span className="text-xs opacity-70">({count})</span>
+                  <span className="text-[13px] opacity-70">({count})</span>
                 </label>
               );
             }
@@ -309,47 +309,47 @@ export default function Prazos() {
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Card className="p-4">
-            <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+            <p className="text-[13px] text-muted-foreground">Total</p>
+            <p className="text-[28px] font-bold text-foreground">{stats.total}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-muted-foreground">Hoje</p>
-            <p className="text-2xl font-bold text-primary">{stats.today}</p>
+            <p className="text-[13px] text-muted-foreground">Hoje</p>
+            <p className="text-[28px] font-bold text-primary">{stats.today}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-muted-foreground">Atrasados</p>
-            <p className="text-2xl font-bold text-destructive">{stats.overdue}</p>
+            <p className="text-[13px] text-muted-foreground">Atrasados</p>
+            <p className="text-[28px] font-bold text-destructive">{stats.overdue}</p>
           </Card>
           <Card className="p-4">
-            <p className="text-xs text-muted-foreground">Próximos</p>
-            <p className="text-2xl font-bold text-foreground">{stats.upcoming}</p>
+            <p className="text-[13px] text-muted-foreground">Próximos</p>
+            <p className="text-[28px] font-bold text-foreground">{stats.upcoming}</p>
           </Card>
         </div>
 
         <Tabs defaultValue="calendario">
-          <TabsList>
-            <TabsTrigger value="calendario">Calendário</TabsTrigger>
-            <TabsTrigger value="lista">Lista</TabsTrigger>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="calendario" className="flex-1 sm:flex-none">Calendário</TabsTrigger>
+            <TabsTrigger value="lista" className="flex-1 sm:flex-none">Lista</TabsTrigger>
           </TabsList>
 
           <TabsContent value="calendario" className="mt-4">
-            <Card className="p-5">
+            <Card className="p-4 sm:p-5">
               {/* Month nav */}
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                  className="p-1 rounded hover:bg-muted"
+                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded hover:bg-muted"
                 >
                   <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                 </button>
-                <h3 className="text-sm font-semibold text-foreground capitalize">
+                <h3 className="text-[14px] sm:text-[15px] font-semibold text-foreground capitalize">
                   {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
                 </h3>
                 <button
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                  className="p-1 rounded hover:bg-muted"
+                  className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded hover:bg-muted"
                 >
                   <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 </button>
@@ -360,7 +360,7 @@ export default function Prazos() {
                 {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
                   <div
                     key={d}
-                    className="text-center text-[10px] font-medium text-muted-foreground py-1"
+                    className="text-center text-[13px] font-medium text-muted-foreground py-1"
                   >
                     {d}
                   </div>
@@ -379,7 +379,7 @@ export default function Prazos() {
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        "h-24 rounded-lg p-1.5 text-xs border transition-colors",
+                        "h-24 rounded-lg p-1.5 text-[13px] border transition-colors",
                         isToday
                           ? "border-primary bg-primary/5"
                           : "border-transparent hover:bg-muted/50"
@@ -400,7 +400,7 @@ export default function Prazos() {
                             <div
                               key={ev.id}
                               className={cn(
-                                "flex items-center gap-1 px-1 py-0.5 rounded text-[9px] truncate cursor-pointer hover:opacity-80 transition-opacity",
+                                "flex min-h-[20px] items-center gap-1 px-1 py-0.5 rounded text-[11px] truncate cursor-pointer hover:opacity-80 transition-opacity",
                                 cfg.badgeClass
                               )}
                               onClick={() => setSelectedEvent(ev)}
@@ -413,7 +413,7 @@ export default function Prazos() {
                           );
                         })}
                         {dayEvents.length > 2 && (
-                          <span className="text-[9px] text-muted-foreground">
+                          <span className="text-[11px] text-muted-foreground">
                             +{dayEvents.length - 2} mais
                           </span>
                         )}
@@ -429,7 +429,7 @@ export default function Prazos() {
                   ([key, cfg]) => {
                     const Icon = cfg.icon;
                     return (
-                      <div key={key} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <div key={key} className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
                         <div className={cn("w-2.5 h-2.5 rounded-full", cfg.dotClass)} />
                         <Icon className="w-3 h-3" />
                         <span>{cfg.label}</span>
@@ -462,10 +462,10 @@ export default function Prazos() {
                       className="p-4 cursor-pointer hover:shadow-md transition-shadow"
                       onClick={() => setSelectedEvent(ev)}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                         <div
                           className={cn(
-                            "mt-0.5 px-2 py-1 rounded text-[10px] font-semibold border",
+                            "mt-0.5 px-2 py-1 rounded text-[13px] font-semibold border w-fit",
                             urgencyBg[ev.urgency]
                           )}
                         >
@@ -473,32 +473,32 @@ export default function Prazos() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-sm font-medium text-foreground">
+                            <span className="text-[15px] font-medium text-foreground">
                               {ev.title}
                             </span>
                             <Badge
                               variant="outline"
-                              className={cn("text-[10px] gap-1", cfg.badgeClass)}
+                              className={cn("text-[13px] gap-1", cfg.badgeClass)}
                             >
                               <Icon className="w-3 h-3" />
                               {cfg.label}
                             </Badge>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-[13px] text-muted-foreground mt-1">
                             {ev.processoNumero && `Processo: ${ev.processoNumero} • `}
                             {ev.responsavel && `Responsável: ${ev.responsavel}`}
                           </p>
                           {ev.observacoes && (
-                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
+                            <p className="text-[13px] text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
                               💡 {ev.observacoes}
                             </p>
                           )}
                         </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-semibold text-foreground">
+                        <div className="text-left sm:text-right shrink-0">
+                          <p className="text-[15px] font-semibold text-foreground">
                             {format(ev.date, "dd/MM/yyyy")}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[13px] text-muted-foreground">
                             {format(ev.date, "EEEE", { locale: ptBR })}
                           </p>
                         </div>
@@ -542,16 +542,16 @@ function EventDetailDialog({
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className={cn("text-xs gap-1", cfg.badgeClass)}>
+            <Badge variant="outline" className={cn("text-[13px] gap-1", cfg.badgeClass)}>
               <Icon className="w-3 h-3" />
               {cfg.label}
             </Badge>
             <Badge
               variant="outline"
-              className={cn("text-[10px]", urgencyBg[event.urgency])}
+              className={cn("text-[13px]", urgencyBg[event.urgency])}
             >
               {urgencyLabel[event.urgency]}
             </Badge>
@@ -571,7 +571,7 @@ function EventDetailDialog({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px]">
             <div>
               <span className="text-muted-foreground">Data:</span>{" "}
               <span className="font-medium text-foreground">
@@ -595,7 +595,7 @@ function EventDetailDialog({
           </div>
 
           {event.category === "pessoal" && (
-            <Badge variant="secondary" className="text-[10px]">🔒 Privado</Badge>
+            <Badge variant="secondary" className="text-[13px]">🔒 Privado</Badge>
           )}
         </div>
       </DialogContent>
