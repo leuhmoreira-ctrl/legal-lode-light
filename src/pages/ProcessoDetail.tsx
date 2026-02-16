@@ -21,7 +21,7 @@ import { differenceInDays, format } from "date-fns";
 // V2 Components
 import { ProcessHeader } from "@/components/processo-detail/v2/ProcessHeader";
 import { ProcessStatusCard } from "@/components/processo-detail/v2/ProcessStatusCard";
-import { ProcessPartiesCard } from "@/components/processo-detail/v2/ProcessPartiesCard";
+import { ProcessPartiesHeader } from "@/components/processo-detail/v2/ProcessPartiesHeader";
 import { ProcessDocuments } from "@/components/processo-detail/v2/ProcessDocuments";
 
 interface Processo {
@@ -179,33 +179,28 @@ export default function ProcessoDetail() {
   return (
     <AppLayout>
       <div className="space-y-8 animate-fade-up max-w-[1600px] mx-auto pb-12">
-        {/* New Header */}
-        <ProcessHeader
-          processoId={processo.id}
-          numero={processo.numero}
-          cliente={processo.cliente}
-          parteContraria={processo.parte_contraria}
-          siglaTribunal={processo.sigla_tribunal}
-          sistemaTribunal={processo.sistema_tribunal}
-          dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
-          movimentacoesCount={movimentacoes.length}
-          fase={processo.fase}
-          onNewTask={() => setNovaTarefaOpen(true)}
-          onViewTasks={() => setActiveTab("tarefas")}
-          onDelete={handleDeleteProcess}
-          onEdit={() => toast({ title: "Em breve", description: "Edição rápida em desenvolvimento" })}
-        />
-
-        {/* Status and Parties Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ProcessStatusCard
-            fase={processo.fase}
-            dataUltimaMovimentacao={movimentacoes[0]?.data_movimento || null}
-            dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
-            proximoPrazo={proximoPrazo}
-            onViewTimeline={() => setActiveTab("timeline")}
-          />
-          <ProcessPartiesCard
+        {/* Sticky Header Container */}
+        <div className="sticky top-0 z-40 -mx-6 shadow-sm">
+          <div className="bg-background px-6">
+            <div className="max-w-[1600px] mx-auto">
+              <ProcessHeader
+                processoId={processo.id}
+                numero={processo.numero}
+                cliente={processo.cliente}
+                parteContraria={processo.parte_contraria}
+                siglaTribunal={processo.sigla_tribunal}
+                sistemaTribunal={processo.sistema_tribunal}
+                dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
+                movimentacoesCount={movimentacoes.length}
+                fase={processo.fase}
+                onNewTask={() => setNovaTarefaOpen(true)}
+                onViewTasks={() => setActiveTab("tarefas")}
+                onDelete={handleDeleteProcess}
+                onEdit={() => toast({ title: "Em breve", description: "Edição rápida em desenvolvimento" })}
+              />
+            </div>
+          </div>
+          <ProcessPartiesHeader
             cliente={processo.cliente}
             parteContraria={processo.parte_contraria}
             advogado={processo.advogado}
@@ -213,6 +208,17 @@ export default function ProcessoDetail() {
             comarca={processo.comarca}
             tipoAcao={processo.tipo_acao}
             dataDistribuicao={processo.data_distribuicao}
+          />
+        </div>
+
+        {/* Status Section */}
+        <div>
+          <ProcessStatusCard
+            fase={processo.fase}
+            dataUltimaMovimentacao={movimentacoes[0]?.data_movimento || null}
+            dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
+            proximoPrazo={proximoPrazo}
+            onViewTimeline={() => setActiveTab("timeline")}
           />
         </div>
 
