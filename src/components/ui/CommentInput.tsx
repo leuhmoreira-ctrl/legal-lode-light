@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 interface UserProfile {
   id: string;
   full_name: string;
-  avatar_url: string | null;
+  avatar_url?: string | null;
 }
 
 interface CommentInputProps {

@@ -517,7 +517,8 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
                     // But for now let's just upload with a suffix so it doesn't group.
                     if (pendingUpload) {
                         const newName = `Copy_${Date.now()}_${pendingUpload.name}`;
-                        const newFile = new File([pendingUpload], newName, { type: pendingUpload.type });
+                        const blob = pendingUpload.slice(0, pendingUpload.size, pendingUpload.type);
+                        const newFile = new globalThis.File([blob], newName, { type: pendingUpload.type });
                         performUpload(newFile);
                         setShowVersionDialog(false);
                     }
