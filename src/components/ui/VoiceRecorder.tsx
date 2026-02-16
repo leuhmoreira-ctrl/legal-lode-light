@@ -265,12 +265,14 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
             <DialogTitle>Gravação Finalizada</DialogTitle>
           </DialogHeader>
 
-          <div className="py-4 space-y-4">
-            <div className="bg-muted p-4 rounded-lg space-y-3">
-              <p className="text-sm font-medium">Duração: {formatTime(timer)}</p>
+          <div className="space-y-4">
+            <div className="bg-muted p-3 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">Duração: {formatTime(timer)}</p>
+              </div>
               {audioUrl && (
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={togglePreview}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={togglePreview}>
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   </Button>
                   <span className="text-xs text-muted-foreground">{isPlaying ? "Reproduzindo..." : "Ouvir gravação"}</span>
@@ -280,18 +282,18 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
             </div>
 
             {editableText ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <p className="text-xs text-muted-foreground uppercase font-medium">Transcrição (editável):</p>
                 <Textarea
                   value={editableText}
                   onChange={(e) => setEditableText(e.target.value)}
-                  rows={4}
-                  className="text-sm"
+                  rows={3}
+                  className="text-sm resize-none"
                 />
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <AlertTriangle className="w-3 h-3" />
+                <AlertTriangle className="w-3 h-3 shrink-0" />
                 <span>Transcrição não disponível (navegador pode não suportar).</span>
               </div>
             )}
@@ -299,16 +301,16 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
             <p className="text-sm text-center text-muted-foreground">O que deseja fazer?</p>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="flex-1 gap-2" onClick={() => handleAction("transcribe")} disabled={!editableText.trim()}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <Button variant="outline" className="flex-1 gap-2 text-sm" onClick={() => handleAction("transcribe")} disabled={!editableText.trim()}>
               <Type className="w-4 h-4" />
               Apenas Texto
             </Button>
-            <Button variant="outline" className="flex-1 gap-2" onClick={() => handleAction("attach")}>
+            <Button variant="outline" className="flex-1 gap-2 text-sm" onClick={() => handleAction("attach")}>
               <FileAudio className="w-4 h-4" />
               Apenas Áudio
             </Button>
-            <Button className="flex-1 gap-2" onClick={() => handleAction("both")}>
+            <Button className="flex-1 gap-2 text-sm" onClick={() => handleAction("both")}>
               Ambos
             </Button>
           </DialogFooter>
