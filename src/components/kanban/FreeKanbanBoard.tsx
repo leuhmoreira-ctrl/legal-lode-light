@@ -40,7 +40,6 @@ interface FreeKanbanBoardProps {
   onTaskMove: (taskId: string, x: number, y: number, status: string, zIndex: number) => void;
   onReorder?: (taskId: string, newStatus: string, newIndex: number) => void;
   onTaskUpdate: (task: KanbanTask) => void;
-  // Pass-through props for KanbanCard
   onEdit: (id: string, e: React.MouseEvent) => void;
   onDelete: (task: KanbanTask, e: React.MouseEvent) => void;
   onToggleToday: (task: KanbanTask, e: React.MouseEvent) => void;
@@ -73,10 +72,11 @@ export function FreeKanbanBoard({
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [dragZ, setDragZ] = useState<number>(0);
   const [cardHeights, setCardHeights] = useState<Record<string, number>>({});
+  const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
 
   const handleHeightChange = useCallback((id: string, height: number) => {
     setCardHeights(prev => {
-      if (Math.abs((prev[id] || 0) - height) < 1) return prev; // Avoid tiny updates
+      if (Math.abs((prev[id] || 0) - height) < 1) return prev;
       return { ...prev, [id]: height };
     });
   }, []);
@@ -112,7 +112,6 @@ export function FreeKanbanBoard({
     const GAP = 16;
     const TOP_MARGIN = 80;
 
-    // Group tasks by status
     const tasksByStatus: Record<string, KanbanTask[]> = {
       todo: [],
       in_progress: [],
@@ -126,13 +125,11 @@ export function FreeKanbanBoard({
       if (tasksByStatus[status]) {
         tasksByStatus[status].push(task);
       } else {
-        // Fallback for unknown status
         if (!tasksByStatus['todo']) tasksByStatus['todo'] = [];
         tasksByStatus['todo'].push(task);
       }
     });
 
-    // Sort and calculate
     ['todo', 'in_progress', 'done'].forEach((status, colIndex) => {
        const colTasks = tasksByStatus[status] || [];
        colTasks.sort((a, b) => a.position_index - b.position_index);
@@ -141,13 +138,12 @@ export function FreeKanbanBoard({
        const colXStart = colIndex * colWidth;
 
        colTasks.forEach(task => {
-          // X: centered in column
           const cardWidth = viewMode === 'compact' ? 250 : 320;
           const x = colXStart + (colWidth - cardWidth) / 2;
 
           newLayout[task.id] = { x, y: currentY };
 
-          const height = cardHeights[task.id] || 150; // default height if not measured
+          const height = cardHeights[task.id] || 150;
           currentY += height + GAP;
        });
     });
@@ -172,9 +168,10 @@ export function FreeKanbanBoard({
           <div
             key={col.id}
             className={cn(
-              "flex-1 border-r last:border-r-0 min-h-full transition-colors",
+              "flex-1 border-r last:border-r-0 min-h-full transition-all duration-200",
               col.bgColor,
-              "bg-opacity-30 dark:bg-opacity-10"
+              "bg-opacity-30 dark:bg-opacity-10",
+              hoveredColumn === col.id && "brightness-110 dark:brightness-125"
             )}
           >
              <div className="p-4 font-bold text-lg opacity-40 text-center uppercase tracking-widest sticky top-0">
@@ -187,13 +184,8 @@ export function FreeKanbanBoard({
       {/* Tasks */}
       {tasks.map((task, index) => {
         const canDelete = task.user_id === currentUserId || isAdmin;
-
-        // Calculate position: either the current drag pos (if dragging) or the stored/calc pos
         const calculatedPos = layout[task.id] || { x: 0, y: 0 };
         const currentPos = (draggingId === task.id) ? dragPos : calculatedPos;
-
-        // z-index: during drag, use the new high Z, otherwise use stored Z
-        // If not dragging, we can use index based z-index to ensure stacking order if overlap occurs (though it shouldn't)
         const currentZ = (draggingId === task.id) ? (getMaxZ() + 100) : (task.z_index || 10);
 
         return (
@@ -205,16 +197,19 @@ export function FreeKanbanBoard({
                setDraggingId(task.id);
                setDragPos({ x: data.x, y: data.y });
                setDragZ(getMaxZ() + 1);
+               setHoveredColumn(getColumnForX(data.x, containerDimensions.width));
             }}
             onDrag={(e, data) => {
                setDragPos({ x: data.x, y: data.y });
+               setHoveredColumn(getColumnForX(data.x, containerDimensions.width));
             }}
             onStop={(e, data) => {
                setDraggingId(null);
+               setHoveredColumn(null);
                const newStatus = getColumnForX(data.x, containerDimensions.width);
 
                if (onReorder) {
-                 // Calculate insertion index
+                 // Calculate insertion index based on Y position
                  const targetTasks = tasks
                    .filter(t => {
                       let s = t.status;
@@ -250,8 +245,10 @@ export function FreeKanbanBoard({
           >
             <div
               className={cn(
-                "absolute transition-shadow",
-                draggingId !== task.id && "transition-transform duration-300 cubic-bezier(0.25, 0.1, 0.25, 1)"
+                "absolute",
+                draggingId === task.id
+                  ? "shadow-2xl scale-[1.02] rotate-[1deg] opacity-90"
+                  : "transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
               )}
               style={{
                 width: viewMode === 'compact' ? '250px' : '320px',
@@ -275,12 +272,6 @@ export function FreeKanbanBoard({
                    canDelete={canDelete}
                  />
                </MeasureCard>
-               {/* Debug coords */}
-               {draggingId === task.id && (
-                  <div className="absolute -top-6 left-0 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                    X: {Math.round(dragPos.x)} ({Math.round((dragPos.x / containerDimensions.width) * 100)}%), Y: {Math.round(dragPos.y)}, Z: {dragZ}
-                  </div>
-               )}
             </div>
           </Draggable>
         );
