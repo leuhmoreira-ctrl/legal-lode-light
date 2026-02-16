@@ -340,39 +340,41 @@
     animation: shimmer 2s infinite;
   }
 
-  /* Origin Animation */
-  @keyframes origin-expand {
-    from {
-      opacity: 0;
-      transform: translate(calc(-50% + var(--origin-x)), calc(-50% + var(--origin-y))) scale(0);
-    }
-    to {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
+  /* New Apple Design System Refinements */
+  .apple-card {
+    @apply bg-white dark:bg-[#1C1C1E] rounded-[16px] border-[0.5px] border-black/5 dark:border-white/10 transition-all duration-200;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
   }
 
-  @keyframes origin-collapse {
-    from {
-      opacity: 1;
-      transform: translate(-50%, -50%) scale(1);
-    }
-    to {
-      opacity: 0;
-      transform: translate(calc(-50% + var(--origin-x)), calc(-50% + var(--origin-y))) scale(0);
-    }
+  .apple-card:hover {
+    @apply -translate-y-[2px];
+    box-shadow: 0 8px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
   }
 
-  .animate-origin-expand {
-    animation: origin-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  .bg-gradient-urgent {
+    background: linear-gradient(135deg, #FF9500 0%, #FF3B30 100%);
   }
 
-  .animate-origin-collapse {
-    animation: origin-collapse 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  .bg-gradient-active {
+    background: linear-gradient(135deg, #007AFF 0%, #5AC8FA 100%);
+  }
+
+  .bg-gradient-pending {
+    background: linear-gradient(135deg, #AF52DE 0%, #5AC8FA 100%);
+  }
+
+  .bg-gradient-audience {
+    background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
   }
 }
 
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
