@@ -91,7 +91,7 @@ export function NovaTarefaProcessoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova Tarefa</DialogTitle>
         </DialogHeader>
@@ -102,7 +102,7 @@ export function NovaTarefaProcessoDialog({
             <CheckCircle2 className="w-4 h-4 text-primary" />
             <span className="font-medium text-foreground">Processo vinculado:</span>
           </div>
-          <p className="text-xs font-mono text-muted-foreground mt-1">{processoNumero}</p>
+          <p className="text-xs font-mono text-muted-foreground mt-1 break-all sm:break-normal">{processoNumero}</p>
           <p className="text-xs text-muted-foreground">{processoCliente}</p>
         </div>
 
@@ -115,27 +115,32 @@ export function NovaTarefaProcessoDialog({
             <Label>Descrição</Label>
             <Textarea placeholder="Descrição (opcional)" value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Urgência</Label>
-              <RadioGroup value={prioridade} onValueChange={setPrioridade} className="flex gap-3">
-                <div className="flex items-center gap-1.5">
+              <RadioGroup value={prioridade} onValueChange={setPrioridade} className="flex flex-wrap gap-2">
+                <div className="inline-flex min-h-[44px] items-center gap-2 rounded-md px-2">
                   <RadioGroupItem value="low" id="p-low" />
-                  <Label htmlFor="p-low" className="text-xs font-normal cursor-pointer">Normal</Label>
+                  <Label htmlFor="p-low" className="text-sm font-normal cursor-pointer">Normal</Label>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="inline-flex min-h-[44px] items-center gap-2 rounded-md px-2">
                   <RadioGroupItem value="medium" id="p-med" />
-                  <Label htmlFor="p-med" className="text-xs font-normal cursor-pointer">Importante</Label>
+                  <Label htmlFor="p-med" className="text-sm font-normal cursor-pointer">Importante</Label>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="inline-flex min-h-[44px] items-center gap-2 rounded-md px-2">
                   <RadioGroupItem value="high" id="p-high" />
-                  <Label htmlFor="p-high" className="text-xs font-normal cursor-pointer">Urgente</Label>
+                  <Label htmlFor="p-high" className="text-sm font-normal cursor-pointer">Urgente</Label>
                 </div>
               </RadioGroup>
             </div>
             <div className="space-y-1.5">
               <Label>Prazo</Label>
-              <Input type="date" value={dataVencimento} onChange={(e) => setDataVencimento(e.target.value)} />
+              <Input
+                type="date"
+                className="w-full min-w-0"
+                value={dataVencimento}
+                onChange={(e) => setDataVencimento(e.target.value)}
+              />
             </div>
           </div>
           <div className="space-y-1.5">
@@ -149,7 +154,7 @@ export function NovaTarefaProcessoDialog({
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancelar</Button>
             <Button type="submit" className="flex-1" disabled={loading}>
               {loading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Criando...</> : "Criar Tarefa"}
