@@ -339,6 +339,37 @@
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
+
+  /* Origin Animation */
+  @keyframes origin-expand {
+    from {
+      opacity: 0;
+      transform: translate(calc(-50% + var(--origin-x)), calc(-50% + var(--origin-y))) scale(0);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  @keyframes origin-collapse {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(calc(-50% + var(--origin-x)), calc(-50% + var(--origin-y))) scale(0);
+    }
+  }
+
+  .animate-origin-expand {
+    animation: origin-expand 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .animate-origin-collapse {
+    animation: origin-collapse 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
 }
 
 @keyframes shimmer {

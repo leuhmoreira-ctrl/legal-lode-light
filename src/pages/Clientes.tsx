@@ -9,6 +9,7 @@ import { ClientFormModal } from "@/components/clientes/ClientFormModal";
 import { DeleteClientDialog } from "@/components/clientes/DeleteClientDialog";
 import { Cliente, ClienteRow } from "@/types/cliente";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAnimationOrigin } from "@/contexts/AnimationOriginContext";
 
 export default function Clientes() {
   const [search, setSearch] = useState("");
@@ -16,6 +17,7 @@ export default function Clientes() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
+  const { setOrigin } = useAnimationOrigin();
 
   const filtered = clientes?.filter(
     (c) =>
@@ -24,17 +26,20 @@ export default function Clientes() {
       (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
   ) || [];
 
-  const handleEdit = (cliente: ClienteRow) => {
+  const handleEdit = (cliente: ClienteRow, e: React.MouseEvent) => {
+      setOrigin({ x: e.clientX, y: e.clientY });
       setSelectedCliente(cliente as unknown as Cliente);
       setIsFormOpen(true);
   };
 
-  const handleDelete = (cliente: ClienteRow) => {
+  const handleDelete = (cliente: ClienteRow, e: React.MouseEvent) => {
+      setOrigin({ x: e.clientX, y: e.clientY });
       setSelectedCliente(cliente as unknown as Cliente);
       setIsDeleteOpen(true);
   };
 
-  const handleCreate = () => {
+  const handleCreate = (e: React.MouseEvent) => {
+      setOrigin({ x: e.clientX, y: e.clientY });
       setSelectedCliente(null);
       setIsFormOpen(true);
   }
@@ -79,10 +84,10 @@ export default function Clientes() {
                     className="p-5 hover:shadow-md transition-shadow relative group"
                 >
                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(cliente)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => handleEdit(cliente, e)}>
                             <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(cliente)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={(e) => handleDelete(cliente, e)}>
                             <Trash2 className="w-4 h-4" />
                         </Button>
                     </div>

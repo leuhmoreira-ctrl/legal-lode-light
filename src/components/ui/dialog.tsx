@@ -3,10 +3,29 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useAnimationOrigin } from "@/contexts/AnimationOriginContext"
 
 const Dialog = DialogPrimitive.Root
 
-const DialogTrigger = DialogPrimitive.Trigger
+const DialogTrigger = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger>
+>(({ className, onClick, ...props }, ref) => {
+  const { setOrigin } = useAnimationOrigin();
+
+  return (
+    <DialogPrimitive.Trigger
+      ref={ref}
+      className={className}
+      onClick={(e) => {
+        setOrigin({ x: e.clientX, y: e.clientY });
+        onClick?.(e);
+      }}
+      {...props}
+    />
+  );
+});
+DialogTrigger.displayName = DialogPrimitive.Trigger.displayName;
 
 const DialogPortal = DialogPrimitive.Portal
 
@@ -30,25 +49,47 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 modal-glass-light dark:modal-glass-dark p-8 shadow-2xl duration-300 ease-apple-ease data-[state=open]:animate-fade-in-scale data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-[20px]",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
+>(({ className, children, style, ...props }, ref) => {
+  const { origin } = useAnimationOrigin();
+  const [styles, setStyles] = React.useState<React.CSSProperties>({});
+
+  React.useLayoutEffect(() => {
+    if (origin) {
+      setStyles({
+        "--origin-x": `${origin.x - window.innerWidth / 2}px`,
+        "--origin-y": `${origin.y - window.innerHeight / 2}px`,
+      } as React.CSSProperties);
+    } else {
+      setStyles({});
+    }
+  }, [origin]);
+
+  const animationClasses = origin
+    ? "data-[state=open]:animate-origin-expand data-[state=closed]:animate-origin-collapse"
+    : "data-[state=open]:animate-fade-in-scale data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95";
+
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        style={{ ...style, ...styles }}
+        className={cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 modal-glass-light dark:modal-glass-dark p-8 shadow-2xl duration-300 ease-apple-ease sm:rounded-[20px]",
+          animationClasses,
+          className
+        )}
+        {...props}
+      >
+        {children}
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  )
+})
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({
