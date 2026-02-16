@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Save, Loader2, Eye, EyeOff, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { FileStructureSettings } from "@/components/configuracoes/FileStructureSettings";
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
@@ -215,6 +216,7 @@ export default function Configuracoes() {
           <TabsList>
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
+            <TabsTrigger value="files">Arquivos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-4 space-y-6">
@@ -380,6 +382,10 @@ export default function Configuracoes() {
                 </form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="files" className="mt-4">
+            <FileStructureSettings />
           </TabsContent>
         </Tabs>
       </div>

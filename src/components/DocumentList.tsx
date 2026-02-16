@@ -43,6 +43,9 @@ interface DocumentMeta {
   uploaded_by: string;
   task_id?: string | null;
   task_title?: string | null;
+  pasta_categoria?: string | null;
+  subpasta?: string | null;
+  caminho_completo?: string | null;
 }
 
 interface DocumentListProps {
@@ -57,6 +60,7 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
   const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [taskFilter, setTaskFilter] = useState('all');
+  const [folderFilter, setFolderFilter] = useState('all');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewName, setPreviewName] = useState('');
 
@@ -154,13 +158,16 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
   };
 
   const filteredByCategory = categoryFilter === 'all' ? docs : docs.filter(d => d.category === categoryFilter);
-  const filtered = taskFilter === 'all'
+  const filteredByTask = taskFilter === 'all'
     ? filteredByCategory
     : taskFilter === 'linked'
       ? filteredByCategory.filter(d => d.task_id)
       : taskFilter === 'unlinked'
         ? filteredByCategory.filter(d => !d.task_id)
         : filteredByCategory.filter(d => d.task_id === taskFilter);
+  const filtered = folderFilter === 'all'
+    ? filteredByTask
+    : filteredByTask.filter(d => `${d.pasta_categoria || ''}||${d.subpasta || ''}` === folderFilter);
 
   // Unique tasks for filter dropdown
   const linkedTasks = docs.filter(d => d.task_id && d.task_title).reduce((acc, d) => {
@@ -169,6 +176,18 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
     }
     return acc;
   }, [] as { id: string; title: string }[]);
+
+  const folderOptions = docs.reduce((acc, d) => {
+    if (!d.pasta_categoria) return acc;
+    const value = `${d.pasta_categoria}||${d.subpasta || ''}`;
+    if (!acc.find((f) => f.value === value)) {
+      acc.push({
+        value,
+        label: d.subpasta ? `${d.pasta_categoria} > ${d.subpasta}` : d.pasta_categoria,
+      });
+    }
+    return acc;
+  }, [] as { value: string; label: string }[]);
 
   if (loading) {
     return (
@@ -208,6 +227,17 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
               ))}
             </SelectContent>
           </Select>
+          <Select value={folderFilter} onValueChange={setFolderFilter}>
+            <SelectTrigger className="w-52 h-8 text-xs">
+              <SelectValue placeholder="Filtrar pasta" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as pastas</SelectItem>
+              {folderOptions.map((f) => (
+                <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <span className="text-xs text-muted-foreground ml-auto">{filtered.length} documento(s)</span>
         </div>
       )}
@@ -239,7 +269,15 @@ export function DocumentList({ processId, refreshKey }: DocumentListProps) {
                   <span className="text-[10px] text-muted-foreground">
                     {format(parseISO(doc.created_at), 'dd/MM/yyyy HH:mm')}
                   </span>
+                  {doc.pasta_categoria && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {doc.subpasta ? `${doc.pasta_categoria} > ${doc.subpasta}` : doc.pasta_categoria}
+                    </Badge>
+                  )}
                 </div>
+                {doc.caminho_completo && (
+                  <p className="text-[10px] text-muted-foreground mt-1 truncate">{doc.caminho_completo}</p>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 {(doc.mime_type === 'application/pdf' || doc.mime_type.startsWith('image/')) && (

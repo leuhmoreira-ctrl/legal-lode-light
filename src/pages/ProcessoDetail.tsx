@@ -293,7 +293,7 @@ export default function ProcessoDetail() {
                 value="docs"
                 className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"
               >
-                Documentos
+                Arquivos
               </TabsTrigger>
               <TabsTrigger
                 value="tarefas"

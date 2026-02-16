@@ -43,16 +43,21 @@ vi.mock('@/integrations/supabase/client', () => {
           upload: mockUpload,
         }),
       },
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            in: () => ({
-              order: () => Promise.resolve({ data: [], error: null }),
-            }),
+      from: () => {
+        const eqChain = {
+          in: () => ({
+            order: () => Promise.resolve({ data: [], error: null }),
           }),
-        }),
-        insert: mockInsert,
-      }),
+          order: () => Promise.resolve({ data: [], error: null }),
+          maybeSingle: () => Promise.resolve({ data: null, error: null }),
+        };
+        return {
+          select: () => ({
+            eq: () => eqChain,
+          }),
+          insert: mockInsert,
+        };
+      },
     },
   };
 });

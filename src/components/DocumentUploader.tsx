@@ -1,21 +1,34 @@
-import { useCallback, useState, useRef, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { useCallback, useMemo, useState, useRef, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { Upload, File, X, Loader2, Link2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Upload, File, X, Loader2, Link2, FolderOpen } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import {
+  buildDocumentPath,
+  cloneDefaultFolderStructure,
+  folderValue,
+  listFolderOptions,
+  parseFolderStructure,
+  parseFolderValue,
+  suggestFolderForFileName,
+} from "@/lib/processFileStructure";
 
 const CATEGORIES = [
-  { value: 'petition', label: 'Petição' },
-  { value: 'decision', label: 'Decisão' },
-  { value: 'power_of_attorney', label: 'Procuração' },
-  { value: 'client_document', label: 'Documento do Cliente' },
-  { value: 'evidence', label: 'Prova' },
-  { value: 'other', label: 'Outro' },
+  { value: "petition", label: "Peticao" },
+  { value: "decision", label: "Decisao" },
+  { value: "power_of_attorney", label: "Procuracao" },
+  { value: "client_document", label: "Documento do Cliente" },
+  { value: "evidence", label: "Prova" },
+  { value: "other", label: "Outro" },
 ];
 
 interface TaskOption {
@@ -28,56 +41,117 @@ interface TaskOption {
 interface DocumentUploaderProps {
   processId: string;
   onUploadComplete: () => void;
+  defaultPastaCategoria?: string | null;
+  defaultSubpasta?: string | null;
 }
 
-/** Simple word-overlap score between two strings (0-1) */
 function matchScore(a: string, b: string): number {
   const normalize = (s: string) =>
-    s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(w => w.length > 2);
+    s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
   const wordsA = normalize(a);
   const wordsB = normalize(b);
   if (wordsA.length === 0 || wordsB.length === 0) return 0;
-  const matches = wordsA.filter(w => wordsB.some(wb => wb.includes(w) || w.includes(wb))).length;
+  const matches = wordsA.filter((w) => wordsB.some((wb) => wb.includes(w) || w.includes(wb))).length;
   return matches / Math.max(wordsA.length, wordsB.length);
 }
 
-export function DocumentUploader({ processId, onUploadComplete }: DocumentUploaderProps) {
+export function DocumentUploader({
+  processId,
+  onUploadComplete,
+  defaultPastaCategoria = null,
+  defaultSubpasta = null,
+}: DocumentUploaderProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
-  const [category, setCategory] = useState('other');
+  const [category, setCategory] = useState("other");
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Task linking
   const [tasks, setTasks] = useState<TaskOption[]>([]);
-  const [selectedTaskId, setSelectedTaskId] = useState<string>('none');
+  const [selectedTaskId, setSelectedTaskId] = useState<string>("none");
   const [suggestedTaskId, setSuggestedTaskId] = useState<string | null>(null);
 
-  // Load open tasks for this process
+  const [folderRootName, setFolderRootName] = useState("Processo");
+  const [folderStructureRaw, setFolderStructureRaw] = useState<unknown>(null);
+  const [selectedFolderValue, setSelectedFolderValue] = useState<string>("");
+  const [suggestedFolderValue, setSuggestedFolderValue] = useState<string | null>(null);
+  const [folderTouched, setFolderTouched] = useState(false);
+
+  const folderStructure = useMemo(
+    () => parseFolderStructure(folderStructureRaw, folderRootName || "Processo"),
+    [folderStructureRaw, folderRootName]
+  );
+  const folderOptions = useMemo(() => listFolderOptions(folderStructure), [folderStructure]);
+
   useEffect(() => {
     if (!processId) return;
     const load = async () => {
       const { data } = await supabase
-        .from('kanban_tasks')
-        .select('id, title, status, priority')
-        .eq('processo_id', processId)
-        .in('status', ['todo', 'in_progress', 'review'])
-        .order('due_date', { ascending: true });
+        .from("kanban_tasks")
+        .select("id, title, status, priority")
+        .eq("processo_id", processId)
+        .in("status", ["todo", "in_progress", "review"])
+        .order("due_date", { ascending: true });
       setTasks(data || []);
     };
     load();
   }, [processId]);
 
-  // Smart suggestion when files change
+  useEffect(() => {
+    if (!processId) return;
+
+    const defaultStructure = cloneDefaultFolderStructure("Processo");
+    setFolderRootName(defaultStructure.raiz);
+    setFolderStructureRaw(defaultStructure);
+
+    const loadFolders = async () => {
+      const { data, error } = await supabase
+        .from("drive_folders")
+        .select("nome_pasta, estrutura_subpastas")
+        .eq("processo_id", processId)
+        .maybeSingle();
+
+      if (error || !data) {
+        const fallback = cloneDefaultFolderStructure("Processo");
+        setFolderRootName(fallback.raiz);
+        setFolderStructureRaw(fallback);
+        return;
+      }
+
+      const row = data as unknown as { nome_pasta?: string | null; estrutura_subpastas?: unknown };
+      const root = row.nome_pasta || "Processo";
+      setFolderRootName(root);
+      setFolderStructureRaw(row.estrutura_subpastas || cloneDefaultFolderStructure(root));
+    };
+
+    loadFolders();
+  }, [processId]);
+
+  useEffect(() => {
+    if (folderOptions.length === 0) return;
+    const preferred = defaultPastaCategoria
+      ? folderValue(defaultPastaCategoria, defaultSubpasta || null)
+      : folderOptions[0].value;
+
+    const exists = folderOptions.some((opt) => opt.value === preferred);
+    const safeValue = exists ? preferred : folderOptions[0].value;
+    setSelectedFolderValue((curr) => (folderOptions.some((opt) => opt.value === curr) ? curr : safeValue));
+  }, [folderOptions, defaultPastaCategoria, defaultSubpasta]);
+
   useEffect(() => {
     if (files.length === 0 || tasks.length === 0) {
       setSuggestedTaskId(null);
       return;
     }
-    const fileName = files[0].name.replace(/\.[^/.]+$/, '');
+    const fileName = files[0].name.replace(/\.[^/.]+$/, "");
     let bestScore = 0;
     let bestId: string | null = null;
     for (const t of tasks) {
@@ -90,63 +164,105 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
     setSuggestedTaskId(bestScore >= 0.3 ? bestId : null);
   }, [files, tasks]);
 
-  const handleFiles = useCallback((newFiles: FileList | File[]) => {
-    const accepted = Array.from(newFiles).filter(f =>
-      ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg',
-       'application/msword',
-       'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      ].includes(f.type)
-    );
-    if (accepted.length < Array.from(newFiles).length) {
-      toast({ title: 'Alguns arquivos ignorados', description: 'Apenas PDF, imagens e Word são aceitos.', variant: 'destructive' });
+  useEffect(() => {
+    if (files.length === 0 || folderOptions.length === 0) {
+      setSuggestedFolderValue(null);
+      return;
     }
-    setFiles(prev => [...prev, ...accepted]);
-  }, [toast]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragActive(false);
-    if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
-  }, [handleFiles]);
+    const suggestion = suggestFolderForFileName(files[0].name);
+    const suggestedOption = folderOptions.find(
+      (opt) => opt.pastaCategoria === suggestion.pastaCategoria && opt.subpasta === suggestion.subpasta
+    );
 
-  const removeFile = (index: number) => setFiles(prev => prev.filter((_, i) => i !== index));
+    const fallbackOption = folderOptions.find(
+      (opt) => opt.pastaCategoria === suggestion.pastaCategoria && opt.subpasta === null
+    );
+
+    const value = suggestedOption?.value || fallbackOption?.value || folderOptions[0]?.value || null;
+    setSuggestedFolderValue(value);
+
+    if (!folderTouched && value && !defaultPastaCategoria) {
+      setSelectedFolderValue(value);
+    }
+  }, [files, folderOptions, folderTouched, defaultPastaCategoria]);
+
+  const handleFiles = useCallback(
+    (newFiles: FileList | File[]) => {
+      const accepted = Array.from(newFiles).filter((f) =>
+        [
+          "application/pdf",
+          "image/png",
+          "image/jpeg",
+          "image/jpg",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ].includes(f.type)
+      );
+      if (accepted.length < Array.from(newFiles).length) {
+        toast({
+          title: "Alguns arquivos ignorados",
+          description: "Apenas PDF, imagens e Word sao aceitos.",
+          variant: "destructive",
+        });
+      }
+      setFiles((prev) => [...prev, ...accepted]);
+    },
+    [toast]
+  );
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragActive(false);
+      if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+    },
+    [handleFiles]
+  );
+
+  const removeFile = (index: number) => setFiles((prev) => prev.filter((_, i) => i !== index));
+
+  const resolveFolderSelection = () => {
+    const fallback = folderOptions[0]?.value || folderValue("07 - Outros", null);
+    const current = selectedFolderValue || suggestedFolderValue || fallback;
+    return parseFolderValue(current);
+  };
 
   const handleUpload = async () => {
     if (files.length === 0 || !user) return;
     setUploading(true);
     setProgress(0);
 
-    const taskId = selectedTaskId !== 'none' ? selectedTaskId : null;
+    const taskId = selectedTaskId !== "none" ? selectedTaskId : null;
+    const { pastaCategoria, subpasta } = resolveFolderSelection();
     let completed = 0;
     const CONCURRENCY_LIMIT = 3;
 
     const uploadFile = async (file: File) => {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${crypto.randomUUID()}.${fileExt}`;
       const filePath = `${user.id}/${processId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('process-documents')
-        .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from("process-documents").upload(filePath, file);
       if (uploadError) throw uploadError;
 
-      const { error: metaError } = await supabase
-        .from('document_metadata')
-        .insert({
-          process_id: processId,
-          storage_path: filePath,
-          original_name: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-          category,
-          uploaded_by: user.id,
-          task_id: taskId,
-        });
+      const { error: metaError } = await supabase.from("document_metadata").insert({
+        process_id: processId,
+        storage_path: filePath,
+        original_name: file.name,
+        mime_type: file.type,
+        size_bytes: file.size,
+        category,
+        uploaded_by: user.id,
+        task_id: taskId,
+        pasta_categoria: pastaCategoria,
+        subpasta,
+        caminho_completo: buildDocumentPath(folderRootName || "Processo", pastaCategoria, subpasta, file.name),
+      });
       if (metaError) throw metaError;
 
-      // Also insert into task_attachments if linked
       if (taskId) {
-        await supabase.from('task_attachments').insert({
+        await supabase.from("task_attachments").insert({
           task_id: taskId,
           file_name: file.name,
           file_size: file.size,
@@ -180,32 +296,37 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
 
       await Promise.all(results);
 
-      const linkedMsg = taskId
-        ? ` Vinculado(s) à tarefa "${tasks.find(t => t.id === taskId)?.title}".`
-        : '';
-      toast({ title: '✅ Upload concluído!', description: `${files.length} arquivo(s) enviado(s).${linkedMsg}` });
+      const linkedMsg = taskId ? ` Vinculado(s) a tarefa "${tasks.find((t) => t.id === taskId)?.title}".` : "";
+      toast({
+        title: "Upload concluido",
+        description: `${files.length} arquivo(s) enviado(s).${linkedMsg}`,
+      });
       setFiles([]);
-      setSelectedTaskId('none');
+      setSelectedTaskId("none");
+      setSuggestedFolderValue(null);
+      setFolderTouched(false);
       onUploadComplete();
     } catch (error: any) {
-      console.error('Erro no upload:', error);
-      toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+      console.error("Erro no upload:", error);
+      toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
     } finally {
       setUploading(false);
       setProgress(0);
     }
   };
 
-  const priorityIcon = (p: string) => p === 'high' ? '🔴' : p === 'medium' ? '🟡' : '🟢';
+  const priorityIcon = (p: string) => (p === "high" ? "🔴" : p === "medium" ? "🟡" : "🟢");
 
   return (
     <div className="space-y-4">
-      {/* Dropzone */}
       <div
         className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-          dragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+          dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
         }`}
-        onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragActive(true);
+        }}
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
@@ -220,27 +341,75 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
         />
         <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
         <p className="text-sm font-medium text-foreground">
-          {dragActive ? 'Solte os arquivos aqui' : 'Arraste arquivos ou clique para selecionar'}
+          {dragActive ? "Solte os arquivos aqui" : "Arraste arquivos ou clique para selecionar"}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">PDF, Imagens, Word (máx. 50MB)</p>
+        <p className="text-xs text-muted-foreground mt-1">PDF, Imagens, Word (max. 50MB)</p>
       </div>
 
-      {/* File list */}
       {files.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-sm font-medium text-foreground">{files.length} arquivo(s)</span>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="w-48">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map(c => (
-                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="flex items-center justify-between flex-wrap gap-2 md:col-span-2">
+              <span className="text-sm font-medium text-foreground">{files.length} arquivo(s)</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Tipo do documento</p>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">Pasta de destino</p>
+              <Select
+                value={selectedFolderValue}
+                onValueChange={(value) => {
+                  setFolderTouched(true);
+                  setSelectedFolderValue(value);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecionar pasta..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {folderOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {suggestedFolderValue && selectedFolderValue !== suggestedFolderValue && (
+            <div className="rounded-lg border border-blue-200 bg-blue-50/80 p-2.5 text-xs">
+              <p className="text-blue-800 font-medium">Sugestao de categorizacao</p>
+              <p className="text-blue-700 mt-1">
+                Detectamos uma pasta mais adequada para este arquivo.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-2 h-7 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={() => setSelectedFolderValue(suggestedFolderValue)}
+              >
+                <FolderOpen className="w-3.5 h-3.5 mr-1" />
+                Usar pasta sugerida
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-1 max-h-40 overflow-y-auto">
             {files.map((file, index) => (
@@ -259,7 +428,6 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
             ))}
           </div>
 
-          {/* Task linking */}
           {tasks.length > 0 && (
             <div className="rounded-lg border border-border p-3 space-y-2">
               <div className="flex items-center gap-2">
@@ -267,13 +435,19 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
                 <span className="text-sm font-medium text-foreground">Vincular a tarefa (opcional)</span>
               </div>
 
-              {suggestedTaskId && selectedTaskId === 'none' && (
+              {suggestedTaskId && selectedTaskId === "none" && (
                 <div className="bg-primary/5 border border-primary/20 rounded-lg p-2.5 text-xs space-y-1.5">
-                  <p className="text-foreground font-medium">✨ Sugestão automática</p>
+                  <p className="text-foreground font-medium">Sugestao automatica</p>
                   <p className="text-muted-foreground">
-                    O arquivo parece relacionado à tarefa: <strong className="text-foreground">{tasks.find(t => t.id === suggestedTaskId)?.title}</strong>
+                    O arquivo parece relacionado a tarefa:{" "}
+                    <strong className="text-foreground">{tasks.find((t) => t.id === suggestedTaskId)?.title}</strong>
                   </p>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setSelectedTaskId(suggestedTaskId)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => setSelectedTaskId(suggestedTaskId)}
+                  >
                     Vincular a esta tarefa
                   </Button>
                 </div>
@@ -285,7 +459,7 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma tarefa</SelectItem>
-                  {tasks.map(t => (
+                  {tasks.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {priorityIcon(t.priority)} {t.title}
                     </SelectItem>
@@ -302,8 +476,16 @@ export function DocumentUploader({ processId, onUploadComplete }: DocumentUpload
             </div>
           )}
 
-          <Button onClick={handleUpload} disabled={uploading} className="w-full gap-2">
-            {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</> : <><Upload className="w-4 h-4" /> Fazer Upload</>}
+          <Button onClick={handleUpload} disabled={uploading || !selectedFolderValue} className="w-full gap-2">
+            {uploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Enviando...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" /> Fazer Upload
+              </>
+            )}
           </Button>
         </div>
       )}
