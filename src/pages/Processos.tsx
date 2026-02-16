@@ -217,17 +217,21 @@ export default function Processos() {
                   <Plus className="w-4 h-4" /> Novo Processo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Cadastrar Novo Processo</DialogTitle>
-                </DialogHeader>
-                <NovoProcessoForm
-                  onSuccess={() => {
-                    setNovoProcessoOpen(false);
-                    // refetch handled by hook invalidation
-                  }}
-                  onCancel={() => setNovoProcessoOpen(false)}
-                />
+              <DialogContent className="max-w-2xl h-[90vh] p-0 overflow-hidden flex flex-col">
+                <div className="px-6 py-4 border-b">
+                  <DialogHeader className="p-0">
+                    <DialogTitle>Cadastrar Novo Processo</DialogTitle>
+                  </DialogHeader>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <NovoProcessoForm
+                    onSuccess={() => {
+                      setNovoProcessoOpen(false);
+                      // refetch handled by hook invalidation
+                    }}
+                    onCancel={() => setNovoProcessoOpen(false)}
+                  />
+                </div>
               </DialogContent>
             </Dialog>
           </div>
@@ -422,44 +426,48 @@ export default function Processos() {
                             Ver Movimentações
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle className="text-lg">Movimentações — {proc.numero}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-2 mt-4">
-                            <div className="grid grid-cols-2 gap-2 text-sm mb-4">
-                              <div>
-                                <span className="text-muted-foreground">Classe: </span>
-                                <span className="font-medium">{syncResult.classe}</span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Assunto: </span>
-                                <span className="font-medium">{syncResult.assunto}</span>
-                              </div>
-                            </div>
+                        <DialogContent className="max-w-2xl max-h-[80vh] p-0 overflow-hidden flex flex-col">
+                          <div className="px-6 py-4 border-b">
+                            <DialogHeader className="p-0">
+                              <DialogTitle className="text-lg">Movimentações — {proc.numero}</DialogTitle>
+                            </DialogHeader>
+                          </div>
+                          <div className="flex-1 overflow-y-auto p-6">
                             <div className="space-y-2">
-                              {syncResult.movimentacoes.map((mov, i) => (
-                                <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm">
-                                  <div className="flex flex-col items-center">
-                                    <Clock className="w-4 h-4 text-primary" />
-                                    <div className="w-px h-full bg-border mt-1" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-muted-foreground">
-                                      {mov.data ? format(parseISO(mov.data), "dd/MM/yyyy HH:mm") : "Data não informada"}
-                                    </p>
-                                    <p className="font-medium mt-0.5">{mov.descricao}</p>
-                                    {mov.complemento && (
-                                      <p className="text-xs text-muted-foreground mt-0.5">{mov.complemento}</p>
-                                    )}
-                                  </div>
+                              <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+                                <div>
+                                  <span className="text-muted-foreground">Classe: </span>
+                                  <span className="font-medium">{syncResult.classe}</span>
                                 </div>
-                              ))}
-                              {syncResult.movimentacoes.length === 0 && (
-                                <p className="text-sm text-muted-foreground text-center py-4">
-                                  Nenhuma movimentação encontrada.
-                                </p>
-                              )}
+                                <div>
+                                  <span className="text-muted-foreground">Assunto: </span>
+                                  <span className="font-medium">{syncResult.assunto}</span>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                {syncResult.movimentacoes.map((mov, i) => (
+                                  <div key={i} className="flex gap-3 p-3 rounded-lg bg-muted/50 text-sm">
+                                    <div className="flex flex-col items-center">
+                                      <Clock className="w-4 h-4 text-primary" />
+                                      <div className="w-px h-full bg-border mt-1" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs text-muted-foreground">
+                                        {mov.data ? format(parseISO(mov.data), "dd/MM/yyyy HH:mm") : "Data não informada"}
+                                      </p>
+                                      <p className="font-medium mt-0.5">{mov.descricao}</p>
+                                      {mov.complemento && (
+                                        <p className="text-xs text-muted-foreground mt-0.5">{mov.complemento}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                                {syncResult.movimentacoes.length === 0 && (
+                                  <p className="text-sm text-muted-foreground text-center py-4">
+                                    Nenhuma movimentação encontrada.
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </DialogContent>
@@ -477,25 +485,29 @@ export default function Processos() {
                           Documentos
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Documentos — {proc.numero}</DialogTitle>
-                        </DialogHeader>
-                        <Tabs defaultValue="list" className="mt-4">
-                          <TabsList>
-                            <TabsTrigger value="list">Documentos</TabsTrigger>
-                            <TabsTrigger value="upload">Upload</TabsTrigger>
-                          </TabsList>
-                          <TabsContent value="list" className="mt-4">
-                            <DocumentList processId={proc.id} refreshKey={docsRefreshKey} />
-                          </TabsContent>
-                          <TabsContent value="upload" className="mt-4">
-                            <DocumentUploader
-                              processId={proc.id}
-                              onUploadComplete={() => setDocsRefreshKey(k => k + 1)}
-                            />
-                          </TabsContent>
-                        </Tabs>
+                      <DialogContent className="max-w-3xl h-[90vh] p-0 overflow-hidden flex flex-col">
+                        <div className="px-6 py-4 border-b">
+                          <DialogHeader className="p-0">
+                            <DialogTitle>Documentos — {proc.numero}</DialogTitle>
+                          </DialogHeader>
+                        </div>
+                        <div className="flex-1 overflow-hidden p-6 flex flex-col">
+                          <Tabs defaultValue="list" className="flex-1 flex flex-col overflow-hidden">
+                            <TabsList className="shrink-0">
+                              <TabsTrigger value="list">Documentos</TabsTrigger>
+                              <TabsTrigger value="upload">Upload</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="list" className="flex-1 overflow-y-auto mt-4 pr-2">
+                              <DocumentList processId={proc.id} refreshKey={docsRefreshKey} />
+                            </TabsContent>
+                            <TabsContent value="upload" className="flex-1 overflow-y-auto mt-4 pr-2">
+                              <DocumentUploader
+                                processId={proc.id}
+                                onUploadComplete={() => setDocsRefreshKey(k => k + 1)}
+                              />
+                            </TabsContent>
+                          </Tabs>
+                        </div>
                       </DialogContent>
                     </Dialog>
 

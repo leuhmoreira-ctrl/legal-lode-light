@@ -111,37 +111,43 @@ export function ClientFormModal({ open, onOpenChange, clienteToEdit }: ClientFor
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{clienteToEdit ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
-          <DialogDescription>
-            Preencha os dados do cliente abaixo.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] p-0 overflow-hidden flex flex-col">
+        <div className="px-6 py-4 border-b">
+          <DialogHeader className="p-0">
+            <DialogTitle>{clienteToEdit ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+            <DialogDescription>
+              Preencha os dados do cliente abaixo.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
-            <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col h-full">
+            <div className="px-6 pt-6 pb-2">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="pf">Pessoa Física</TabsTrigger>
+                <TabsTrigger value="pj">Pessoa Jurídica</TabsTrigger>
+              </TabsList>
+            </div>
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="nome"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{activeTab === "pf" ? "Nome Completo" : "Razão Social"}</FormLabel>
-                      <FormControl>
-                        <Input placeholder={activeTab === "pf" ? "Ex: João Silva" : "Ex: Empresa LTDA"} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="flex-1 overflow-y-auto px-6 pb-6">
+              <Form {...form}>
+                <form id="client-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="nome"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{activeTab === "pf" ? "Nome Completo" : "Razão Social"}</FormLabel>
+                        <FormControl>
+                          <Input placeholder={activeTab === "pf" ? "Ex: João Silva" : "Ex: Empresa LTDA"} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="cpf_cnpj"
@@ -150,14 +156,14 @@ export function ClientFormModal({ open, onOpenChange, clienteToEdit }: ClientFor
                           <FormLabel>{activeTab === "pf" ? "CPF" : "CNPJ"}</FormLabel>
                           <FormControl>
                             <Input
-                                placeholder={activeTab === "pf" ? "000.000.000-00" : "00.000.000/0000-00"}
-                                {...field}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    const formatted = activeTab === "pf" ? formatCPF(val) : formatCNPJ(val);
-                                    field.onChange(formatted);
-                                }}
-                                maxLength={activeTab === "pf" ? 14 : 18}
+                              placeholder={activeTab === "pf" ? "000.000.000-00" : "00.000.000/0000-00"}
+                              {...field}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const formatted = activeTab === "pf" ? formatCPF(val) : formatCNPJ(val);
+                                field.onChange(formatted);
+                              }}
+                              maxLength={activeTab === "pf" ? 14 : 18}
                             />
                           </FormControl>
                           <FormMessage />
@@ -173,78 +179,82 @@ export function ClientFormModal({ open, onOpenChange, clienteToEdit }: ClientFor
                           <FormLabel>Telefone</FormLabel>
                           <FormControl>
                             <Input
-                                placeholder="(00) 00000-0000"
-                                {...field}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    const formatted = formatPhone(val);
-                                    field.onChange(formatted);
-                                }}
-                                maxLength={15}
+                              placeholder="(00) 00000-0000"
+                              {...field}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                const formatted = formatPhone(val);
+                                field.onChange(formatted);
+                              }}
+                              maxLength={15}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                </div>
+                  </div>
 
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="email@exemplo.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="email@exemplo.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
+                  <div className="space-y-2">
                     <FormLabel>Endereço</FormLabel>
                     <div className="flex gap-2">
-                         <Input
-                            placeholder="CEP"
-                            className="w-24"
-                            maxLength={9}
-                            onChange={(e) => {
-                                e.target.value = e.target.value.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2");
-                            }}
-                            onBlur={handleCepBlur}
+                      <Input
+                        placeholder="CEP"
+                        className="w-24"
+                        maxLength={9}
+                        onChange={(e) => {
+                          e.target.value = e.target.value.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2");
+                        }}
+                        onBlur={handleCepBlur}
+                      />
+                      <div className="flex-1">
+                        <FormField
+                          control={form.control}
+                          name="endereco"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input placeholder="Endereço completo" {...field} value={field.value || ''} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                         <div className="flex-1">
-                             <FormField
-                                control={form.control}
-                                name="endereco"
-                                render={({ field }) => (
-                                    <FormItem>
-                                    <FormControl>
-                                        <Input placeholder="Endereço completo" {...field} value={field.value || ''} />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                         </div>
+                      </div>
                     </div>
-                     {cepLoading && <p className="text-xs text-muted-foreground">Buscando CEP...</p>}
-                </div>
+                    {cepLoading && <p className="text-xs text-muted-foreground">Buscando CEP...</p>}
+                  </div>
+                </form>
+              </Form>
+            </div>
+          </Tabs>
+        </div>
 
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isLoading}>
-                        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {clienteToEdit ? "Salvar Alterações" : "Cadastrar Cliente"}
-                    </Button>
-                </div>
-            </form>
-          </Form>
-        </Tabs>
+        <div className="p-4 border-t bg-background/50 backdrop-blur-sm">
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="client-form" disabled={isLoading}>
+              {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {clienteToEdit ? "Salvar Alterações" : "Cadastrar Cliente"}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
