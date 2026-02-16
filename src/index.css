@@ -345,3 +345,264 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Dashboard List Corrections */
+
+/* Container do card */
+.prazo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  min-height: 72px;
+}
+.dark .prazo-card {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.05);
+}
+
+.prazo-card:hover {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,122,255,0.2);
+  transform: translateX(2px);
+  cursor: pointer;
+}
+.dark .prazo-card:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(10,132,255,0.3);
+}
+
+/* Linha superior: Badge + Título + Data */
+.prazo-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Badge de prioridade */
+.prazo-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* Badge Variants */
+.badge-urgente {
+  background: rgba(255,59,48,0.12);
+  color: #FF3B30;
+}
+.dark .badge-urgente {
+  background: rgba(255,69,58,0.2);
+  color: #FF453A;
+}
+
+.badge-proximo {
+  background: rgba(255,149,0,0.12);
+  color: #FF9500;
+}
+.dark .badge-proximo {
+  background: rgba(255,159,10,0.2);
+  color: #FF9F0A;
+}
+
+.badge-emdia {
+  background: rgba(52,199,89,0.12);
+  color: #34C759;
+}
+.dark .badge-emdia {
+  background: rgba(48,209,88,0.2);
+  color: #30D158;
+}
+
+/* Título */
+.prazo-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: #1D1D1F;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+.dark .prazo-title {
+  color: #F5F5F7;
+}
+
+/* Data */
+.prazo-date {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #6E6E73;
+  letter-spacing: -0.2px;
+  min-width: 50px;
+  text-align: right;
+}
+.dark .prazo-date {
+  color: #A1A1A6;
+}
+
+/* Linha inferior: Processo + Responsável */
+.prazo-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #8B949E;
+  letter-spacing: -0.1px;
+  line-height: 1.3;
+}
+.dark .prazo-details {
+  color: #86868B;
+}
+
+/* Número do processo */
+.prazo-processo {
+  font-family: 'SF Mono', 'Courier New', monospace;
+  font-weight: 500;
+}
+
+/* Separador */
+.prazo-separator {
+  color: #C9D1D9;
+  font-weight: 400;
+}
+.dark .prazo-separator {
+  color: #48484A;
+}
+
+/* Nome do responsável */
+.prazo-responsavel {
+  font-weight: 400;
+}
+
+/* Movimentações */
+.movimentacao-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0,0,0,0.02);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.dark .movimentacao-card {
+  background: rgba(255,255,255,0.03);
+}
+
+.movimentacao-card:hover {
+  background: rgba(0,0,0,0.04);
+  transform: translateX(2px);
+}
+.dark .movimentacao-card:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.movimentacao-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+/* Icon Colors */
+.icon-recurso { background: rgba(0,122,255,0.1); color: #007AFF; }
+.dark .icon-recurso { background: rgba(10,132,255,0.2); color: #0A84FF; }
+
+.icon-juntada { background: rgba(52,199,89,0.1); color: #34C759; }
+.dark .icon-juntada { background: rgba(48,209,88,0.2); color: #30D158; }
+
+.icon-laudo { background: rgba(175,82,222,0.1); color: #AF52DE; }
+.dark .icon-laudo { background: rgba(191,90,242,0.2); color: #BF5AF2; }
+
+.icon-decisao { background: rgba(255,149,0,0.1); color: #FF9500; }
+.dark .icon-decisao { background: rgba(255,159,10,0.2); color: #FF9F0A; }
+
+.movimentacao-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.movimentacao-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.movimentacao-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: #1D1D1F;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+.dark .movimentacao-title {
+  color: #F5F5F7;
+}
+
+.movimentacao-date {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #6E6E73;
+  min-width: 50px;
+  text-align: right;
+}
+.dark .movimentacao-date {
+  color: #A1A1A6;
+}
+
+.movimentacao-details {
+  font-size: 13px;
+  color: #8B949E;
+  line-height: 1.3;
+}
+.dark .movimentacao-details {
+  color: #86868B;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 767px) {
+  .prazo-header {
+    flex-wrap: wrap;
+  }
+
+  .prazo-badge {
+    order: 1;
+  }
+
+  .prazo-date {
+    order: 2;
+    margin-left: auto;
+  }
+
+  .prazo-title {
+    order: 3;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .prazo-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

@@ -12,6 +12,9 @@ import {
   Scale,
   Star,
   Loader2,
+  FileCheck,
+  Gavel,
+  AlertCircle,
 } from "lucide-react";
 import {
   BarChart,
@@ -72,6 +75,32 @@ const statusClass: Record<string, string> = {
   urgente: "urgency-high",
   proximo: "urgency-medium",
   em_dia: "urgency-low",
+};
+
+const getBadgeClass = (status: string) => {
+  switch (status) {
+    case 'urgente': return 'badge-urgente';
+    case 'proximo': return 'badge-proximo';
+    case 'em_dia': return 'badge-emdia';
+    default: return 'badge-emdia';
+  }
+};
+
+const getMovimentacaoConfig = (descricao: string) => {
+  const lower = descricao.toLowerCase();
+  if (lower.includes('recurso') || lower.includes('petição')) {
+    return { icon: FileText, className: 'icon-recurso' };
+  }
+  if (lower.includes('juntada') || lower.includes('conclusos')) {
+    return { icon: FileCheck, className: 'icon-juntada' };
+  }
+  if (lower.includes('laudo') || lower.includes('perícia')) {
+    return { icon: AlertCircle, className: 'icon-laudo' };
+  }
+  if (lower.includes('sentença') || lower.includes('decisão') || lower.includes('audiência')) {
+    return { icon: Gavel, className: 'icon-decisao' };
+  }
+  return { icon: FileText, className: 'icon-recurso' };
 };
 
 export default function Dashboard() {
@@ -301,26 +330,23 @@ export default function Dashboard() {
             </div>
             <div className="space-y-3">
               {prazosMock.slice(0, 5).map((prazo) => (
-                <div
-                  key={prazo.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
-                >
-                  <div
-                    className={`mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold border ${statusClass[prazo.status]}`}
-                  >
-                    {statusLabel[prazo.status]}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                <div key={prazo.id} className="prazo-card">
+                  <div className="prazo-header">
+                    <div className={`prazo-badge ${getBadgeClass(prazo.status)}`}>
+                      {statusLabel[prazo.status]}
+                    </div>
+                    <div className="prazo-title">
                       {prazo.descricao}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {prazo.processoNumero} • {prazo.responsavel}
-                    </p>
+                    </div>
+                    <div className="prazo-date">
+                      {format(parseISO(prazo.dataVencimento), "dd/MM")}
+                    </div>
                   </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {format(parseISO(prazo.dataVencimento), "dd/MM")}
-                  </span>
+                  <div className="prazo-details">
+                    <span className="prazo-processo">{prazo.processoNumero}</span>
+                    <span className="prazo-separator">•</span>
+                    <span className="prazo-responsavel">{prazo.responsavel}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -337,27 +363,31 @@ export default function Dashboard() {
               </Badge>
             </div>
             <div className="space-y-3">
-              {movimentacoesRecentes.map((proc) => (
-                <div
-                  key={proc.id}
-                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
-                >
-                  <div className="p-1.5 rounded bg-primary/10">
-                    <FileText className="w-3.5 h-3.5 text-primary" />
+              {movimentacoesRecentes.map((proc) => {
+                const { icon: Icon, className } = getMovimentacaoConfig(proc.descricaoMovimentacao);
+                return (
+                  <div key={proc.id} className="movimentacao-card">
+                    <div className={`movimentacao-icon ${className}`}>
+                      <Icon size={18} strokeWidth={2.5} />
+                    </div>
+                    <div className="movimentacao-content">
+                      <div className="movimentacao-header">
+                        <div className="movimentacao-title">
+                          {proc.descricaoMovimentacao}
+                        </div>
+                        <div className="movimentacao-date">
+                          {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
+                        </div>
+                      </div>
+                      <div className="movimentacao-details">
+                        <span className="prazo-processo">{proc.numero}</span>
+                        <span className="prazo-separator">•</span>
+                        <span className="prazo-responsavel">{proc.cliente}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
-                      {proc.descricaoMovimentacao}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {proc.numero} • {proc.cliente}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         </div>
