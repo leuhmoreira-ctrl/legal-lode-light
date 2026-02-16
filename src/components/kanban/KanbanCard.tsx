@@ -2,15 +2,12 @@ import { useMemo } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, ArrowRight, Clock, GripVertical, MoreVertical,
-  Trash2, Edit, Check, MessageSquare, Star, Flame, CheckCircle2
+  ArrowLeft, ArrowRight, Clock, GripVertical,
+  Edit, Check, Star, Flame, CheckCircle2
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/UserAvatar";
 import { cn } from "@/lib/utils";
 import { KanbanTask, ViewMode } from "@/types/kanban";
@@ -167,36 +164,6 @@ export function KanbanCard({
                 </p>
               </div>
 
-              {!isCompact && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreVertical className="w-3.5 h-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={(e) => onEdit(task.id, e)}>
-                      <Edit className="w-3.5 h-3.5 mr-2" /> Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => onToggleToday(task, e)}>
-                      <Star className="w-3.5 h-3.5 mr-2" /> {task.marked_for_today ? "Desmarcar" : "Marcar para hoje"}
-                    </DropdownMenuItem>
-                    {canDelete && (
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={(e) => onDelete(task, e)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
             </div>
 
             {/* Compact Mode Content */}

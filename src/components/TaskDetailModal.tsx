@@ -551,6 +551,27 @@ export function TaskDetailModal({
                 <div className="text-xs text-muted-foreground pt-2">
                   Criada em {format(new Date(task.created_at), "dd/MM/yyyy 'às' HH:mm")}
                 </div>
+
+                <Separator />
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 justify-start gap-2"
+                  onClick={async () => {
+                    if (!task) return;
+                    const { error } = await supabase.from("kanban_tasks").delete().eq("id", task.id);
+                    if (error) {
+                      toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+                    } else {
+                      toast({ title: "Tarefa excluída" });
+                      onOpenChange(false);
+                      onUpdate?.();
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" /> Excluir tarefa
+                </Button>
               </div>
             </div>
           </>
