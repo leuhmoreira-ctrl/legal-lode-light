@@ -112,107 +112,111 @@ export function NovoProcessoForm({ onSuccess, onCancel }: NovoProcessoFormProps)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Número do Processo */}
-      <div className="space-y-1.5">
-        <Label>Número do Processo (CNJ) *</Label>
-        <div className="relative">
-          <Input
-            placeholder="0000000-00.0000.0.00.0000"
-            value={numero}
-            onChange={(e) => setNumero(e.target.value)}
-            className="pr-10"
-          />
-          <div className="absolute right-3 top-2.5">
-            {loadingAutofill && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-            {autofillData && <CheckCircle className="w-4 h-4 text-primary" />}
+    <form onSubmit={handleSubmit} className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        {/* Número do Processo */}
+        <div className="space-y-1.5">
+          <Label>Número do Processo (CNJ) *</Label>
+          <div className="relative">
+            <Input
+              placeholder="0000000-00.0000.0.00.0000"
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+              className="pr-10"
+            />
+            <div className="absolute right-3 top-2.5">
+              {loadingAutofill && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+              {autofillData && <CheckCircle className="w-4 h-4 text-primary" />}
+            </div>
+          </div>
+          {autofillData && (
+            <Badge variant="secondary" className="text-xs">
+              {autofillData.tribunal.nome} — {autofillData.tribunal.sistema}
+            </Badge>
+          )}
+          {errorAutofill && (
+            <Alert variant="destructive" className="py-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                {errorAutofill} — Preencha os campos manualmente.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        {/* Cliente (Polo Ativo) + Parte Contrária (Polo Passivo) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Polo Ativo (Cliente) *</Label>
+            <Input placeholder="Nome do autor/reclamante" value={cliente} onChange={(e) => setCliente(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Polo Passivo (Parte Contrária)</Label>
+            <Input placeholder="Nome do réu/reclamado" value={parteContraria} onChange={(e) => setParteContraria(e.target.value)} />
           </div>
         </div>
-        {autofillData && (
-          <Badge variant="secondary" className="text-xs">
-            {autofillData.tribunal.nome} — {autofillData.tribunal.sistema}
-          </Badge>
-        )}
-        {errorAutofill && (
-          <Alert variant="destructive" className="py-2">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="text-xs">
-              {errorAutofill} — Preencha os campos manualmente.
-            </AlertDescription>
-          </Alert>
-        )}
-      </div>
 
-      {/* Cliente (Polo Ativo) + Parte Contrária (Polo Passivo) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Advogado Responsável */}
         <div className="space-y-1.5">
-          <Label>Polo Ativo (Cliente) *</Label>
-          <Input placeholder="Nome do autor/reclamante" value={cliente} onChange={(e) => setCliente(e.target.value)} />
+          <Label>Advogado Responsável *</Label>
+          <Input placeholder="Nome do advogado" value={advogado} onChange={(e) => setAdvogado(e.target.value)} />
         </div>
-        <div className="space-y-1.5">
-          <Label>Polo Passivo (Parte Contrária)</Label>
-          <Input placeholder="Nome do réu/reclamado" value={parteContraria} onChange={(e) => setParteContraria(e.target.value)} />
-        </div>
-      </div>
 
-      {/* Advogado Responsável */}
-      <div className="space-y-1.5">
-        <Label>Advogado Responsável *</Label>
-        <Input placeholder="Nome do advogado" value={advogado} onChange={(e) => setAdvogado(e.target.value)} />
-      </div>
+        {/* Classe + Assunto (auto-preenchidos) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Classe / Tipo de Ação</Label>
+            <Input placeholder="Preenchido automaticamente" value={classe} onChange={(e) => setClasse(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Assunto</Label>
+            <Input placeholder="Preenchido automaticamente" value={assunto} onChange={(e) => setAssunto(e.target.value)} />
+          </div>
+        </div>
 
-      {/* Classe + Assunto (auto-preenchidos) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>Classe / Tipo de Ação</Label>
-          <Input placeholder="Preenchido automaticamente" value={classe} onChange={(e) => setClasse(e.target.value)} />
+        {/* Comarca + Vara (auto-preenchidos) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Comarca</Label>
+            <Input placeholder="Preenchido automaticamente" value={comarca} onChange={(e) => setComarca(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Vara</Label>
+            <Input placeholder="Preenchido automaticamente" value={vara} onChange={(e) => setVara(e.target.value)} />
+          </div>
         </div>
-        <div className="space-y-1.5">
-          <Label>Assunto</Label>
-          <Input placeholder="Preenchido automaticamente" value={assunto} onChange={(e) => setAssunto(e.target.value)} />
-        </div>
-      </div>
 
-      {/* Comarca + Vara (auto-preenchidos) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>Comarca</Label>
-          <Input placeholder="Preenchido automaticamente" value={comarca} onChange={(e) => setComarca(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Vara</Label>
-          <Input placeholder="Preenchido automaticamente" value={vara} onChange={(e) => setVara(e.target.value)} />
-        </div>
-      </div>
-
-      {/* Fase */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>Fase Processual</Label>
-          <Select value={fase} onValueChange={setFase}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Conhecimento">Conhecimento</SelectItem>
-              <SelectItem value="Recursal">Recursal</SelectItem>
-              <SelectItem value="Execução">Execução</SelectItem>
-              <SelectItem value="Encerrado">Encerrado</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Fase */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label>Fase Processual</Label>
+            <Select value={fase} onValueChange={setFase}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Conhecimento">Conhecimento</SelectItem>
+                <SelectItem value="Recursal">Recursal</SelectItem>
+                <SelectItem value="Execução">Execução</SelectItem>
+                <SelectItem value="Encerrado">Encerrado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
       {/* Botões */}
-      <div className="flex gap-3 pt-2">
-        <Button type="submit" className="flex-1" disabled={submitting}>
-          {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : 'Cadastrar Processo'}
-        </Button>
-        {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancelar
+      <div className="p-4 border-t bg-background/50 backdrop-blur-sm mt-auto">
+        <div className="flex gap-3">
+          <Button type="submit" className="flex-1" disabled={submitting}>
+            {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Salvando...</> : 'Cadastrar Processo'}
           </Button>
-        )}
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancelar
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   )
