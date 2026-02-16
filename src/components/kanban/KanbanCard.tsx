@@ -137,7 +137,7 @@ export function KanbanCard({
         )}
 
         <div className="flex items-start gap-2 w-full">
-          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing", isCompact ? "mt-0.5" : "mt-1")}>
+          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing", isCompact ? "mt-0.5" : "mt-1", dragHandleProps?.className)}>
             <GripVertical className="w-4 h-4 text-muted-foreground/40" />
           </div>
 
