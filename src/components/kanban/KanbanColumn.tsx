@@ -1,0 +1,58 @@
+import { cn } from "@/lib/utils";
+import { KanbanColumnId } from "@/types/kanban";
+
+interface KanbanColumnProps {
+  id: KanbanColumnId;
+  title: string;
+  bgColor: string;
+  borderColor: string; // e.g. "border-t-[#007AFF]" -> I will extract the color part
+  count: number;
+  totalTasks: number;
+  children: React.ReactNode;
+}
+
+export function KanbanColumn({
+  id,
+  title,
+  bgColor,
+  borderColor,
+  count,
+  totalTasks,
+  children
+}: KanbanColumnProps) {
+  const percentage = totalTasks > 0 ? Math.round((count / totalTasks) * 100) : 0;
+
+  // Extract color from borderColor class (e.g. "border-t-[#007AFF]" -> "bg-[#007AFF]")
+  // Or just map it manually since we control the props.
+  const progressColor = borderColor.replace('border-t-', 'bg-');
+
+  return (
+    <div className={cn("flex flex-col h-full rounded-xl transition-colors duration-300", bgColor)}>
+      {/* Header */}
+      <div className={cn("px-4 py-3 rounded-t-xl bg-white/50 backdrop-blur-sm border-t-[3px]", borderColor)}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+            {title}
+            <span className="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium">
+              {count}
+            </span>
+          </h3>
+          <span className="text-xs text-muted-foreground font-medium">{percentage}%</span>
+        </div>
+
+        {/* Custom Progress Bar */}
+        <div className="h-1 w-full bg-gray-200/50 rounded-full overflow-hidden">
+          <div
+            className={cn("h-full transition-all duration-500", progressColor)}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 p-3 overflow-y-auto min-h-[100px] scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent space-y-3">
+        {children}
+      </div>
+    </div>
+  );
+}
