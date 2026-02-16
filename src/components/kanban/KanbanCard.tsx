@@ -76,7 +76,6 @@ export function KanbanCard({
   const getMember = (id: string | null) => teamMembers.find((m: any) => m.id === id);
 
   const isCompact = viewMode === 'compact';
-  const isExpanded = viewMode === 'expanded';
 
   return (
     <motion.div
@@ -154,7 +153,7 @@ export function KanbanCard({
                     <Star className={cn("w-3.5 h-3.5", task.marked_for_today ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40 hover:text-yellow-400")} />
                   </button>
                 )}
-                <p className={cn("text-sm font-semibold text-foreground leading-tight truncate", isExpanded && "whitespace-normal line-clamp-none")}>
+                <p className="text-sm font-semibold text-foreground leading-tight truncate">
                    {task.title}
                 </p>
               </div>
@@ -206,7 +205,7 @@ export function KanbanCard({
 
                   {/* Description Preview */}
                   {task.description && (
-                    <p className={cn("text-xs text-muted-foreground mb-3", isExpanded ? "line-clamp-none whitespace-pre-wrap" : "line-clamp-2")}>
+                    <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
                        {task.description}
                     </p>
                   )}
@@ -236,26 +235,6 @@ export function KanbanCard({
                     </div>
                   </div>
 
-                  {/* Visual Timeline (Expanded Only) */}
-                  {isExpanded && (
-                     <div className="mt-3 pt-2 relative animate-fade-in">
-                        <div className="h-0.5 bg-gray-100 w-full absolute top-2.5 left-0 -z-10" />
-                        <div className="flex justify-between text-[8px] text-muted-foreground">
-                           <div className="flex flex-col items-center gap-1">
-                              <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                              <span>Criado</span>
-                           </div>
-                           <div className="flex flex-col items-center gap-1">
-                              <div className={cn("w-1.5 h-1.5 rounded-full", task.started_at ? "bg-blue-400" : "bg-gray-200")} />
-                              <span>Iniciado</span>
-                           </div>
-                           <div className="flex flex-col items-center gap-1">
-                              <div className={cn("w-1.5 h-1.5 rounded-full", task.completed_at ? "bg-green-400" : "bg-gray-200")} />
-                              <span>Fim</span>
-                           </div>
-                        </div>
-                     </div>
-                  )}
                </>
             )}
           </div>
