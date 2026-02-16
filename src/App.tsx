@@ -37,7 +37,6 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <ThemeContextProvider>
         <TooltipProvider>
-          <Toaster />
           <AuthProvider>
             <PermissionsProvider>
               <BrowserRouter>
@@ -71,6 +70,7 @@ const App = () => (
               </BrowserRouter>
             </PermissionsProvider>
           </AuthProvider>
+          <Toaster />
         </TooltipProvider>
       </ThemeContextProvider>
     </ThemeProvider>

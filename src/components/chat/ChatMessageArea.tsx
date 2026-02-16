@@ -181,7 +181,7 @@ export function ChatMessageArea({ conversationId, compact }: ChatMessageAreaProp
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-full p-0 border-none shadow-xl" align="start" side="top">
-                <EmojiPicker onEmojiClick={handleEmojiClick} lazyLoadEmojis={true} theme="auto" width={300} height={400} />
+                <EmojiPicker onEmojiClick={handleEmojiClick} lazyLoadEmojis={true} theme={"auto" as any} width={300} height={400} />
               </PopoverContent>
             </Popover>
 
