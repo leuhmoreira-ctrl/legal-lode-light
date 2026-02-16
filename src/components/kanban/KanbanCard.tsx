@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Clock, GripVertical,
-  Edit, Check, Star, Flame, CheckCircle2
+  Check, Star, Flame, CheckCircle2
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -98,15 +98,10 @@ export function KanbanCard({
         onClick={onClick}
       >
         {/* Quick Actions Overlay (Hover) - Hide in compact to save space */}
-        {!isDragging && !isCompact && (
+        {!isDragging && !isCompact && task.status !== 'done' && (
            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-             {task.status !== 'done' && (
-               <Button variant="secondary" size="icon" className="h-7 w-7 bg-white/90 hover:bg-white shadow-sm" onClick={(e) => { e.stopPropagation(); onComplete(task.id); }} title="Concluir">
-                 <Check className="w-3.5 h-3.5 text-green-600" />
-               </Button>
-             )}
-             <Button variant="secondary" size="icon" className="h-7 w-7 bg-white/90 hover:bg-white shadow-sm" onClick={(e) => onEdit(task.id, e)} title="Editar">
-               <Edit className="w-3.5 h-3.5 text-blue-600" />
+             <Button variant="secondary" size="icon" className="h-7 w-7 bg-white/90 hover:bg-white shadow-sm" onClick={(e) => { e.stopPropagation(); onComplete(task.id); }} title="Concluir">
+               <Check className="w-3.5 h-3.5 text-green-600" />
              </Button>
            </div>
         )}
