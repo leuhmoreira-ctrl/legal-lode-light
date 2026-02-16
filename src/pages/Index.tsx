@@ -339,43 +339,45 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Movimentações Recentes */}
-        <div className="apple-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.4px]">
-              Movimentações Recentes
-            </h3>
-            <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[12px] font-medium">
-              Últimas 3
-            </span>
-          </div>
-          <div className="space-y-3">
-            {movimentacoesRecentes.map((proc) => (
-              <div
-                key={proc.id}
-                className="flex items-start gap-3 p-3 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors duration-200"
-              >
-                <div className="p-2 rounded-full bg-[#007AFF]/10">
-                  <FileText className="w-3.5 h-3.5 text-[#007AFF]" />
+        {/* Prazos + Movimentações side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <UpcomingDeadlines />
+
+          {/* Movimentações Recentes */}
+          <div className="apple-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.4px]">
+                Movimentações Recentes
+              </h3>
+              <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[12px] font-medium">
+                Últimas 3
+              </span>
+            </div>
+            <div className="space-y-3">
+              {movimentacoesRecentes.map((proc) => (
+                <div
+                  key={proc.id}
+                  className="flex items-start gap-3 p-3 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors duration-200"
+                >
+                  <div className="p-2 rounded-full bg-[#007AFF]/10">
+                    <FileText className="w-3.5 h-3.5 text-[#007AFF]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
+                      {proc.descricaoMovimentacao}
+                    </p>
+                    <p className="text-[12px] text-[#6E6E73] mt-0.5">
+                      {proc.numero} <span className="mx-1">•</span> {proc.cliente}
+                    </p>
+                  </div>
+                  <span className="text-[12px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-2 py-1 rounded-md shadow-sm border border-black/5">
+                    {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
-                    {proc.descricaoMovimentacao}
-                  </p>
-                  <p className="text-[12px] text-[#6E6E73] mt-0.5">
-                    {proc.numero} <span className="mx-1">•</span> {proc.cliente}
-                  </p>
-                </div>
-                <span className="text-[12px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-2 py-1 rounded-md shadow-sm border border-black/5">
-                  {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
-
-        {/* Upcoming Deadlines */}
-        <UpcomingDeadlines />
       </div>
     </AppLayout>
   );
