@@ -11,57 +11,19 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, User, Calendar, Loader2, Link2, X, Filter, MoreVertical, Trash2, Edit, ArrowRight, Star } from "lucide-react";
+import { Loader2, X, Filter, Star, List, Layout, Maximize2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
-import { UserAvatar } from "@/components/UserAvatar";
 import { useAnimationOrigin } from "@/contexts/AnimationOriginContext";
-
-const COLUMNS = [
-  { id: "todo", title: "A Fazer", color: "bg-muted-foreground" },
-  { id: "in_progress", title: "Em Andamento", color: "bg-warning" },
-  { id: "review", title: "Revisão", color: "bg-primary" },
-  { id: "done", title: "Concluído", color: "bg-success" },
-];
-
-const priorityStyle: Record<string, string> = {
-  high: "urgency-high",
-  medium: "urgency-medium",
-  low: "urgency-low",
-};
-
-const priorityLabel: Record<string, string> = {
-  high: "Alta",
-  medium: "Média",
-  low: "Baixa",
-};
-
-interface KanbanTask {
-  id: string;
-  title: string;
-  description: string | null;
-  processo_id: string | null;
-  assigned_to: string | null;
-  status: string;
-  priority: string;
-  position_index: number;
-  due_date: string | null;
-  user_id: string;
-  created_at: string;
-  marked_for_today: boolean;
-  marked_for_today_at: string | null;
-  observacoes: string | null;
-  processo?: { id: string; numero: string; cliente: string } | null;
-}
+import { KanbanCard } from "@/components/kanban/KanbanCard";
+import { KanbanColumn } from "@/components/kanban/KanbanColumn";
+import { KanbanTask, TaskActivity, ViewMode, KANBAN_COLUMNS as COLUMNS } from "@/types/kanban";
+import { getStageEntryDate, getTaskStartDate, getTaskCompletionDate } from "@/utils/kanbanUtils";
 
 interface ProcessoMap {
   [id: string]: { id: string; numero: string; cliente: string };
@@ -83,6 +45,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [processoMap, setProcessoMap] = useState<ProcessoMap>({});
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<KanbanTask | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("normal");
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -109,10 +72,31 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
     const { data, error } = await query;
     if (!error && data) {
-      setTasks(data.map((t) => ({
-        ...t,
-        processo: t.processo_id ? processoMap[t.processo_id] || null : null,
-      })) as KanbanTask[]);
+       // Fetch activities for enriched data
+       const taskIds = data.map(t => t.id);
+       let activities: TaskActivity[] = [];
+       if (taskIds.length > 0) {
+          const { data: actData } = await supabase
+             .from('task_activities')
+             .select('*')
+             .in('task_id', taskIds)
+             .eq('action_type', 'status_changed');
+          activities = (actData as TaskActivity[]) || [];
+       }
+
+      setTasks(data.map((t) => {
+        const stageEntryDate = getStageEntryDate(t.id, t.status, activities);
+        const startedAt = getTaskStartDate(t.id, activities);
+        const completedAt = getTaskCompletionDate(t.id, activities);
+
+        return {
+          ...t,
+          processo: t.processo_id ? processoMap[t.processo_id] || null : null,
+          stage_entry_date: stageEntryDate || t.created_at,
+          started_at: startedAt,
+          completed_at: completedAt
+        };
+      }) as KanbanTask[]);
     }
     setLoading(false);
   }, [processoMap, personalOnly, user]);
@@ -129,6 +113,20 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadTasks]);
+
+  // Migrate 'review' tasks to 'in_progress'
+  useEffect(() => {
+    const migrateReviewTasks = async () => {
+       const { error } = await supabase
+          .from('kanban_tasks')
+          .update({ status: 'in_progress' })
+          .eq('status', 'review');
+       if (error) {
+         console.error("Error migrating review tasks", error);
+       }
+    };
+    migrateReviewTasks();
+  }, []);
 
   // Auto-clear "Para Fazer Hoje" at midnight
   useEffect(() => {
@@ -157,6 +155,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     const newStatus = destination.droppableId;
     const newPosition = destination.index;
 
+    // Optimistic update
     setTasks((prev) =>
       prev.map((t) => (t.id === draggableId ? { ...t, status: newStatus, position_index: newPosition } : t))
     );
@@ -165,6 +164,32 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       .from("kanban_tasks")
       .update({ status: newStatus, position_index: newPosition })
       .eq("id", draggableId);
+  };
+
+  const handleMoveTask = async (taskId: string, direction: 'left' | 'right') => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const currentIndex = COLUMNS.findIndex(c => c.id === task.status);
+    let newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+
+    if (newIndex >= 0 && newIndex < COLUMNS.length) {
+       const newStatus = COLUMNS[newIndex].id;
+       // Optimistic update
+       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+
+       const { error } = await supabase.from('kanban_tasks').update({ status: newStatus }).eq('id', taskId);
+       if (!error) {
+         toast({ title: `Tarefa movida para ${COLUMNS[newIndex].title}` });
+       }
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    // Move to Done
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'done' } : t));
+    await supabase.from('kanban_tasks').update({ status: 'done' }).eq('id', taskId);
+    toast({ title: "Tarefa concluída! 🎉" });
   };
 
   const tasksFilteredByProcess = useMemo(() => {
@@ -179,8 +204,15 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     }, {} as Record<string, KanbanTask[]>);
 
     tasksFilteredByProcess.forEach((task) => {
-      if (grouped[task.status]) {
-        grouped[task.status].push(task);
+      let status = task.status;
+      if (status === 'review') status = 'in_progress';
+
+      if (grouped[status]) {
+        grouped[status].push(task);
+      } else if (COLUMNS.some(c => c.id === status)) {
+         grouped[status].push(task);
+      } else {
+         if (grouped['todo']) grouped['todo'].push(task);
       }
     });
     return grouped;
@@ -228,7 +260,38 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               {personalOnly ? " atribuídas a você" : " no total"}
             </p>
           </div>
-          <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
+          <div className="flex items-center gap-2">
+             <div className="flex bg-muted p-1 rounded-lg border">
+                <Button
+                   variant={viewMode === 'compact' ? 'secondary' : 'ghost'}
+                   size="icon"
+                   className="h-7 w-7"
+                   onClick={() => setViewMode('compact')}
+                   title="Modo Compacto"
+                >
+                   <List className="w-4 h-4" />
+                </Button>
+                <Button
+                   variant={viewMode === 'normal' ? 'secondary' : 'ghost'}
+                   size="icon"
+                   className="h-7 w-7"
+                   onClick={() => setViewMode('normal')}
+                   title="Modo Normal"
+                >
+                   <Layout className="w-4 h-4" />
+                </Button>
+                <Button
+                   variant={viewMode === 'expanded' ? 'secondary' : 'ghost'}
+                   size="icon"
+                   className="h-7 w-7"
+                   onClick={() => setViewMode('expanded')}
+                   title="Modo Expandido"
+                >
+                   <Maximize2 className="w-4 h-4" />
+                </Button>
+             </div>
+             <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
+          </div>
         </div>
 
         {/* Process filter */}
@@ -269,7 +332,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               </div>
               <div className="flex flex-wrap gap-2">
                 {todayTasks.map((t) => (
-                  <Badge key={t.id} variant="outline" className="cursor-pointer text-xs gap-1.5 py-1.5" onClick={() => setSelectedTaskId(t.id)}>
+                  <Badge key={t.id} variant="outline" className="cursor-pointer text-xs gap-1.5 py-1.5 bg-white" onClick={() => setSelectedTaskId(t.id)}>
                     <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                     {t.title}
                   </Badge>
@@ -285,128 +348,72 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           </div>
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)] min-h-[500px]">
               {COLUMNS.map((col) => (
-                <div key={col.id} className="kanban-column">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className={`w-2.5 h-2.5 rounded-full ${col.color}`} />
-                    <h3 className="text-sm font-semibold text-foreground">{col.title}</h3>
-                    <Badge variant="secondary" className="text-[10px] ml-auto">
-                      {tasksByStatus[col.id].length}
-                    </Badge>
-                  </div>
-                  <Droppable droppableId={col.id}>
-                    {(provided) => (
-                      <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-3 min-h-[100px]">
-                        {tasksByStatus[col.id].map((task, index) => (
-                          <Draggable key={task.id} draggableId={task.id} index={index}>
-                            {(provided) => (
-                              <div ref={provided.innerRef} {...provided.draggableProps}>
-                                <Card className={cn("p-3.5 hover:shadow-md transition-shadow cursor-pointer group", task.marked_for_today && "ring-1 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10")} onClick={() => setSelectedTaskId(task.id)}>
-                                  <div className="flex items-start gap-2">
-                                    <div {...provided.dragHandleProps}>
-                                      <GripVertical className="w-4 h-4 text-muted-foreground/40 mt-0.5" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-start justify-between gap-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <button
-                                            className="shrink-0"
-                                            onClick={async (e) => {
-                                              e.stopPropagation();
-                                              const newVal = !task.marked_for_today;
-                                              setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
-                                              await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
-                                            }}
-                                            title={task.marked_for_today ? "Desmarcar" : "Marcar para hoje"}
-                                          >
-                                            <Star className={cn("w-3.5 h-3.5", task.marked_for_today ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40")} />
-                                          </button>
-                                          <p className="text-sm font-medium text-foreground">{task.title}</p>
-                                        </div>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="icon"
-                                              className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              <MoreVertical className="w-3.5 h-3.5" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                            <DropdownMenuItem onClick={(e) => {
-                                              setOrigin({ x: e.clientX, y: e.clientY });
-                                              setSelectedTaskId(task.id);
-                                            }}>
-                                              <Edit className="w-3.5 h-3.5 mr-2" /> Editar tarefa
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={async () => {
-                                              const newVal = !task.marked_for_today;
-                                              setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal } : t));
-                                              await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
-                                            }}>
-                                              <Star className="w-3.5 h-3.5 mr-2" /> {task.marked_for_today ? "Desmarcar" : "⭐ Marcar para hoje"}
-                                            </DropdownMenuItem>
-                                            {canDelete(task) && (
-                                              <DropdownMenuItem
-                                                className="text-destructive focus:text-destructive"
-                                                onClick={(e) => {
-                                                  setOrigin({ x: e.clientX, y: e.clientY });
-                                                  setDeleteTarget(task);
-                                                }}
-                                              >
-                                                <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir tarefa
-                                              </DropdownMenuItem>
-                                            )}
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-
-                                      {task.processo && (
-                                        <div className="flex items-center gap-1 mt-1">
-                                          <Link2 className="w-3 h-3 text-primary" />
-                                          <span className="text-[11px] text-primary font-medium truncate">
-                                            {task.processo.numero}
-                                          </span>
-                                        </div>
-                                      )}
-
-                                      {task.description && (
-                                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
-                                      )}
-                                      <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${priorityStyle[task.priority]}`}>
-                                          {priorityLabel[task.priority]}
-                                        </span>
-                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                                          <UserAvatar
-                                            name={getMember(task.assigned_to)?.full_name}
-                                            avatarUrl={getMember(task.assigned_to)?.avatar_url}
-                                            size="sm"
-                                            className="w-4 h-4 text-[8px]"
+                <div key={col.id} className="h-full">
+                  <KanbanColumn
+                    id={col.id}
+                    title={col.title}
+                    bgColor={col.bgColor}
+                    borderColor={col.borderColor}
+                    count={tasksByStatus[col.id]?.length || 0}
+                    totalTasks={tasksFilteredByProcess.length}
+                  >
+                     <Droppable droppableId={col.id}>
+                        {(provided, snapshot) => (
+                           <div
+                              ref={provided.innerRef}
+                              {...provided.droppableProps}
+                              className={cn(
+                                 "space-y-3 min-h-[100px] transition-colors rounded-lg",
+                                 snapshot.isDraggingOver && "bg-black/5"
+                              )}
+                           >
+                              {tasksByStatus[col.id]?.map((task, index) => (
+                                 <Draggable key={task.id} draggableId={task.id} index={index}>
+                                    {(provided, snapshot) => (
+                                       <div
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          style={provided.draggableProps.style}
+                                       >
+                                          <KanbanCard
+                                             task={task}
+                                             index={index}
+                                             viewMode={viewMode}
+                                             isDragging={snapshot.isDragging}
+                                             onEdit={(id, e) => {
+                                                e.stopPropagation();
+                                                setOrigin({ x: e.clientX, y: e.clientY });
+                                                setSelectedTaskId(id);
+                                             }}
+                                             onDelete={(task, e) => {
+                                                e.stopPropagation();
+                                                setOrigin({ x: e.clientX, y: e.clientY });
+                                                setDeleteTarget(task);
+                                             }}
+                                             onToggleToday={async (task, e) => {
+                                                e.stopPropagation();
+                                                const newVal = !task.marked_for_today;
+                                                setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
+                                                await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
+                                             }}
+                                             onMove={handleMoveTask}
+                                             onComplete={handleCompleteTask}
+                                             onClick={() => setSelectedTaskId(task.id)}
+                                             dragHandleProps={provided.dragHandleProps}
+                                             teamMembers={teamMembers}
+                                             canDelete={canDelete(task)}
                                           />
-                                          {getMember(task.assigned_to)?.full_name.split(" ")[0] || "—"}
-                                        </div>
-                                        {task.due_date && (
-                                          <div className="flex items-center gap-1 text-[10px] text-muted-foreground ml-auto">
-                                            <Calendar className="w-3 h-3" />
-                                            {format(new Date(task.due_date), "dd/MM")}
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </Card>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
+                                       </div>
+                                    )}
+                                 </Draggable>
+                              ))}
+                              {provided.placeholder}
+                           </div>
+                        )}
+                     </Droppable>
+                  </KanbanColumn>
                 </div>
               ))}
             </div>
