@@ -102,11 +102,11 @@ export function ProcessHeaderUnified({
     <div className={`flex flex-col items-start gap-1.5 ${className}`}>
       <div className="flex items-center gap-1.5">
         <Icon className={`w-3.5 h-3.5 ${colorClass}`} />
-        <span className="text-[11px] font-semibold text-[#86868B] uppercase tracking-wide">
+        <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
           {label}
         </span>
       </div>
-      <span className={`text-[16px] text-[#1D1D1F] leading-snug ${valueClass}`}>
+      <span className={`text-[16px] text-foreground leading-snug ${valueClass}`}>
         {value}
       </span>
     </div>
@@ -115,7 +115,7 @@ export function ProcessHeaderUnified({
   return (
     <header
       className={`
-        bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_2px_8px_rgba(0,0,0,0.02)] py-8 rounded-xl
+        bg-card shadow-[0_1px_3px_rgba(0,0,0,0.03),0_2px_8px_rgba(0,0,0,0.02)] py-8 rounded-xl
         -mx-6 -mt-6 px-0
         ${className}
       `}
@@ -131,24 +131,24 @@ export function ProcessHeaderUnified({
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/processos")}
-                className="mt-1 -ml-3 h-8 w-8 text-[#86868B] hover:text-[#1D1D1F] hover:bg-transparent"
+                className="mt-1 -ml-3 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-transparent"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
 
               <div>
-                <h1 className="text-[32px] leading-[1.2] font-bold text-[#000000] tracking-tight">
-                  {cliente} <span className="text-[#86868B] font-light mx-1">×</span> {parteContraria || "Parte Contrária"}
+                <h1 className="text-[32px] leading-[1.2] font-bold text-foreground tracking-tight">
+                  {cliente} <span className="text-muted-foreground font-light mx-1">×</span> {parteContraria || "Parte Contrária"}
                 </h1>
 
                 <div
                   className="flex items-center gap-2 mt-2 group cursor-pointer w-fit"
                   onClick={handleCopy}
                 >
-                  <span className="text-[15px] font-mono text-[#86868B] tracking-wide group-hover:text-[#007AFF] transition-colors">
+                  <span className="text-[15px] font-mono text-muted-foreground tracking-wide group-hover:text-primary transition-colors">
                     {numero}
                   </span>
-                  <Copy className="w-3.5 h-3.5 text-[#86868B] opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <Copy className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </div>
             </div>
@@ -158,7 +158,7 @@ export function ProcessHeaderUnified({
           <div className="flex items-center gap-3 self-end md:self-start">
             <Button
               onClick={onNewTask}
-              className="bg-[#007AFF] hover:bg-[#007AFF]/90 text-white h-10 px-4 rounded-[10px] text-[15px] font-semibold shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground h-10 px-4 rounded-[10px] text-[15px] font-semibold shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <Plus className="w-4 h-4 mr-1.5" />
               Nova Tarefa
@@ -167,7 +167,7 @@ export function ProcessHeaderUnified({
             <Button
               variant="outline"
               onClick={onViewTasks}
-              className="bg-transparent text-[#007AFF] border border-[#007AFF]/30 hover:bg-[#007AFF]/5 h-10 px-4 rounded-[10px] text-[15px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="bg-transparent text-primary border border-primary/30 hover:bg-primary/5 h-10 px-4 rounded-[10px] text-[15px] font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <List className="w-4 h-4 mr-1.5" />
               Ver Tarefas
@@ -175,7 +175,7 @@ export function ProcessHeaderUnified({
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 text-[#007AFF] hover:bg-[#007AFF]/10 rounded-[10px]">
+                <Button variant="ghost" size="icon" className="h-10 w-10 text-primary hover:bg-primary/10 rounded-[10px]">
                   <MoreVertical className="w-5 h-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -241,7 +241,7 @@ export function ProcessHeaderUnified({
             label="Tipo de Ação"
             value={tipoAcao || "Não informado"}
             icon={FileText}
-            colorClass="text-[#86868B]"
+            colorClass="text-muted-foreground"
             className="md:order-5"
           />
 
@@ -250,7 +250,7 @@ export function ProcessHeaderUnified({
             label="Vara / Comarca"
             value={`${vara} — ${comarca}`}
             icon={MapPin}
-            colorClass="text-[#86868B]"
+            colorClass="text-muted-foreground"
             className="md:order-4"
           />
 
@@ -259,7 +259,7 @@ export function ProcessHeaderUnified({
             label="Distribuição"
             value={formattedDate}
             icon={Calendar}
-            colorClass="text-[#86868B]"
+            colorClass="text-muted-foreground"
             className="md:order-6"
           />
         </div>
