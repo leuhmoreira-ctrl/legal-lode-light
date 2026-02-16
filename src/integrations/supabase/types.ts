@@ -154,42 +154,51 @@ export type Database = {
       }
       document_metadata: {
         Row: {
+          caminho_completo: string | null
           category: string
           created_at: string
           id: string
           mime_type: string
           original_name: string
+          pasta_categoria: string | null
           process_id: string
           size_bytes: number
           storage_path: string
+          subpasta: string | null
           tags: string[] | null
           task_id: string | null
           uploaded_by: string
           version: number
         }
         Insert: {
+          caminho_completo?: string | null
           category?: string
           created_at?: string
           id?: string
           mime_type: string
           original_name: string
+          pasta_categoria?: string | null
           process_id: string
           size_bytes: number
           storage_path: string
+          subpasta?: string | null
           tags?: string[] | null
           task_id?: string | null
           uploaded_by: string
           version?: number
         }
         Update: {
+          caminho_completo?: string | null
           category?: string
           created_at?: string
           id?: string
           mime_type?: string
           original_name?: string
+          pasta_categoria?: string | null
           process_id?: string
           size_bytes?: number
           storage_path?: string
+          subpasta?: string | null
           tags?: string[] | null
           task_id?: string | null
           uploaded_by?: string
