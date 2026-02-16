@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { uploadChatAttachment } from "@/utils/storage";
 
 export interface Conversation {
   id: string;
@@ -224,6 +225,7 @@ export function useChatMessages(conversationId: string | null) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
 
   const loadMessages = useCallback(async () => {
     if (!conversationId) return;
@@ -270,10 +272,11 @@ export function useChatMessages(conversationId: string | null) {
     loadMessages();
   }, [loadMessages]);
 
-  // Realtime subscription
+  // Realtime subscription and Presence
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !user) return;
 
+    // Messages channel
     const channel = supabase
       .channel(`chat-${conversationId}`)
       .on(
@@ -304,7 +307,26 @@ export function useChatMessages(conversationId: string | null) {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    // Presence channel for typing
+    const presenceChannel = supabase.channel(`presence-${conversationId}`, {
+      config: { presence: { key: user.id } },
+    });
+
+    presenceChannel
+      .on("presence", { event: "sync" }, async () => {
+        const newState = presenceChannel.presenceState();
+        const typingIds = Object.keys(newState).filter((key) => key !== user.id);
+
+        // Fetch names if needed, for now just IDs
+        // In a real app we'd cache these profiles
+        setTypingUsers(typingIds);
+      })
+      .subscribe();
+
+    return () => {
+        supabase.removeChannel(channel);
+        supabase.removeChannel(presenceChannel);
+    };
   }, [conversationId, user]);
 
   const sendMessage = useCallback(
@@ -326,5 +348,25 @@ export function useChatMessages(conversationId: string | null) {
     [conversationId, user]
   );
 
-  return { messages, loading, sendMessage, loadMessages };
+  const sendFile = useCallback(async (file: File) => {
+      if (!conversationId || !user) return;
+      try {
+          const { url } = await uploadChatAttachment(file);
+          // Format: [Arquivo] filename (url)
+          const content = `[Arquivo] ${file.name} (${url})`;
+          await sendMessage(content);
+      } catch (e) {
+          console.error("Failed to send file", e);
+      }
+  }, [conversationId, user, sendMessage]);
+
+  const setTyping = async (isTyping: boolean) => {
+      if (!conversationId || !user) return;
+      const channel = supabase.getChannels().find(c => c.topic === `presence-${conversationId}`);
+      if (channel) {
+          await channel.track({ typing: isTyping, user_id: user.id });
+      }
+  };
+
+  return { messages, loading, sendMessage, sendFile, loadMessages, typingUsers, setTyping };
 }
