@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Copy,
@@ -71,15 +70,6 @@ export function ProcessHeaderUnified({
 }: ProcessHeaderUnifiedProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isScrolled, setIsScrolled] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 60);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(numero);
@@ -125,12 +115,7 @@ export function ProcessHeaderUnified({
   return (
     <header
       className={`
-        sticky top-0 z-50 transition-all duration-200 ease-in-out
-        ${isScrolled
-          ? "bg-white/85 backdrop-blur-[20px] shadow-[0_2px_16px_rgba(0,0,0,0.08)] py-4"
-          : "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_2px_8px_rgba(0,0,0,0.02)] py-8"
-        }
-        border-b border-[#F0F0F2]
+        bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_2px_8px_rgba(0,0,0,0.02)] py-8
         ${className}
       `}
     >
