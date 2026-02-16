@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
   FileText,
@@ -8,7 +8,6 @@ import {
   Loader2,
   Folder,
   ChevronRight,
-  ChevronDown,
   Wand2,
   FolderPlus,
   Pencil,
@@ -48,6 +47,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import {
+  buildDocumentPath,
   cloneDefaultFolderStructure,
   countByFolder,
   folderKey,
@@ -82,6 +82,19 @@ interface DriveFolderRow {
   estrutura_subpastas: unknown;
 }
 
+interface FolderTarget {
+  pastaCategoria: string;
+  subpasta: string | null;
+}
+
+interface MoveHistory {
+  docId: string;
+  from: FolderTarget;
+  to: FolderTarget;
+  oldName: string;
+  newName: string;
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   petition: "Peticao",
   decision: "Decisao",
@@ -89,6 +102,15 @@ const CATEGORY_LABELS: Record<string, string> = {
   client_document: "Doc. Cliente",
   evidence: "Prova",
   other: "Outro",
+};
+
+const CATEGORY_FOLDER_RULES: Record<string, string[]> = {
+  petition: ["01 - Peticoes"],
+  decision: ["02 - Decisoes e Sentencas"],
+  power_of_attorney: ["03 - Documentos"],
+  client_document: ["03 - Documentos"],
+  evidence: ["04 - Provas"],
+  other: [],
 };
 
 interface ProcessDocumentsProps {
@@ -103,6 +125,28 @@ function cloneStructure(base: FolderStructure): FolderStructure {
       custom: cat.custom,
       subpastas: cat.subpastas.map((sub) => (typeof sub === "string" ? sub : { ...sub })),
     })),
+  };
+}
+
+function sortDocuments(items: DocumentMeta[]): DocumentMeta[] {
+  return [...items].sort((a, b) => {
+    if ((a.pasta_categoria || "") !== (b.pasta_categoria || "")) {
+      return (a.pasta_categoria || "").localeCompare(b.pasta_categoria || "");
+    }
+    if ((a.subpasta || "") !== (b.subpasta || "")) {
+      return (a.subpasta || "").localeCompare(b.subpasta || "");
+    }
+    if (a.ordem_na_pasta !== b.ordem_na_pasta) return a.ordem_na_pasta - b.ordem_na_pasta;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+}
+
+function splitFileName(name: string): { base: string; ext: string } {
+  const lastDot = name.lastIndexOf(".");
+  if (lastDot <= 0 || lastDot === name.length - 1) return { base: name, ext: "" };
+  return {
+    base: name.slice(0, lastDot),
+    ext: name.slice(lastDot),
   };
 }
 
@@ -132,9 +176,41 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   const [moveTarget, setMoveTarget] = useState<DocumentMeta | null>(null);
   const [moveValue, setMoveValue] = useState("");
 
+  const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
+  const [dragOverTargetKey, setDragOverTargetKey] = useState<string | null>(null);
+  const [recentlyMovedDocId, setRecentlyMovedDocId] = useState<string | null>(null);
+  const [shakeDocId, setShakeDocId] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<MoveHistory | null>(null);
+
+  const expandedStorageKey = useMemo(() => `process-files-expanded:${processId}`, [processId]);
+
   useEffect(() => {
     loadAll();
   }, [processId, refreshKey]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(expandedStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Record<string, boolean>;
+        setExpanded(parsed);
+      } else {
+        setExpanded({});
+      }
+    } catch {
+      setExpanded({});
+    }
+  }, [expandedStorageKey]);
+
+  useEffect(() => {
+    localStorage.setItem(expandedStorageKey, JSON.stringify(expanded));
+  }, [expanded, expandedStorageKey]);
+
+  useEffect(() => {
+    return () => {
+      document.body.classList.remove("dragging-documents-cursor");
+    };
+  }, []);
 
   const loadAll = async () => {
     setLoading(true);
@@ -151,14 +227,8 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       console.error("Erro ao carregar documentos:", docsRes.error);
       setDocs([]);
     } else {
-      const items = (docsRes.data || []) as unknown as DocumentMeta[];
-      items.sort((a, b) => {
-        if (a.pasta_categoria !== b.pasta_categoria) return (a.pasta_categoria || "").localeCompare(b.pasta_categoria || "");
-        if (a.subpasta !== b.subpasta) return (a.subpasta || "").localeCompare(b.subpasta || "");
-        if (a.ordem_na_pasta !== b.ordem_na_pasta) return a.ordem_na_pasta - b.ordem_na_pasta;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-      setDocs(items);
+      const items = (docsRes.data || []) as DocumentMeta[];
+      setDocs(sortDocuments(items));
     }
 
     if (folderRes.error || !folderRes.data) {
@@ -170,9 +240,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   };
 
   const structure = useMemo<FolderStructure>(() => {
-    if (!driveFolder) {
-      return cloneDefaultFolderStructure("Processo");
-    }
+    if (!driveFolder) return cloneDefaultFolderStructure("Processo");
     return parseFolderStructure(driveFolder.estrutura_subpastas, driveFolder.nome_pasta || "Processo");
   }, [driveFolder]);
 
@@ -228,6 +296,243 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     setDriveFolder(data as unknown as DriveFolderRow);
   };
 
+  const isSameFolder = useCallback((doc: DocumentMeta, target: FolderTarget) => {
+    return (doc.pasta_categoria || "") === target.pastaCategoria && (doc.subpasta || "") === (target.subpasta || "");
+  }, []);
+
+  const findConflictInTarget = useCallback(
+    (doc: DocumentMeta, target: FolderTarget) =>
+      docs.find(
+        (d) =>
+          d.id !== doc.id &&
+          (d.pasta_categoria || "") === target.pastaCategoria &&
+          (d.subpasta || "") === (target.subpasta || "") &&
+          d.original_name.toLowerCase() === doc.original_name.toLowerCase()
+      ) || null,
+    [docs]
+  );
+
+  const ensureUniqueNameForTarget = useCallback(
+    (rawName: string, target: FolderTarget, excludeId: string) => {
+      const { base, ext } = splitFileName(rawName);
+      const existing = new Set(
+        docs
+          .filter(
+            (d) =>
+              d.id !== excludeId &&
+              (d.pasta_categoria || "") === target.pastaCategoria &&
+              (d.subpasta || "") === (target.subpasta || "")
+          )
+          .map((d) => d.original_name.toLowerCase())
+      );
+
+      if (!existing.has(rawName.toLowerCase())) return rawName;
+
+      let index = 2;
+      let candidate = `${base} (${index})${ext}`;
+      while (existing.has(candidate.toLowerCase())) {
+        index += 1;
+        candidate = `${base} (${index})${ext}`;
+      }
+      return candidate;
+    },
+    [docs]
+  );
+
+  const canDropDocumentIntoFolder = useCallback(
+    (doc: DocumentMeta, target: FolderTarget) => {
+      const allowed = CATEGORY_FOLDER_RULES[doc.category] || [];
+      if (allowed.length === 0) return true;
+      const targetCategory = structure.subpastas.find((cat) => cat.nome === target.pastaCategoria);
+      if (!targetCategory) return false;
+      if (targetCategory.custom) return true;
+      return allowed.includes(target.pastaCategoria);
+    },
+    [structure.subpastas]
+  );
+
+  const markMoveSuccess = useCallback((docId: string) => {
+    setRecentlyMovedDocId(docId);
+    window.setTimeout(() => {
+      setRecentlyMovedDocId((prev) => (prev === docId ? null : prev));
+    }, 500);
+  }, []);
+
+  const markMoveError = useCallback((docId: string) => {
+    setShakeDocId(docId);
+    window.setTimeout(() => {
+      setShakeDocId((prev) => (prev === docId ? null : prev));
+    }, 350);
+  }, []);
+
+  const moveDocumentToFolder = useCallback(
+    async (doc: DocumentMeta, target: FolderTarget, source: "drag" | "dialog" | "undo") => {
+      if (!canDropDocumentIntoFolder(doc, target)) {
+        toast({
+          title: "Pasta incompatível",
+          description: "Este tipo de documento não pode ser movido para esta pasta.",
+          variant: "destructive",
+        });
+        markMoveError(doc.id);
+        return false;
+      }
+
+      if (source !== "undo" && isSameFolder(doc, target)) {
+        return false;
+      }
+
+      let nextName = doc.original_name;
+      const conflict = findConflictInTarget(doc, target);
+
+      try {
+        if (source !== "undo" && conflict) {
+          const choice = window.prompt(
+            `Já existe "${conflict.original_name}" nesta pasta.\nDigite "S" para substituir ou "R" para renomear.`,
+            "R"
+          );
+          if (!choice) return false;
+
+          if (choice.trim().toUpperCase().startsWith("S")) {
+            const { error: storageError } = await supabase.storage
+              .from("process-documents")
+              .remove([conflict.storage_path]);
+            if (storageError) {
+              throw new Error(`Não foi possível substituir: ${storageError.message}`);
+            }
+            const { error: deleteError } = await supabase.from("document_metadata").delete().eq("id", conflict.id);
+            if (deleteError) {
+              throw new Error(`Não foi possível substituir: ${deleteError.message}`);
+            }
+            setDocs((prev) => prev.filter((item) => item.id !== conflict.id));
+          } else {
+            nextName = ensureUniqueNameForTarget(doc.original_name, target, doc.id);
+          }
+        }
+
+        const { error } = await supabase
+          .from("document_metadata")
+          .update({
+            pasta_categoria: target.pastaCategoria,
+            subpasta: target.subpasta,
+            ordem_na_pasta: 0,
+            original_name: nextName,
+          })
+          .eq("id", doc.id);
+
+        if (error) throw error;
+
+        const updatedDoc: DocumentMeta = {
+          ...doc,
+          pasta_categoria: target.pastaCategoria,
+          subpasta: target.subpasta,
+          ordem_na_pasta: 0,
+          original_name: nextName,
+          caminho_completo: buildDocumentPath(
+            structure.raiz || "Processo",
+            target.pastaCategoria,
+            target.subpasta,
+            nextName
+          ),
+        };
+
+        setDocs((prev) => sortDocuments(prev.map((item) => (item.id === doc.id ? updatedDoc : item))));
+
+        if (source !== "undo") {
+          setLastMove({
+            docId: doc.id,
+            from: {
+              pastaCategoria: doc.pasta_categoria || "07 - Outros",
+              subpasta: doc.subpasta || null,
+            },
+            to: target,
+            oldName: doc.original_name,
+            newName: nextName,
+          });
+        } else {
+          setLastMove(null);
+        }
+
+        markMoveSuccess(doc.id);
+        const targetLabel = target.subpasta ? `${target.pastaCategoria} > ${target.subpasta}` : target.pastaCategoria;
+        toast({
+          title: source === "undo" ? "Movimento desfeito" : "Documento movido",
+          description: source === "undo" ? `Documento voltou para ${targetLabel}` : `Documento movido para ${targetLabel}`,
+        });
+        return true;
+      } catch (err: any) {
+        toast({ title: "Não foi possível mover documento", description: err.message, variant: "destructive" });
+        markMoveError(doc.id);
+        return false;
+      }
+    },
+    [
+      canDropDocumentIntoFolder,
+      isSameFolder,
+      findConflictInTarget,
+      ensureUniqueNameForTarget,
+      markMoveError,
+      markMoveSuccess,
+      structure.raiz,
+      toast,
+    ]
+  );
+
+  const undoLastMove = useCallback(async () => {
+    if (!lastMove) return;
+    const doc = docs.find((d) => d.id === lastMove.docId);
+    if (!doc) {
+      setLastMove(null);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("document_metadata")
+      .update({
+        pasta_categoria: lastMove.from.pastaCategoria,
+        subpasta: lastMove.from.subpasta,
+        ordem_na_pasta: 0,
+        original_name: lastMove.oldName,
+      })
+      .eq("id", lastMove.docId);
+
+    if (error) {
+      toast({ title: "Erro ao desfazer movimento", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    const restoredDoc: DocumentMeta = {
+      ...doc,
+      pasta_categoria: lastMove.from.pastaCategoria,
+      subpasta: lastMove.from.subpasta,
+      ordem_na_pasta: 0,
+      original_name: lastMove.oldName,
+      caminho_completo: buildDocumentPath(
+        structure.raiz || "Processo",
+        lastMove.from.pastaCategoria,
+        lastMove.from.subpasta,
+        lastMove.oldName
+      ),
+    };
+
+    setDocs((prev) => sortDocuments(prev.map((item) => (item.id === doc.id ? restoredDoc : item))));
+    setLastMove(null);
+    markMoveSuccess(restoredDoc.id);
+    toast({ title: "Movimento desfeito", description: "Documento voltou para a pasta anterior." });
+  }, [docs, lastMove, markMoveSuccess, structure.raiz, toast]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === "z") {
+        if (!lastMove) return;
+        event.preventDefault();
+        void undoLastMove();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [lastMove, undoLastMove]);
+
   const handleDownload = async (doc: DocumentMeta) => {
     const { data, error } = await supabase.storage.from("process-documents").createSignedUrl(doc.storage_path, 300);
 
@@ -271,8 +576,8 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       return;
     }
 
+    setDocs((prev) => prev.filter((item) => item.id !== doc.id));
     toast({ title: "Documento excluido" });
-    setRefreshKey((k) => k + 1);
   };
 
   const handleUploadComplete = () => {
@@ -311,7 +616,6 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       toast({ title: "Pasta criada" });
       setCreateFolderOpen(false);
       setNewFolderName("");
-      setRefreshKey((k) => k + 1);
     } catch (err: any) {
       toast({ title: "Erro ao criar pasta", description: err.message, variant: "destructive" });
     }
@@ -393,31 +697,19 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       setDeleteOpen(false);
       setSelected({ pastaCategoria: null, subpasta: null });
       toast({ title: "Pasta removida" });
-      setRefreshKey((k) => k + 1);
     } catch (err: any) {
       toast({ title: "Erro ao remover pasta", description: err.message, variant: "destructive" });
     }
   };
 
-  const handleMoveDocument = async () => {
+  const handleMoveDocumentFromDialog = async () => {
     if (!moveTarget || !moveValue) return;
     const { pastaCategoria, subpasta } = parseFolderValue(moveValue);
-    const { error } = await supabase
-      .from("document_metadata")
-      .update({
-        pasta_categoria: pastaCategoria,
-        subpasta,
-      })
-      .eq("id", moveTarget.id);
-
-    if (error) {
-      toast({ title: "Erro ao mover documento", description: error.message, variant: "destructive" });
-      return;
+    const moved = await moveDocumentToFolder(moveTarget, { pastaCategoria, subpasta }, "dialog");
+    if (moved) {
+      setMoveTarget(null);
+      setMoveValue("");
     }
-
-    toast({ title: "Documento movido" });
-    setMoveTarget(null);
-    setRefreshKey((k) => k + 1);
   };
 
   const handleAutoOrganize = async () => {
@@ -441,11 +733,88 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     }
   };
 
-  const breadcrumb = [
-    structure.raiz || "Processo",
-    selected.pastaCategoria,
-    selected.subpasta,
-  ].filter(Boolean) as string[];
+  const toggleCategory = (categoryName: string) => {
+    setExpanded((prev) => ({ ...prev, [categoryName]: !(prev[categoryName] ?? false) }));
+  };
+
+  const handleDragStart = (event: React.DragEvent<HTMLDivElement>, doc: DocumentMeta) => {
+    setDraggingDocId(doc.id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", doc.id);
+    document.body.classList.add("dragging-documents-cursor");
+  };
+
+  const handleDragEnd = () => {
+    setDragOverTargetKey(null);
+    setDraggingDocId(null);
+    document.body.classList.remove("dragging-documents-cursor");
+  };
+
+  const handleFolderDragOver = (
+    event: React.DragEvent<HTMLElement>,
+    target: FolderTarget
+  ) => {
+    const docId = draggingDocId || event.dataTransfer.getData("text/plain");
+    if (!docId) return;
+    const doc = docs.find((item) => item.id === docId);
+    if (!doc) return;
+
+    if (!canDropDocumentIntoFolder(doc, target)) {
+      event.dataTransfer.dropEffect = "none";
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverTargetKey(folderKey(target.pastaCategoria, target.subpasta));
+  };
+
+  const handleFolderDragEnter = (
+    event: React.DragEvent<HTMLElement>,
+    target: FolderTarget
+  ) => {
+    const docId = draggingDocId || event.dataTransfer.getData("text/plain");
+    if (!docId) return;
+    const doc = docs.find((item) => item.id === docId);
+    if (!doc) return;
+    if (!canDropDocumentIntoFolder(doc, target)) return;
+    event.preventDefault();
+    setExpanded((prev) => ({ ...prev, [target.pastaCategoria]: true }));
+    setDragOverTargetKey(folderKey(target.pastaCategoria, target.subpasta));
+  };
+
+  const handleFolderDragLeave = (
+    event: React.DragEvent<HTMLElement>,
+    target: FolderTarget
+  ) => {
+    const related = event.relatedTarget as Node | null;
+    if (related && event.currentTarget.contains(related)) return;
+    setDragOverTargetKey((prev) =>
+      prev === folderKey(target.pastaCategoria, target.subpasta) ? null : prev
+    );
+  };
+
+  const handleFolderDrop = async (
+    event: React.DragEvent<HTMLElement>,
+    target: FolderTarget
+  ) => {
+    event.preventDefault();
+    const docId = event.dataTransfer.getData("text/plain") || draggingDocId;
+    if (!docId) {
+      setDragOverTargetKey(null);
+      return;
+    }
+
+    const doc = docs.find((item) => item.id === docId);
+    setDragOverTargetKey(null);
+    setDraggingDocId(null);
+    document.body.classList.remove("dragging-documents-cursor");
+    if (!doc) return;
+
+    await moveDocumentToFolder(doc, target, "drag");
+  };
+
+  const breadcrumb = [structure.raiz || "Processo", selected.pastaCategoria, selected.subpasta].filter(Boolean) as string[];
 
   if (loading) {
     return (
@@ -469,11 +838,19 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
               Organizar ({uncategorizedDocs.length})
             </Button>
           )}
+          {lastMove && (
+            <Button variant="outline" className="gap-2" onClick={() => void undoLastMove()}>
+              Desfazer ultimo movimento
+            </Button>
+          )}
           <Button variant="outline" className="gap-2" onClick={() => setCreateFolderOpen(true)}>
             <FolderPlus className="w-4 h-4" />
             Criar Pasta
           </Button>
-          <Button onClick={() => setUploadOpen(true)} className="gap-2 h-10 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white">
+          <Button
+            onClick={() => setUploadOpen(true)}
+            className="gap-2 h-10 px-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
             <Plus className="w-4 h-4" />
             Adicionar
           </Button>
@@ -498,17 +875,27 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
           <div className="mt-3 space-y-1">
             {structure.subpastas.map((cat) => {
-              const catExpanded = expanded[cat.nome] ?? true;
+              const catExpanded = expanded[cat.nome] ?? false;
               const catCount = counts[folderKey(cat.nome, null)] || 0;
               const selectedCat = selected.pastaCategoria === cat.nome && !selected.subpasta;
+              const catTargetKey = folderKey(cat.nome, null);
+              const isCategoryDropTarget = dragOverTargetKey === catTargetKey;
 
               return (
                 <div key={cat.nome} className="space-y-1">
                   <button
                     type="button"
                     onClick={() => setSelected({ pastaCategoria: cat.nome, subpasta: null })}
-                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left ${
-                      selectedCat ? "bg-blue-50 text-blue-700" : "hover:bg-muted/50"
+                    onDragOver={(e) => handleFolderDragOver(e, { pastaCategoria: cat.nome, subpasta: null })}
+                    onDragEnter={(e) => handleFolderDragEnter(e, { pastaCategoria: cat.nome, subpasta: null })}
+                    onDragLeave={(e) => handleFolderDragLeave(e, { pastaCategoria: cat.nome, subpasta: null })}
+                    onDrop={(e) => void handleFolderDrop(e, { pastaCategoria: cat.nome, subpasta: null })}
+                    className={`w-full flex items-center justify-between p-2 rounded-lg text-left border transition-all duration-200 ${
+                      isCategoryDropTarget
+                        ? "folder-drag-over"
+                        : selectedCat
+                        ? "bg-blue-50 text-blue-700 border-blue-100"
+                        : "hover:bg-muted/50 border-transparent"
                     }`}
                   >
                     <span className="flex items-center gap-2 text-sm">
@@ -516,11 +903,15 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                         className="text-muted-foreground"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setExpanded((prev) => ({ ...prev, [cat.nome]: !catExpanded }));
+                          toggleCategory(cat.nome);
                         }}
                       >
                         {cat.subpastas.length > 0 ? (
-                          catExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />
+                          <ChevronRight
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              catExpanded ? "rotate-90" : "rotate-0"
+                            }`}
+                          />
                         ) : (
                           <span className="inline-block w-3.5 h-3.5" />
                         )}
@@ -528,29 +919,63 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                       <Folder className="w-4 h-4" />
                       {cat.nome}
                     </span>
-                    <span className="text-xs text-muted-foreground">{catCount}</span>
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      {isCategoryDropTarget && draggingDocId ? <Plus className="w-3.5 h-3.5 text-blue-600" /> : null}
+                      {catCount}
+                    </span>
                   </button>
 
-                  {catExpanded && cat.subpastas.length > 0 && (
-                    <div className="pl-7 space-y-1">
-                      {cat.subpastas.map((sub) => {
-                        const subName = getSubfolderName(sub);
-                        const subCount = counts[folderKey(cat.nome, subName)] || 0;
-                        const selectedSub = selected.pastaCategoria === cat.nome && selected.subpasta === subName;
-                        return (
-                          <button
-                            key={`${cat.nome}-${subName}`}
-                            type="button"
-                            onClick={() => setSelected({ pastaCategoria: cat.nome, subpasta: subName })}
-                            className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-sm ${
-                              selectedSub ? "bg-blue-50 text-blue-700" : "hover:bg-muted/50"
-                            }`}
-                          >
-                            <span className="truncate">{subName}</span>
-                            <span className="text-xs text-muted-foreground">{subCount}</span>
-                          </button>
-                        );
-                      })}
+                  {cat.subpastas.length > 0 && (
+                    <div
+                      className={`grid transition-all duration-200 ease-in-out ${
+                        catExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                      }`}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="pl-7 space-y-1 pt-1">
+                          {cat.subpastas.map((sub) => {
+                            const subName = getSubfolderName(sub);
+                            const subCount = counts[folderKey(cat.nome, subName)] || 0;
+                            const selectedSub =
+                              selected.pastaCategoria === cat.nome && selected.subpasta === subName;
+                            const subTargetKey = folderKey(cat.nome, subName);
+                            const isSubDropTarget = dragOverTargetKey === subTargetKey;
+
+                            return (
+                              <button
+                                key={`${cat.nome}-${subName}`}
+                                type="button"
+                                onClick={() => setSelected({ pastaCategoria: cat.nome, subpasta: subName })}
+                                onDragOver={(e) =>
+                                  handleFolderDragOver(e, { pastaCategoria: cat.nome, subpasta: subName })
+                                }
+                                onDragEnter={(e) =>
+                                  handleFolderDragEnter(e, { pastaCategoria: cat.nome, subpasta: subName })
+                                }
+                                onDragLeave={(e) =>
+                                  handleFolderDragLeave(e, { pastaCategoria: cat.nome, subpasta: subName })
+                                }
+                                onDrop={(e) =>
+                                  void handleFolderDrop(e, { pastaCategoria: cat.nome, subpasta: subName })
+                                }
+                                className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-sm border transition-all duration-200 ${
+                                  isSubDropTarget
+                                    ? "folder-drag-over"
+                                    : selectedSub
+                                    ? "bg-blue-50 text-blue-700 border-blue-100"
+                                    : "hover:bg-muted/50 border-transparent"
+                                }`}
+                              >
+                                <span className="truncate">{subName}</span>
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  {isSubDropTarget && draggingDocId ? <Plus className="w-3.5 h-3.5 text-blue-600" /> : null}
+                                  {subCount}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -602,58 +1027,92 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                 Nenhum documento nesta pasta.
               </div>
             ) : (
-              filteredDocs.map((doc) => (
-                <div key={doc.id} className="flex items-start sm:items-center gap-3 p-3 border border-border/50 rounded-lg">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4 text-blue-600" />
-                  </div>
+              filteredDocs.map((doc) => {
+                const isDragging = draggingDocId === doc.id;
+                const isMoved = recentlyMovedDocId === doc.id;
+                const isShake = shakeDocId === doc.id;
+                const rowClass = [
+                  "flex items-start sm:items-center gap-3 p-3 border border-border/50 rounded-lg transition-all duration-200",
+                  "cursor-grab active:cursor-grabbing",
+                  isDragging ? "dragging-document opacity-60 rotate-1" : "",
+                  isMoved ? "bg-blue-50/40 border-blue-200" : "",
+                  isShake ? "document-shake" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{doc.original_name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {(doc.size_bytes / 1024 / 1024).toFixed(2)} MB • {format(parseISO(doc.created_at), "dd/MM/yyyy HH:mm")} •{" "}
-                      {CATEGORY_LABELS[doc.category] || doc.category}
-                    </p>
-                    {doc.caminho_completo && (
-                      <p className="text-[11px] text-muted-foreground truncate mt-1">{doc.caminho_completo}</p>
-                    )}
-                  </div>
+                return (
+                  <div
+                    key={doc.id}
+                    className={rowClass}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, doc)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-blue-600" />
+                    </div>
 
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setMoveTarget(doc);
-                        setMoveValue(folderValue(doc.pasta_categoria || "07 - Outros", doc.subpasta || null));
-                      }}
-                      title="Mover"
-                    >
-                      <MoveRight className="w-4 h-4" />
-                    </Button>
-                    {(doc.mime_type === "application/pdf" || doc.mime_type.startsWith("image/")) && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePreview(doc)} title="Visualizar">
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(doc)} title="Download">
-                      <Download className="w-4 h-4" />
-                    </Button>
-                    {doc.uploaded_by === user?.id && (
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{doc.original_name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {(doc.size_bytes / 1024 / 1024).toFixed(2)} MB •{" "}
+                        {format(parseISO(doc.created_at), "dd/MM/yyyy HH:mm")} •{" "}
+                        {CATEGORY_LABELS[doc.category] || doc.category}
+                      </p>
+                      {doc.caminho_completo && (
+                        <p className="text-[11px] text-muted-foreground truncate mt-1">{doc.caminho_completo}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(doc)}
-                        title="Excluir"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setMoveTarget(doc);
+                          setMoveValue(folderValue(doc.pasta_categoria || "07 - Outros", doc.subpasta || null));
+                        }}
+                        title="Mover"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <MoveRight className="w-4 h-4" />
                       </Button>
-                    )}
+                      {(doc.mime_type === "application/pdf" || doc.mime_type.startsWith("image/")) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handlePreview(doc)}
+                          title="Visualizar"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDownload(doc)}
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      {doc.uploaded_by === user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(doc)}
+                          title="Excluir"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -692,7 +1151,11 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Nome da pasta</Label>
-              <Input value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} placeholder="Ex: 08 - Laudos" />
+              <Input
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                placeholder="Ex: 08 - Laudos"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Nivel</Label>
@@ -777,7 +1240,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             <Button variant="outline" onClick={() => setMoveTarget(null)}>
               Cancelar
             </Button>
-            <Button onClick={handleMoveDocument}>Mover</Button>
+            <Button onClick={() => void handleMoveDocumentFromDialog()}>Mover</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

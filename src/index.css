@@ -375,6 +375,26 @@
     animation: shake 0.4s ease-in-out;
   }
 
+  .dragging-documents-cursor,
+  .dragging-documents-cursor * {
+    cursor: grabbing !important;
+  }
+
+  .dragging-document {
+    opacity: 0.6;
+    cursor: grabbing;
+    transform: rotate(3deg);
+  }
+
+  .folder-drag-over {
+    background: rgba(0, 122, 255, 0.1) !important;
+    border: 2px dashed #007AFF !important;
+  }
+
+  .document-shake {
+    animation: document-shake 0.32s ease-in-out;
+  }
+
   .bg-gradient-urgent {
     background: linear-gradient(135deg, #FF9500 0%, #FF3B30 100%);
   }
@@ -483,4 +503,13 @@
 @keyframes countUp {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes document-shake {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+  100% { transform: translateX(0); }
 }
