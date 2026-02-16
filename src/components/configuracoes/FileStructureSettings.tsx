@@ -34,7 +34,7 @@ export function FileStructureSettings() {
     if (!user?.id) return;
     const load = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("file_structure_templates")
         .select("estrutura_subpastas")
         .eq("user_id", user.id)
@@ -56,11 +56,11 @@ export function FileStructureSettings() {
   const saveTemplate = async () => {
     if (!user?.id) return;
     setSaving(true);
-    const { error } = await supabase.from("file_structure_templates").upsert(
+    const { error } = await (supabase as any).from("file_structure_templates").upsert(
       {
         user_id: user.id,
-        estrutura_subpastas: structure as unknown as Record<string, unknown>,
-      } as any,
+        estrutura_subpastas: structure,
+      },
       { onConflict: "user_id" }
     );
     setSaving(false);

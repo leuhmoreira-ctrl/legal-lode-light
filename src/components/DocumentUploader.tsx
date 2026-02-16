@@ -113,7 +113,7 @@ export function DocumentUploader({
     setFolderStructureRaw(defaultStructure);
 
     const loadFolders = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("drive_folders")
         .select("nome_pasta, estrutura_subpastas")
         .eq("processo_id", processId)

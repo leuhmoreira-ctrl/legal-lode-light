@@ -109,28 +109,28 @@ export function parseFolderStructure(raw: unknown, rootFallback = "Processo"): F
       if (!item || typeof item !== "object") return null;
       const row = item as { nome?: unknown; subpastas?: unknown; custom?: unknown };
       if (typeof row.nome !== "string" || !row.nome.trim()) return null;
-      const subfolders = Array.isArray(row.subpastas)
+      const subfolders: FolderSubfolder[] = Array.isArray(row.subpastas)
         ? row.subpastas
-            .map((sub) => {
+            .map((sub: unknown): FolderSubfolder | null => {
               if (typeof sub === "string" && sub.trim()) return sub;
               if (sub && typeof sub === "object" && typeof (sub as { nome?: unknown }).nome === "string" && (sub as { nome: string }).nome.trim()) {
                 return {
                   nome: (sub as { nome: string }).nome,
                   custom: !!(sub as { custom?: unknown }).custom,
-                };
+                } as FolderSubfolder;
               }
               return null;
             })
-            .filter((sub): sub is string | { nome: string; custom?: boolean } => !!sub)
+            .filter((sub: FolderSubfolder | null): sub is FolderSubfolder => !!sub)
         : [];
 
       return {
         nome: row.nome,
         custom: !!row.custom,
         subpastas: subfolders,
-      };
+      } as FolderCategory;
     })
-    .filter((item): item is { nome: string; custom?: boolean; subpastas: FolderSubfolder[] } => !!item);
+    .filter((item): item is FolderCategory => !!item);
 
   return {
     raiz,

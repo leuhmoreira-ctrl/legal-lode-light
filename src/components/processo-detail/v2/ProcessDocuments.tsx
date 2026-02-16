@@ -140,7 +140,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     setLoading(true);
     const [docsRes, folderRes] = await Promise.all([
       supabase.from("document_metadata").select("*").eq("process_id", processId),
-      supabase
+      (supabase as any)
         .from("drive_folders")
         .select("id, nome_pasta, estrutura_subpastas")
         .eq("processo_id", processId)
@@ -151,7 +151,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       console.error("Erro ao carregar documentos:", docsRes.error);
       setDocs([]);
     } else {
-      const items = (docsRes.data || []) as DocumentMeta[];
+      const items = (docsRes.data || []) as unknown as DocumentMeta[];
       items.sort((a, b) => {
         if (a.pasta_categoria !== b.pasta_categoria) return (a.pasta_categoria || "").localeCompare(b.pasta_categoria || "");
         if (a.subpasta !== b.subpasta) return (a.subpasta || "").localeCompare(b.subpasta || "");
@@ -164,7 +164,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     if (folderRes.error || !folderRes.data) {
       setDriveFolder(null);
     } else {
-      setDriveFolder(folderRes.data as DriveFolderRow);
+      setDriveFolder(folderRes.data as unknown as DriveFolderRow);
     }
     setLoading(false);
   };
@@ -205,27 +205,27 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
   const persistStructure = async (nextStructure: FolderStructure) => {
     if (driveFolder?.id) {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("drive_folders")
-        .update({ estrutura_subpastas: nextStructure as unknown as Record<string, unknown> })
+        .update({ estrutura_subpastas: nextStructure })
         .eq("id", driveFolder.id);
       if (error) throw error;
       setDriveFolder((prev) => (prev ? { ...prev, estrutura_subpastas: nextStructure } : prev));
       return;
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("drive_folders")
       .insert({
         processo_id: processId,
         nome_pasta: nextStructure.raiz || "Processo",
-        estrutura_subpastas: nextStructure as unknown as Record<string, unknown>,
+        estrutura_subpastas: nextStructure,
         sincronizado: false,
-      } as any)
+      })
       .select("id, nome_pasta, estrutura_subpastas")
       .single();
     if (error) throw error;
-    setDriveFolder(data as DriveFolderRow);
+    setDriveFolder(data as unknown as DriveFolderRow);
   };
 
   const handleDownload = async (doc: DocumentMeta) => {
