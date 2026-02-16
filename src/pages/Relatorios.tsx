@@ -40,7 +40,7 @@ const tipoData = [
   { name: "Empresarial", value: 2 },
 ];
 
-const COLORS = ["hsl(220,60%,22%)", "hsl(220,45%,40%)", "hsl(38,92%,50%)", "hsl(152,60%,40%)"];
+const COLORS = ["hsl(207,90%,54%)", "hsl(38,92%,50%)", "hsl(152,60%,40%)", "hsl(340,75%,55%)"];
 
 export default function Relatorios() {
   return (
@@ -75,8 +75,8 @@ export default function Relatorios() {
                 <XAxis dataKey="nome" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
                 <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
                 <Tooltip />
-                <Bar dataKey="processos" fill="hsl(220,60%,22%)" name="Processos" radius={[4,4,0,0]} />
-                <Bar dataKey="tarefas" fill="hsl(220,45%,40%)" name="Tarefas" radius={[4,4,0,0]} />
+                <Bar dataKey="processos" fill="hsl(207,90%,54%)" name="Processos" radius={[4,4,0,0]} />
+                <Bar dataKey="tarefas" fill="hsl(38,92%,50%)" name="Tarefas" radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -109,7 +109,7 @@ export default function Relatorios() {
                 <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
                 <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
                 <Tooltip />
-                <Line type="monotone" dataKey="total" stroke="hsl(220,45%,40%)" strokeWidth={2} name="Total" dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="total" stroke="hsl(207,90%,54%)" strokeWidth={2} name="Total" dot={{ r: 4 }} />
                 <Line type="monotone" dataKey="cumpridos" stroke="hsl(152,60%,40%)" strokeWidth={2} name="Cumpridos" dot={{ r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
