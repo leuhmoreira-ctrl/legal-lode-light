@@ -122,9 +122,13 @@ export default {
         'apple-card': '0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
         'apple-card-hover': '0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04)',
         'apple-button': '0 4px 14px rgba(0, 122, 255, 0.4)',
+        'apple-focus': '0 0 0 4px rgba(0, 122, 255, 0.15)',
       },
       transitionTimingFunction: {
         "apple-ease": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "apple-ease-out": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "apple-ease-in": "cubic-bezier(0.4, 0, 1, 1)",
+        "spring": "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
       },
       keyframes: {
         "accordion-down": {
@@ -144,11 +148,11 @@ export default {
           to: { transform: "translateY(0)", opacity: "1" },
         },
         "fade-up": {
-          from: { transform: "translateY(8px)", opacity: "0" },
+          from: { transform: "translateY(10px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
         },
         "fade-in-scale": {
-          from: { opacity: "0", transform: "scale(0.95)" },
+          from: { opacity: "0", transform: "scale(0.98)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
         "pulse-urgent": {
@@ -163,17 +167,65 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "origin-expand": {
+          "0%": {
+            opacity: "0",
+            transform: "translate(calc(-50% + var(--origin-x)), calc(-50% + var(--origin-y))) scale(0.1)"
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translate(-50%, -50%) scale(1)"
+          }
+        },
+        "origin-collapse": {
+          "0%": {
+            opacity: "1",
+            transform: "translate(-50%, -50%) scale(1)"
+          },
+          "100%": {
+            opacity: "0",
+            transform: "translate(calc(-50% + var(--origin-x)), calc(-50% + var(--origin-y))) scale(0.1)"
+          }
+        },
+        "scale-in": {
+          "0%": { opacity: "0", transform: "scale(0.95)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "scale-out": {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(0.95)" },
+        },
+        "shake": {
+          "0%, 100%": { transform: "translateX(0)" },
+          "25%": { transform: "translateX(-4px)" },
+          "75%": { transform: "translateX(4px)" },
+        },
+        "pulse-sutil": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.05)", opacity: "0.8" },
+        },
+        "count-up": {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "slide-in": "slide-in 0.3s ease-out",
-        "slide-in-top": "slide-in-top 0.3s ease-out",
-        "fade-up": "fade-up 0.4s ease-out",
-        "fade-in-scale": "fade-in-scale 0.2s ease-out",
+        "slide-in": "slide-in 0.3s ease-apple-ease-out",
+        "slide-in-top": "slide-in-top 0.3s ease-apple-ease-out",
+        "fade-up": "fade-up 0.4s ease-apple-ease-out",
+        "fade-in-scale": "fade-in-scale 0.3s ease-apple-ease-out",
         "pulse-urgent": "pulse-urgent 2s ease-in-out infinite",
         shimmer: "shimmer 2s infinite",
         bounce: "bounce 1s infinite",
+        "origin-expand": "origin-expand 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "origin-collapse": "origin-collapse 0.2s cubic-bezier(0.4, 0, 1, 1) forwards",
+        "scale-in": "scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "scale-out": "scale-out 0.15s cubic-bezier(0.4, 0, 1, 1) forwards",
+        "shake": "shake 0.4s ease-in-out",
+        "pulse-sutil": "pulse-sutil 2s ease-in-out infinite",
+        "count-up": "count-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
     },
   },
