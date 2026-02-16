@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,11 +39,17 @@ import {
   FileArchive,
   File,
   Eye,
-  Filter,
+  Folder,
+  ChevronRight,
+  ChevronDown,
+  Clock,
+  History,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   { value: "peticao_inicial", label: "Petição Inicial", color: "bg-blue-100 text-blue-700 border-blue-200" },
@@ -71,13 +83,14 @@ interface AttachmentSectionProps {
   onReload: () => void;
 }
 
-function getFileIcon(mimeType: string | null, fileName: string) {
+function getFileIcon(mimeType: string | null) {
   if (!mimeType) return <File className="w-4 h-4 text-muted-foreground" />;
   if (mimeType.startsWith("image/")) return <FileImage className="w-4 h-4 text-emerald-500" />;
   if (mimeType.includes("pdf")) return <FileText className="w-4 h-4 text-red-500" />;
   if (mimeType.includes("word") || mimeType.includes("document")) return <FileText className="w-4 h-4 text-blue-500" />;
   if (mimeType.includes("sheet") || mimeType.includes("excel")) return <FileSpreadsheet className="w-4 h-4 text-green-500" />;
   if (mimeType.includes("zip") || mimeType.includes("rar") || mimeType.includes("archive")) return <FileArchive className="w-4 h-4 text-yellow-500" />;
+  if (mimeType.startsWith("audio/")) return <FileArchive className="w-4 h-4 text-purple-500" />;
   return <File className="w-4 h-4 text-muted-foreground" />;
 }
 
@@ -96,21 +109,77 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
   const { toast } = useToast();
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AttachmentItem | null>(null);
-  const [filterCategory, setFilterCategory] = useState("all");
   const replaceRef = useRef<HTMLInputElement>(null);
   const [replaceTarget, setReplaceTarget] = useState<AttachmentItem | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = filterCategory === "all"
-    ? attachments
-    : attachments.filter((a) => (a.category || "other") === filterCategory);
+  // Versioning Upload State
+  const [pendingUpload, setPendingUpload] = useState<File | null>(null);
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Preview State
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: string; name: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Folder State
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+  // History Expansion State (Key: fileName + category)
+  const [expandedHistory, setExpandedHistory] = useState<Record<string, boolean>>({});
+
+  const toggleFolder = (cat: string) => {
+    setExpandedFolders(prev => ({ ...prev, [cat]: !prev[cat] }));
+  };
+
+  const toggleHistory = (key: string) => {
+    setExpandedHistory(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Grouping logic: Category -> FileName -> List of Versions
+  const groupedAttachments = useMemo(() => {
+    const groups: Record<string, Record<string, AttachmentItem[]>> = {};
+    attachments.forEach(att => {
+      const cat = att.category || "other";
+      if (!groups[cat]) groups[cat] = {};
+
+      const name = att.file_name;
+      if (!groups[cat][name]) groups[cat][name] = [];
+      groups[cat][name].push(att);
+    });
+
+    // Sort versions by date desc inside each group
+    Object.keys(groups).forEach(cat => {
+        Object.keys(groups[cat]).forEach(name => {
+            groups[cat][name].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        });
+    });
+
+    return groups;
+  }, [attachments]);
+
+  const initiateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 25 * 1024 * 1024) {
       toast({ title: "Arquivo muito grande", description: "Máximo 25MB", variant: "destructive" });
       return;
     }
+
+    // Check if file exists in any category (simplified: assume 'other' or check all)
+    // Actually, new uploads go to "other" by default (in handleUpload).
+    // So we check if it exists in "other" or ANY category?
+    // If it exists anywhere, we should probably warn.
+    const exists = attachments.some(a => a.file_name === file.name);
+
+    if (exists) {
+        setPendingUpload(file);
+        setShowVersionDialog(true);
+        e.target.value = ""; // Reset input
+    } else {
+        performUpload(file);
+    }
+  };
+
+  const performUpload = async (file: File, category = "other") => {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop();
@@ -134,7 +203,7 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
           original_name: file.name,
           mime_type: file.type,
           size_bytes: file.size,
-          category: "other",
+          category: category,
           uploaded_by: user!.id,
           task_id: taskId,
         });
@@ -146,7 +215,8 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
       toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
     } finally {
       setUploading(false);
-      e.target.value = "";
+      setPendingUpload(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -168,47 +238,46 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
   };
 
   const handleReplace = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Same as before
     const file = e.target.files?.[0];
     if (!file || !replaceTarget) return;
+    // ... (rest of logic same as before, skipping for brevity in thought but including in file)
+    // Actually I need to include it.
     if (file.size > 25 * 1024 * 1024) {
-      toast({ title: "Arquivo muito grande", description: "Máximo 25MB", variant: "destructive" });
-      return;
+        toast({ title: "Arquivo muito grande", description: "Máximo 25MB", variant: "destructive" });
+        return;
     }
     setUploading(true);
     try {
-      // Remove old file from storage
-      await supabase.storage.from("task-attachments").remove([replaceTarget.storage_path]);
+        await supabase.storage.from("task-attachments").remove([replaceTarget.storage_path]);
+        const ext = file.name.split(".").pop();
+        const path = `${taskId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
+        if (upErr) throw upErr;
 
-      // Upload new file
-      const ext = file.name.split(".").pop();
-      const path = `${taskId}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
-      if (upErr) throw upErr;
+        await supabase.from("task_attachments").update({
+            file_name: file.name,
+            file_size: file.size,
+            mime_type: file.type,
+            storage_path: path,
+        }).eq("id", replaceTarget.id);
 
-      await supabase.from("task_attachments").update({
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type,
-        storage_path: path,
-      }).eq("id", replaceTarget.id);
-
-      if (processoId) {
-        await supabase.from("document_metadata").update({
-          original_name: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-          storage_path: path,
-        }).eq("storage_path", replaceTarget.storage_path);
-      }
-
-      toast({ title: "✅ Arquivo substituído" });
-      onReload();
+        if (processoId) {
+            await supabase.from("document_metadata").update({
+                original_name: file.name,
+                mime_type: file.type,
+                size_bytes: file.size,
+                storage_path: path,
+            }).eq("storage_path", replaceTarget.storage_path);
+        }
+        toast({ title: "✅ Arquivo substituído" });
+        onReload();
     } catch (err: any) {
-      toast({ title: "Erro ao substituir", description: err.message, variant: "destructive" });
+        toast({ title: "Erro ao substituir", description: err.message, variant: "destructive" });
     } finally {
-      setUploading(false);
-      setReplaceTarget(null);
-      e.target.value = "";
+        setUploading(false);
+        setReplaceTarget(null);
+        e.target.value = "";
     }
   };
 
@@ -224,14 +293,24 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
   };
 
   const handlePreview = async (att: AttachmentItem) => {
-    const { data } = await supabase.storage.from("task-attachments").createSignedUrl(att.storage_path, 300);
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, "_blank");
+    setPreviewLoading(true);
+    try {
+      const { data } = await supabase.storage.from("task-attachments").createSignedUrl(att.storage_path, 3600);
+      if (data?.signedUrl) {
+         setPreviewFile({
+             url: data.signedUrl,
+             type: att.mime_type || "application/octet-stream",
+             name: att.file_name
+         });
+      }
+    } catch (err) {
+        toast({ title: "Erro ao abrir preview", variant: "destructive" });
+    } finally {
+        setPreviewLoading(false);
     }
   };
 
   const handleCategoryChange = async (att: AttachmentItem, category: string) => {
-    // Update category in document_metadata if linked
     if (processoId) {
       await supabase.from("document_metadata")
         .update({ category })
@@ -248,98 +327,155 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
           <Paperclip className="w-4 h-4" />
           Anexos ({attachments.length})
         </h3>
-        <div className="flex items-center gap-2">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="h-7 text-xs w-36">
-              <Filter className="w-3 h-3 mr-1" />
-              <SelectValue placeholder="Filtrar..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              {CATEGORIES.map((c) => (
-                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <label>
+            <Button variant="outline" size="sm" className="gap-1.5 h-7" disabled={uploading} asChild>
+            <span>
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                Adicionar
+            </span>
+            </Button>
+            <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={initiateUpload}
+                disabled={uploading}
+            />
+        </label>
       </div>
 
-      <div className="space-y-2 mb-3 max-h-64 overflow-y-auto">
-        {filtered.map((att) => {
-          const catInfo = getCategoryInfo(att.category);
-          return (
-            <div key={att.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 group">
-              <div className="shrink-0">{getFileIcon(att.mime_type, att.file_name)}</div>
-              <div className="flex-1 min-w-0 space-y-1">
-                <p className="text-sm font-medium text-foreground truncate">{att.file_name}</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[10px] text-muted-foreground">
-                    {formatFileSize(att.file_size)} · {att.uploader_name} · {formatDistanceToNow(new Date(att.created_at), { addSuffix: true, locale: ptBR })}
-                  </span>
-                  {processoId && (
-                    <Select
-                      value={att.category || "other"}
-                      onValueChange={(val) => handleCategoryChange(att, val)}
-                    >
-                      <SelectTrigger className="h-5 text-[10px] w-auto min-w-0 border-0 p-0 shadow-none">
-                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 cursor-pointer ${catInfo.color}`}>
-                          {catInfo.label}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CATEGORIES.map((c) => (
-                          <SelectItem key={c.value} value={c.value} className="text-xs">{c.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePreview(att)} title="Visualizar">
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(att)} title="Baixar">
-                  <Download className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => { setReplaceTarget(att); replaceRef.current?.click(); }}
-                  title="Substituir"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-destructive hover:text-destructive"
-                  onClick={() => setDeleteTarget(att)}
-                  title="Deletar"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
+      <ScrollArea className="h-[280px] pr-4">
+         {Object.entries(groupedAttachments).length === 0 ? (
+             <p className="text-sm text-muted-foreground text-center py-8 border border-dashed rounded-lg">
+                 Nenhum anexo. Clique em Adicionar para começar.
+             </p>
+         ) : (
+            <div className="space-y-3">
+             {Object.keys(groupedAttachments).sort().map(cat => {
+                 const catInfo = getCategoryInfo(cat);
+                 const filesByName = groupedAttachments[cat];
+                 const isExpanded = expandedFolders[cat] !== false;
+
+                 // Calculate total files in this category
+                 const totalFiles = Object.values(filesByName).reduce((acc, curr) => acc + curr.length, 0);
+
+                 return (
+                     <div key={cat} className="border rounded-lg overflow-hidden">
+                         <div
+                            className="flex items-center gap-2 p-2 bg-muted/40 cursor-pointer hover:bg-muted/60 transition-colors"
+                            onClick={() => toggleFolder(cat)}
+                         >
+                            {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                            <Folder className={`w-4 h-4 ${catInfo.color.split(" ")[1]}`} />
+                            <span className="text-sm font-medium flex-1">{catInfo.label}</span>
+                            <Badge variant="secondary" className="text-[10px] h-5">{totalFiles}</Badge>
+                         </div>
+
+                         {isExpanded && (
+                             <div className="bg-card divide-y">
+                                 {Object.keys(filesByName).sort().map(fileName => {
+                                     const versions = filesByName[fileName];
+                                     const current = versions[0];
+                                     const history = versions.slice(1);
+                                     const historyKey = `${cat}-${fileName}`;
+                                     const showHistory = expandedHistory[historyKey];
+
+                                     return (
+                                        <div key={current.id} className="flex flex-col">
+                                             <div className="flex items-center gap-3 p-2 px-3 group hover:bg-muted/20 transition-colors">
+                                                <div className="shrink-0 cursor-pointer" onClick={() => handlePreview(current)}>
+                                                    {getFileIcon(current.mime_type)}
+                                                </div>
+                                                <div className="flex-1 min-w-0 space-y-0.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="text-sm font-medium text-foreground truncate cursor-pointer hover:underline" onClick={() => handlePreview(current)}>
+                                                            {current.file_name}
+                                                        </p>
+                                                        {history.length > 0 && (
+                                                            <Badge variant="outline" className="text-[10px] h-4 px-1 cursor-pointer hover:bg-muted" onClick={() => toggleHistory(historyKey)}>
+                                                                v{versions.length}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        {formatFileSize(current.file_size)} · {current.uploader_name} · {formatDistanceToNow(new Date(current.created_at), { addSuffix: true, locale: ptBR })}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePreview(current)} title="Visualizar">
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(current)} title="Baixar">
+                                                        <Download className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    {history.length > 0 && (
+                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleHistory(historyKey)} title="Histórico">
+                                                            <History className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    )}
+                                                    {processoId && (
+                                                        <Select
+                                                        value={current.category || "other"}
+                                                        onValueChange={(val) => handleCategoryChange(current, val)}
+                                                        >
+                                                        <SelectTrigger className="h-7 w-7 p-0 border-0 shadow-none hover:bg-muted" title="Mover">
+                                                            <Folder className="w-3.5 h-3.5" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {CATEGORIES.map((c) => (
+                                                            <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7"
+                                                        onClick={() => { setReplaceTarget(current); replaceRef.current?.click(); }}
+                                                        title="Substituir (Overwrite)"
+                                                    >
+                                                        <RefreshCw className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(current)} title="Deletar">
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                             </div>
+
+                                             {/* History List */}
+                                             {showHistory && history.length > 0 && (
+                                                 <div className="pl-10 pr-2 pb-2 space-y-1 bg-muted/10 border-l ml-6 my-1">
+                                                     {history.map((ver, idx) => (
+                                                         <div key={ver.id} className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-muted/30">
+                                                             <div className="flex items-center gap-2">
+                                                                 <Badge variant="secondary" className="text-[9px] h-4 px-1">v{history.length - idx}</Badge>
+                                                                 <span className="text-muted-foreground">{formatDistanceToNow(new Date(ver.created_at), { addSuffix: true, locale: ptBR })} por {ver.uploader_name}</span>
+                                                             </div>
+                                                             <div className="flex items-center">
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handlePreview(ver)} title="Visualizar">
+                                                                    <Eye className="w-3 h-3" />
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDownload(ver)} title="Baixar">
+                                                                    <Download className="w-3 h-3" />
+                                                                </Button>
+                                                             </div>
+                                                         </div>
+                                                     ))}
+                                                 </div>
+                                             )}
+                                        </div>
+                                     );
+                                 })}
+                             </div>
+                         )}
+                     </div>
+                 );
+             })}
             </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <p className="text-sm text-muted-foreground text-center py-4">
-            {attachments.length === 0 ? "Nenhum anexo" : "Nenhum anexo nesta categoria"}
-          </p>
-        )}
-      </div>
-
-      <label>
-        <Button variant="outline" size="sm" className="gap-1.5" disabled={uploading} asChild>
-          <span>
-            {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-            {uploading ? "Enviando..." : "Adicionar Anexo"}
-          </span>
-        </Button>
-        <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
-      </label>
+         )}
+      </ScrollArea>
 
       {/* Hidden input for replace */}
       <input ref={replaceRef} type="file" className="hidden" onChange={handleReplace} />
@@ -361,6 +497,84 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Versioning Confirmation */}
+      <AlertDialog open={showVersionDialog} onOpenChange={setShowVersionDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Arquivo já existe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Já existe um arquivo chamado "{pendingUpload?.name}". O que deseja fazer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel onClick={() => { setPendingUpload(null); }}>Cancelar</AlertDialogCancel>
+            <Button
+                variant="outline"
+                onClick={() => {
+                    // Rename logic (simple append timestamp) - or we could focus pendingUpload logic?
+                    // Actually prompt implies "Rename" means "Upload as separate file with different name".
+                    // But for now let's just upload with a suffix so it doesn't group.
+                    if (pendingUpload) {
+                        const newName = `Copy_${Date.now()}_${pendingUpload.name}`;
+                        const newFile = new File([pendingUpload], newName, { type: pendingUpload.type });
+                        performUpload(newFile);
+                        setShowVersionDialog(false);
+                    }
+                }}
+            >
+                Renomear e Salvar
+            </Button>
+            <Button
+                onClick={() => {
+                    if (pendingUpload) {
+                        // Find existing category to inherit
+                        const existing = attachments.find(a => a.file_name === pendingUpload.name);
+                        const category = existing?.category || "other";
+                        performUpload(pendingUpload, category); // Same name -> creates version in same category
+                        setShowVersionDialog(false);
+                    }
+                }}
+            >
+                Criar Nova Versão
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Preview Modal */}
+      <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+        <DialogContent className="max-w-5xl h-[85vh] p-0 flex flex-col">
+            <DialogHeader className="p-4 border-b shrink-0">
+                <DialogTitle className="flex items-center justify-between">
+                    <span className="truncate">{previewFile?.name}</span>
+                    <Button variant="outline" size="sm" onClick={() => { if(previewFile) window.open(previewFile.url, "_blank"); }}>
+                        <Download className="w-4 h-4 mr-2" /> Baixar
+                    </Button>
+                </DialogTitle>
+            </DialogHeader>
+            <div className="flex-1 bg-muted/20 relative overflow-hidden flex items-center justify-center p-4">
+                {previewFile?.type.startsWith("image/") ? (
+                    <img src={previewFile.url} alt="Preview" className="max-w-full max-h-full object-contain rounded shadow-lg" />
+                ) : previewFile?.type === "application/pdf" ? (
+                    <iframe src={previewFile.url} className="w-full h-full rounded border bg-white" />
+                ) : previewFile?.type.startsWith("audio/") ? (
+                    <div className="w-full max-w-md bg-white p-6 rounded-xl shadow-sm border text-center">
+                        <FileArchive className="w-12 h-12 mx-auto text-primary mb-4" />
+                        <audio controls src={previewFile.url} className="w-full" />
+                    </div>
+                ) : (
+                    <div className="text-center">
+                        <File className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                        <p className="text-lg font-medium">Visualização não disponível</p>
+                        <Button className="mt-4" onClick={() => window.open(previewFile?.url, "_blank")}>
+                            Baixar para visualizar
+                        </Button>
+                    </div>
+                )}
+            </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -42,6 +42,8 @@ import { ptBR } from "date-fns/locale";
 import { ProcessInfoCard } from "@/components/task-detail/ProcessInfoCard";
 import { AttachmentSection, type AttachmentItem } from "@/components/task-detail/AttachmentSection";
 import { UserAvatar } from "@/components/UserAvatar";
+import { VoiceRecorder } from "@/components/ui/VoiceRecorder";
+import { CommentInput } from "@/components/ui/CommentInput";
 
 interface TaskComment {
   id: string;
@@ -118,7 +120,6 @@ export function TaskDetailModal({
   const [activities, setActivities] = useState<TaskActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [newComment, setNewComment] = useState("");
   const [newCheckItem, setNewCheckItem] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -253,17 +254,36 @@ export function TaskDetailModal({
     loadTaskDetails();
   };
 
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !taskId) return;
+  const handleAddComment = async (content: string) => {
+    if (!content.trim() || !taskId) return;
+
     const { error } = await supabase.from("task_comments").insert({
       task_id: taskId,
       user_id: user!.id,
-      content: newComment,
+      content: content,
     });
+
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
-    } else {
-      setNewComment("");
+      return;
+    }
+
+    // Handle notifications for mentions
+    const mentionedUsers = teamMembers.filter(member =>
+      content.includes(`@${member.full_name}`) && member.id !== user!.id
+    );
+
+    if (mentionedUsers.length > 0) {
+      const notifications = mentionedUsers.map(member => ({
+        user_id: member.id,
+        title: "Nova menção em tarefa",
+        message: `${user?.user_metadata?.full_name || "Alguém"} te mencionou na tarefa "${task?.title}"`,
+        link: `/kanban?taskId=${taskId}`,
+        is_read: false,
+        type: "mention"
+      }));
+
+      await supabase.from("notifications").insert(notifications);
     }
   };
 
@@ -294,6 +314,77 @@ export function TaskDetailModal({
       case "status_changed": return `moveu para ${STATUS_LABELS[act.new_value || ""] || act.new_value}`;
       case "assigned_changed": return `atribuiu para ${getMemberName(act.new_value)}`;
       default: return act.action_type;
+    }
+  };
+
+  const renderCommentContent = (content: string) => {
+    if (!content) return null;
+
+    // Create regex pattern from team members names
+    // Sort by length desc to match longest names first
+    const sortedMembers = [...teamMembers].sort((a, b) => b.full_name.length - a.full_name.length);
+    const memberNames = sortedMembers.map(m => m.full_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+
+    if (!memberNames) return content;
+
+    const regex = new RegExp(`@(${memberNames})`, 'g');
+    const parts = content.split(regex);
+
+    return parts.map((part, i) => {
+      // Check if this part matches a member name (it was captured by regex group)
+      const isMention = sortedMembers.some(m => m.full_name === part);
+
+      if (isMention) {
+        return (
+          <span key={i} className="bg-blue-100 text-blue-700 px-1 py-0.5 rounded font-medium mx-0.5">
+            @{part}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
+  const handleTranscribe = (text: string) => {
+    const newDesc = editDesc ? editDesc + "\n" + text : text;
+    setEditDesc(newDesc);
+    setEditingDesc(true);
+  };
+
+  const handleAttachAudio = async (blob: Blob) => {
+    if (!taskId || !user) return;
+    try {
+      const file = new File([blob], `audio_${format(new Date(), "dd-MM-yyyy_HH-mm")}.webm`, { type: "audio/webm" });
+      const path = `${taskId}/${crypto.randomUUID()}.webm`;
+      const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
+      if (upErr) throw upErr;
+
+      await supabase.from("task_attachments").insert({
+        task_id: taskId,
+        file_name: file.name,
+        file_size: file.size,
+        mime_type: file.type,
+        storage_path: path,
+        uploaded_by: user.id,
+      });
+
+      if (task?.processo_id) {
+        await supabase.from("document_metadata").insert({
+          process_id: task.processo_id,
+          storage_path: path,
+          original_name: file.name,
+          mime_type: file.type,
+          size_bytes: file.size,
+          category: "other",
+          uploaded_by: user.id,
+          task_id: taskId,
+        });
+      }
+
+      toast({ title: "Áudio anexado com sucesso!" });
+      loadTaskDetails();
+    } catch (err: any) {
+      toast({ title: "Erro ao anexar áudio", description: err.message, variant: "destructive" });
     }
   };
 
@@ -347,9 +438,19 @@ export function TaskDetailModal({
               <div className="lg:col-span-2 space-y-6">
                 {/* Description */}
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                    <Edit2 className="w-4 h-4" /> Descrição
-                  </h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Edit2 className="w-4 h-4" /> Descrição
+                    </h3>
+                    <VoiceRecorder
+                      onTranscribe={handleTranscribe}
+                      onAttachAudio={handleAttachAudio}
+                      onBoth={(text, blob) => {
+                        handleTranscribe(text);
+                        handleAttachAudio(blob);
+                      }}
+                    />
+                  </div>
                   {editingDesc ? (
                     <div className="space-y-2">
                       <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={4} autoFocus />
@@ -436,7 +537,7 @@ export function TaskDetailModal({
                                   {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true, locale: ptBR })}
                                 </span>
                               </div>
-                              <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
+                              <p className="text-sm text-foreground whitespace-pre-wrap">{renderCommentContent(comment.content)}</p>
                             </div>
                           </div>
                         </div>
@@ -444,12 +545,12 @@ export function TaskDetailModal({
                     })}
                     {comments.length === 0 && <p className="text-sm text-muted-foreground text-center py-3">Nenhum comentário ainda</p>}
                   </div>
-                  <div className="flex gap-2">
-                    <Input placeholder="Escrever comentário..." value={newComment} onChange={(e) => setNewComment(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleAddComment()} className="text-sm" />
-                    <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim()}>
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
+
+                  <CommentInput
+                    users={teamMembers}
+                    onSubmit={handleAddComment}
+                    placeholder="Escreva um comentário... Use @ para mencionar"
+                  />
                 </div>
               </div>
 
