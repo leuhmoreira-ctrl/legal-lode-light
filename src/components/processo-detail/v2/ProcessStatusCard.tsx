@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { BarChart3, Clock, FileText, RefreshCw, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,29 @@ export function ProcessStatusCard({
   onSync,
   syncing = false,
 }: ProcessStatusCardProps) {
+  // Smooth spin: keep spinning until current rotation completes
+  const [visualSpin, setVisualSpin] = useState(false);
+  const iconRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (syncing) {
+      setVisualSpin(true);
+    } else if (visualSpin) {
+      // Wait for current spin cycle to finish before stopping
+      const el = iconRef.current;
+      if (el) {
+        const handler = () => {
+          setVisualSpin(false);
+          el.removeEventListener("animationiteration", handler);
+        };
+        el.addEventListener("animationiteration", handler);
+        return () => el.removeEventListener("animationiteration", handler);
+      } else {
+        setVisualSpin(false);
+      }
+    }
+  }, [syncing]);
+
   return (
     <Card className="shadow-none border border-border/40 bg-card rounded-xl">
       <CardHeader className="pb-4">
@@ -79,18 +103,18 @@ export function ProcessStatusCard({
 
           {/* Sincronização */}
           <div
-            className={`flex gap-3 items-start ${onSync && !syncing ? "cursor-pointer group" : ""}`}
-            onClick={onSync && !syncing ? onSync : undefined}
+            className={`flex gap-3 items-start ${onSync && !visualSpin ? "cursor-pointer group" : ""}`}
+            onClick={onSync && !visualSpin ? onSync : undefined}
             role={onSync ? "button" : undefined}
             tabIndex={onSync ? 0 : undefined}
             title="Clique para sincronizar"
           >
             <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500/20 transition-colors">
-              <RefreshCw className={`w-4 h-4 text-green-600 dark:text-green-400 ${syncing ? "animate-spin" : ""}`} />
+              <RefreshCw ref={iconRef} className={`w-4 h-4 text-green-600 dark:text-green-400 ${visualSpin ? "animate-spin" : ""}`} />
             </div>
             <div>
               <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                {syncing ? "Sincronizando..." : "Sincronização"}
+                {visualSpin ? "Sincronizando..." : "Sincronização"}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {dataUltimaSincronizacao
