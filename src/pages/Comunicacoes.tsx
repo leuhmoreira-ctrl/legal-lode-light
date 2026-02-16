@@ -334,7 +334,7 @@ export default function Comunicacoes() {
             {/* Right: Detail */}
             <div
               className={cn(
-                "flex-1 flex flex-col bg-background min-w-0 min-h-0 transition-all duration-300",
+                "flex-1 flex flex-col bg-background min-w-0 min-h-0 transition-all duration-300 overflow-hidden",
                 !mobileShowDetail ? "hidden md:flex" : "flex"
               )}
             >
@@ -350,12 +350,12 @@ export default function Comunicacoes() {
                   </div>
                 </>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 animate-in fade-in zoom-in-95 duration-300">
+                <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 animate-in fade-in zoom-in-95 duration-300 overflow-hidden">
                   <div className="w-20 h-20 bg-muted/30 rounded-full flex items-center justify-center mb-6">
                     <MessageSquare className="w-10 h-10 opacity-20" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2 text-foreground/80">Nenhum item selecionado</h3>
-                  <p className="text-sm text-center max-w-sm leading-relaxed">
+                  <h3 className="text-xl font-semibold mb-2 text-foreground/80 text-center">Nenhum item selecionado</h3>
+                  <p className="text-sm text-center max-w-sm leading-relaxed text-muted-foreground break-words">
                     Selecione uma notificação, mensagem ou e-mail da lista para visualizar os detalhes.
                   </p>
                 </div>

@@ -141,7 +141,7 @@ export function EmailComposer({ open, onOpenChange, initialTo = "", initialSubje
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent
         className={cn(
-          "flex flex-col p-0 gap-0 transition-all duration-300",
+          "flex flex-col p-0 gap-0 transition-all duration-300 [&>button.absolute]:hidden",
           isExpanded ? "w-[95vw] h-[95vh] max-w-none" : "max-w-3xl h-[85vh]"
         )}
         onInteractOutside={(e) => e.preventDefault()}
