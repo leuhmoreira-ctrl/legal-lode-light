@@ -26,6 +26,7 @@ export interface Prazo {
   dataVencimento: string;
   status: "urgente" | "proximo" | "em_dia";
   responsavel: string;
+  dataCriacao?: string;
 }
 
 export interface Tarefa {
@@ -148,6 +149,7 @@ export const prazosMock: Prazo[] = [
     dataVencimento: format(addDays(hoje, 2), "yyyy-MM-dd"),
     status: "urgente",
     responsavel: "Dr. Carlos Mendes",
+    dataCriacao: format(subDays(hoje, 10), "yyyy-MM-dd"),
   },
   {
     id: "2",
@@ -158,6 +160,7 @@ export const prazosMock: Prazo[] = [
     dataVencimento: format(addDays(hoje, 5), "yyyy-MM-dd"),
     status: "proximo",
     responsavel: "Dra. Ana Beatriz",
+    dataCriacao: format(subDays(hoje, 15), "yyyy-MM-dd"),
   },
   {
     id: "3",
@@ -168,6 +171,7 @@ export const prazosMock: Prazo[] = [
     dataVencimento: format(addDays(hoje, 3), "yyyy-MM-dd"),
     status: "urgente",
     responsavel: "Dr. Carlos Mendes",
+    dataCriacao: format(subDays(hoje, 20), "yyyy-MM-dd"),
   },
   {
     id: "4",
@@ -178,6 +182,7 @@ export const prazosMock: Prazo[] = [
     dataVencimento: format(addDays(hoje, 10), "yyyy-MM-dd"),
     status: "em_dia",
     responsavel: "Dra. Ana Beatriz",
+    dataCriacao: format(subDays(hoje, 2), "yyyy-MM-dd"),
   },
   {
     id: "5",
@@ -188,6 +193,7 @@ export const prazosMock: Prazo[] = [
     dataVencimento: format(addDays(hoje, 6), "yyyy-MM-dd"),
     status: "proximo",
     responsavel: "Dr. Paulo Henrique",
+    dataCriacao: format(subDays(hoje, 8), "yyyy-MM-dd"),
   },
   {
     id: "6",
@@ -198,6 +204,7 @@ export const prazosMock: Prazo[] = [
     dataVencimento: format(addDays(hoje, 1), "yyyy-MM-dd"),
     status: "urgente",
     responsavel: "Dr. Carlos Mendes",
+    dataCriacao: format(subDays(hoje, 5), "yyyy-MM-dd"),
   },
 ];
 
