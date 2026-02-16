@@ -15,9 +15,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface NewConversationDialogProps {
   onCreateDirect: (userId: string) => Promise<string | null>;
+  trigger?: React.ReactNode;
 }
 
-export function NewConversationDialog({ onCreateDirect }: NewConversationDialogProps) {
+export function NewConversationDialog({ onCreateDirect, trigger }: NewConversationDialogProps) {
   const { user } = useAuth();
   const { teamMembers } = usePermissions();
   const [open, setOpen] = useState(false);
@@ -35,9 +36,11 @@ export function NewConversationDialog({ onCreateDirect }: NewConversationDialogP
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="ghost" className="shrink-0 h-8 w-8">
-          <Plus className="w-4 h-4" />
-        </Button>
+        {trigger || (
+            <Button size="icon" variant="ghost" className="shrink-0 h-8 w-8">
+            <Plus className="w-4 h-4" />
+            </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
@@ -57,7 +60,7 @@ export function NewConversationDialog({ onCreateDirect }: NewConversationDialogP
               >
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                    {member.full_name.slice(0, 2).toUpperCase()}
+                    {member.full_name?.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">

@@ -52,6 +52,9 @@ export interface EmailMessage {
   has_attachments: boolean;
   folder: 'inbox' | 'sent' | 'drafts' | 'trash';
   created_at: string;
+  // Extended fields (simulated or metadata)
+  priority?: 'normal' | 'high' | 'low';
+  scheduled_at?: string;
 }
 
 export interface EmailTemplate {
