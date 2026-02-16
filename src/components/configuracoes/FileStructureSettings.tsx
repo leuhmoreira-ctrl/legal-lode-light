@@ -59,8 +59,8 @@ export function FileStructureSettings() {
     const { error } = await supabase.from("file_structure_templates").upsert(
       {
         user_id: user.id,
-        estrutura_subpastas: structure,
-      },
+        estrutura_subpastas: structure as unknown as Record<string, unknown>,
+      } as any,
       { onConflict: "user_id" }
     );
     setSaving(false);

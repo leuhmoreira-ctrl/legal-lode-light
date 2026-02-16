@@ -121,7 +121,7 @@ export function parseFolderStructure(raw: unknown, rootFallback = "Processo"): F
               }
               return null;
             })
-            .filter((sub): sub is FolderSubfolder => !!sub)
+            .filter((sub): sub is string | { nome: string; custom?: boolean } => !!sub)
         : [];
 
       return {
@@ -130,7 +130,7 @@ export function parseFolderStructure(raw: unknown, rootFallback = "Processo"): F
         subpastas: subfolders,
       };
     })
-    .filter((item): item is FolderCategory => !!item);
+    .filter((item): item is { nome: string; custom?: boolean; subpastas: FolderSubfolder[] } => !!item);
 
   return {
     raiz,
