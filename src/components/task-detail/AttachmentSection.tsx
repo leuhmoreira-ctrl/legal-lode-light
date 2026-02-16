@@ -334,13 +334,13 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between gap-3 mb-3">
         <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Paperclip className="w-4 h-4" />
           Anexos ({attachments.length})
         </h3>
         <label>
-            <Button variant="outline" size="sm" className="gap-1.5 h-7" disabled={uploading} asChild>
+            <Button variant="outline" size="sm" className="gap-1.5" disabled={uploading} asChild>
             <span>
                 {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                 Adicionar
@@ -356,7 +356,7 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
         </label>
       </div>
 
-      <ScrollArea className="h-[280px] pr-4">
+      <ScrollArea className="h-[280px] pr-1 sm:pr-4">
          {Object.entries(groupedAttachments).length === 0 ? (
              <p className="text-sm text-muted-foreground text-center py-8 border border-dashed rounded-lg">
                  Nenhum anexo. Clique em Adicionar para começar.
@@ -379,8 +379,8 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
                          >
                             {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                             <Folder className={`w-4 h-4 ${catInfo.color.split(" ")[1]}`} />
-                            <span className="text-sm font-medium flex-1">{catInfo.label}</span>
-                            <Badge variant="secondary" className="text-[10px] h-5">{totalFiles}</Badge>
+                            <span className="text-sm font-medium flex-1 truncate">{catInfo.label}</span>
+                            <Badge variant="secondary" className="text-[12px] h-5">{totalFiles}</Badge>
                          </div>
 
                          {isExpanded && (
@@ -394,35 +394,34 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
 
                                      return (
                                         <div key={current.id} className="flex flex-col">
-                                             <div className="flex items-center gap-3 p-2 px-3 group hover:bg-muted/20 transition-colors">
-                                                <div className="shrink-0 cursor-pointer" onClick={() => handlePreview(current)}>
+                                             <div className="flex items-start gap-3 p-3 group hover:bg-muted/20 transition-colors">
+                                                <div className="shrink-0 mt-0.5 cursor-pointer" onClick={() => handlePreview(current)}>
                                                     {getFileIcon(current.mime_type)}
                                                 </div>
                                                 <div className="flex-1 min-w-0 space-y-0.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="text-sm font-medium text-foreground truncate cursor-pointer hover:underline" onClick={() => handlePreview(current)}>
+                                                    <div className="flex items-start gap-2 min-w-0">
+                                                        <p className="text-sm font-medium text-foreground line-clamp-2 break-all sm:break-normal cursor-pointer hover:underline min-w-0" onClick={() => handlePreview(current)}>
                                                             {current.file_name}
                                                         </p>
                                                         {history.length > 0 && (
-                                                            <Badge variant="outline" className="text-[10px] h-4 px-1 cursor-pointer hover:bg-muted" onClick={() => toggleHistory(historyKey)}>
+                                                            <Badge variant="outline" className="text-[11px] h-5 px-1.5 cursor-pointer hover:bg-muted shrink-0" onClick={() => toggleHistory(historyKey)}>
                                                                 v{versions.length}
                                                             </Badge>
                                                         )}
                                                     </div>
-                                                    <p className="text-[10px] text-muted-foreground">
-                                                        {formatFileSize(current.file_size)} · {current.uploader_name} · {formatDistanceToNow(new Date(current.created_at), { addSuffix: true, locale: ptBR })}
+                                                    <p className="text-[13px] text-muted-foreground leading-relaxed break-words">
+                                                        {formatFileSize(current.file_size)} · {current.uploader_name || "Usuário"} · {formatDistanceToNow(new Date(current.created_at), { addSuffix: true, locale: ptBR })}
                                                     </p>
-                                                </div>
 
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handlePreview(current)} title="Visualizar">
+                                                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handlePreview(current)} title="Visualizar">
                                                         <Eye className="w-3.5 h-3.5" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDownload(current)} title="Baixar">
+                                                    <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleDownload(current)} title="Baixar">
                                                         <Download className="w-3.5 h-3.5" />
                                                     </Button>
                                                     {history.length > 0 && (
-                                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleHistory(historyKey)} title="Histórico">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => toggleHistory(historyKey)} title="Histórico">
                                                             <History className="w-3.5 h-3.5" />
                                                         </Button>
                                                     )}
@@ -431,7 +430,7 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
                                                         value={current.category || "other"}
                                                         onValueChange={(val) => handleCategoryChange(current, val)}
                                                         >
-                                                        <SelectTrigger className="h-7 w-7 p-0 border-0 shadow-none hover:bg-muted" title="Mover">
+                                                        <SelectTrigger className="h-9 w-9 p-0 border-0 shadow-none hover:bg-muted" title="Mover">
                                                             <Folder className="w-3.5 h-3.5" />
                                                         </SelectTrigger>
                                                         <SelectContent>
@@ -444,15 +443,16 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-7 w-7"
+                                                        className="h-9 w-9"
                                                         onClick={() => { setReplaceTarget(current); replaceRef.current?.click(); }}
                                                         title="Substituir (Overwrite)"
                                                     >
                                                         <RefreshCw className="w-3.5 h-3.5" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(current)} title="Deletar">
+                                                    <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(current)} title="Deletar">
                                                         <Trash2 className="w-3.5 h-3.5" />
                                                     </Button>
+                                                    </div>
                                                 </div>
                                              </div>
 
@@ -460,16 +460,16 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
                                              {showHistory && history.length > 0 && (
                                                  <div className="pl-10 pr-2 pb-2 space-y-1 bg-muted/10 border-l ml-6 my-1">
                                                      {history.map((ver, idx) => (
-                                                         <div key={ver.id} className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-muted/30">
-                                                             <div className="flex items-center gap-2">
-                                                                 <Badge variant="secondary" className="text-[9px] h-4 px-1">v{history.length - idx}</Badge>
-                                                                 <span className="text-muted-foreground">{formatDistanceToNow(new Date(ver.created_at), { addSuffix: true, locale: ptBR })} por {ver.uploader_name}</span>
+                                                         <div key={ver.id} className="flex items-center justify-between text-[13px] py-1 px-2 rounded hover:bg-muted/30 gap-2">
+                                                             <div className="flex items-center gap-2 min-w-0">
+                                                                 <Badge variant="secondary" className="text-[11px] h-5 px-1.5 shrink-0">v{history.length - idx}</Badge>
+                                                                 <span className="text-muted-foreground truncate">{formatDistanceToNow(new Date(ver.created_at), { addSuffix: true, locale: ptBR })} por {ver.uploader_name || "Usuário"}</span>
                                                              </div>
-                                                             <div className="flex items-center">
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handlePreview(ver)} title="Visualizar">
+                                                             <div className="flex items-center shrink-0">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handlePreview(ver)} title="Visualizar">
                                                                     <Eye className="w-3 h-3" />
                                                                 </Button>
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleDownload(ver)} title="Baixar">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(ver)} title="Baixar">
                                                                     <Download className="w-3 h-3" />
                                                                 </Button>
                                                              </div>
@@ -559,8 +559,8 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
       <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
         <DialogContent className="max-w-5xl h-[85vh] p-0 flex flex-col">
             <DialogHeader className="p-4 border-b shrink-0">
-                <DialogTitle className="flex items-center justify-between">
-                    <span className="truncate">{previewFile?.name}</span>
+                <DialogTitle className="flex items-center justify-between gap-3">
+                    <span className="truncate min-w-0">{previewFile?.name}</span>
                     <Button variant="outline" size="sm" onClick={() => { if(previewFile) window.open(previewFile.url, "_blank"); }}>
                         <Download className="w-4 h-4 mr-2" /> Baixar
                     </Button>
