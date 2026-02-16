@@ -199,10 +199,18 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth, mode = "def
     if (!audioBlob) return;
     const text = editableText.trim();
 
+    if (mode === "description-note") {
+      if (text) {
+        onTranscribe(text);
+      } else {
+        onAttachAudio?.(audioBlob);
+      }
+      cleanup();
+      return;
+    }
+
     if (type === "transcribe") {
-      // In description-note mode, always register as note even without automatic transcript.
-      const fallback = text || `[Áudio gravado sem transcrição automática • duração ${formatTime(timer)}]`;
-      onTranscribe(mode === "description-note" ? fallback : text);
+      onTranscribe(text);
     } else if (type === "attach") {
       onAttachAudio?.(audioBlob);
     } else {
@@ -309,16 +317,34 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth, mode = "def
             ) : (
               <div className="flex items-center gap-2 text-xs text-muted-foreground py-1">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                <span>Transcrição não disponível neste navegador.</span>
+                <span>
+                  {mode === "description-note"
+                    ? "Sem transcrição automática. Podemos salvar só o áudio como nota de voz."
+                    : "Transcrição não disponível neste navegador."}
+                </span>
               </div>
             )}
           </div>
 
           {mode === "description-note" ? (
             <DialogFooter className="pt-1">
-              <Button size="sm" className="gap-1.5 text-xs w-full" onClick={() => handleAction("transcribe")}>
-                <Type className="w-3.5 h-3.5 shrink-0" />
-                Adicionar anotação na descrição
+              <Button
+                size="sm"
+                className="gap-1.5 text-xs w-full"
+                onClick={() => handleAction("transcribe")}
+                disabled={!editableText.trim() && !onAttachAudio}
+              >
+                {editableText.trim() ? (
+                  <>
+                    <Type className="w-3.5 h-3.5 shrink-0" />
+                    Adicionar anotação na descrição
+                  </>
+                ) : (
+                  <>
+                    <FileAudio className="w-3.5 h-3.5 shrink-0" />
+                    Adicionar áudio da nota
+                  </>
+                )}
               </Button>
             </DialogFooter>
           ) : (

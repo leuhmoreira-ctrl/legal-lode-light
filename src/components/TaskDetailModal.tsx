@@ -35,6 +35,7 @@ import {
   Check,
   X,
   Trash2,
+  FileAudio,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
@@ -125,6 +126,7 @@ export function TaskDetailModal({
   const [editTitle, setEditTitle] = useState("");
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDesc, setEditDesc] = useState("");
+  const [descriptionVoiceNotes, setDescriptionVoiceNotes] = useState<Array<{ id: string; url: string; createdAt: string }>>([]);
 
   const getMember = useCallback(
     (id: string | null) => teamMembers.find((m) => m.id === id),
@@ -196,6 +198,10 @@ export function TaskDetailModal({
       setTask(null);
       setEditingTitle(false);
       setEditingDesc(false);
+      setDescriptionVoiceNotes((prev) => {
+        prev.forEach((n) => URL.revokeObjectURL(n.url));
+        return [];
+      });
     }
   }, [taskId, open, loadTaskDetails]);
 
@@ -347,7 +353,7 @@ export function TaskDetailModal({
 
   const handleTranscribe = (text: string) => {
     const noteTimestamp = format(new Date(), "dd/MM/yyyy 'às' HH:mm");
-    const noteText = text.trim() || "[Anotação de voz sem transcrição automática]";
+    const noteText = text.trim();
     const voiceNoteBlock = `\n\n[Anotação por voz • ${noteTimestamp}]\n${noteText}`;
     const newDesc = editDesc ? editDesc + voiceNoteBlock : `[Anotação por voz • ${noteTimestamp}]\n${noteText}`;
     setEditDesc(newDesc);
@@ -355,6 +361,29 @@ export function TaskDetailModal({
     toast({
       title: "Anotação adicionada",
       description: "Revise e clique em Salvar para persistir na descrição.",
+    });
+  };
+
+  const handleDescriptionVoiceAudio = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const note = {
+      id: crypto.randomUUID(),
+      url,
+      createdAt: new Date().toISOString(),
+    };
+    setDescriptionVoiceNotes((prev) => [...prev, note]);
+    setEditingDesc(true);
+    toast({
+      title: "Nota de voz adicionada",
+      description: "Sem transcrição: áudio adicionado como nota da descrição (não vai para anexos).",
+    });
+  };
+
+  const removeDescriptionVoiceNote = (id: string) => {
+    setDescriptionVoiceNotes((prev) => {
+      const note = prev.find((n) => n.id === id);
+      if (note) URL.revokeObjectURL(note.url);
+      return prev.filter((n) => n.id !== id);
     });
   };
 
@@ -416,22 +445,79 @@ export function TaskDetailModal({
                     <VoiceRecorder
                       mode="description-note"
                       onTranscribe={handleTranscribe}
+                      onAttachAudio={handleDescriptionVoiceAudio}
                     />
                   </div>
                   {editingDesc ? (
                     <div className="space-y-2">
                       <Textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} rows={4} autoFocus />
+                      {descriptionVoiceNotes.length > 0 && (
+                        <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Notas de voz da descrição (não entram em anexos)
+                          </p>
+                          {descriptionVoiceNotes.map((note) => (
+                            <div key={note.id} className="flex items-center gap-2 rounded-md bg-background/90 border px-2 py-2">
+                              <FileAudio className="w-4 h-4 text-primary shrink-0" />
+                              <div className="w-full">
+                                <p className="text-[11px] text-muted-foreground mb-1">
+                                  Nota de voz · {format(new Date(note.createdAt), "HH:mm")}
+                                </p>
+                                <audio controls src={note.url} className="w-full h-9" />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+                                onClick={() => removeDescriptionVoiceNote(note.id)}
+                                title="Remover nota de voz"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button size="sm" onClick={handleSaveDesc}>Salvar</Button>
                         <Button size="sm" variant="ghost" onClick={() => { setEditingDesc(false); setEditDesc(task.description || ""); }}>Cancelar</Button>
                       </div>
                     </div>
                   ) : (
-                    <div
-                      className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 cursor-pointer hover:bg-muted transition-colors min-h-[60px]"
-                      onClick={() => setEditingDesc(true)}
-                    >
-                      {task.description || "Clique para adicionar uma descrição..."}
+                    <div className="space-y-2">
+                      <div
+                        className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3 cursor-pointer hover:bg-muted transition-colors min-h-[60px]"
+                        onClick={() => setEditingDesc(true)}
+                      >
+                        {task.description || "Clique para adicionar uma descrição..."}
+                      </div>
+                      {descriptionVoiceNotes.length > 0 && (
+                        <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Notas de voz da descrição (não entram em anexos)
+                          </p>
+                          {descriptionVoiceNotes.map((note) => (
+                            <div key={note.id} className="flex items-center gap-2 rounded-md bg-background/90 border px-2 py-2">
+                              <FileAudio className="w-4 h-4 text-primary shrink-0" />
+                              <div className="w-full">
+                                <p className="text-[11px] text-muted-foreground mb-1">
+                                  Nota de voz · {format(new Date(note.createdAt), "HH:mm")}
+                                </p>
+                                <audio controls src={note.url} className="w-full h-9" />
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+                                onClick={() => removeDescriptionVoiceNote(note.id)}
+                                title="Remover nota de voz"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
