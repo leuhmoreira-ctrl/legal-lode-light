@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { UserAvatar } from "@/components/UserAvatar";
+import { useAnimationOrigin } from "@/contexts/AnimationOriginContext";
 
 const COLUMNS = [
   { id: "todo", title: "A Fazer", color: "bg-muted-foreground" },
@@ -74,6 +75,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const { user } = useAuth();
   const { teamMembers, isAdmin } = usePermissions();
   const { toast } = useToast();
+  const { setOrigin } = useAnimationOrigin();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroProcesso, setFiltroProcesso] = useState("");
@@ -334,7 +336,10 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                                             </Button>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                                            <DropdownMenuItem onClick={() => setSelectedTaskId(task.id)}>
+                                            <DropdownMenuItem onClick={(e) => {
+                                              setOrigin({ x: e.clientX, y: e.clientY });
+                                              setSelectedTaskId(task.id);
+                                            }}>
                                               <Edit className="w-3.5 h-3.5 mr-2" /> Editar tarefa
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={async () => {
@@ -347,7 +352,10 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                                             {canDelete(task) && (
                                               <DropdownMenuItem
                                                 className="text-destructive focus:text-destructive"
-                                                onClick={() => setDeleteTarget(task)}
+                                                onClick={(e) => {
+                                                  setOrigin({ x: e.clientX, y: e.clientY });
+                                                  setDeleteTarget(task);
+                                                }}
                                               >
                                                 <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir tarefa
                                               </DropdownMenuItem>
