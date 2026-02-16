@@ -184,6 +184,84 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       .eq("id", taskId);
   };
 
+  const handleTaskReorder = useCallback(async (taskId: string, newStatus: string, newIndex: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const oldStatus = task.status;
+
+    // Create a new array of tasks
+    let newTasks = tasks.filter(t => t.id !== taskId);
+
+    // Group by status
+    const tasksByStatus: Record<string, KanbanTask[]> = {
+      todo: [],
+      in_progress: [],
+      done: []
+    };
+
+    newTasks.forEach(t => {
+      if (tasksByStatus[t.status]) {
+        tasksByStatus[t.status].push(t);
+      } else {
+        // Fallback for unknown status
+        if (!tasksByStatus['todo']) tasksByStatus['todo'] = [];
+        tasksByStatus['todo'].push(t);
+      }
+    });
+
+    // Sort by current index to ensure stability
+    Object.keys(tasksByStatus).forEach(s => {
+      tasksByStatus[s].sort((a, b) => a.position_index - b.position_index);
+    });
+
+    // Insert task into new column
+    if (!tasksByStatus[newStatus]) tasksByStatus[newStatus] = [];
+
+    // Clamp index
+    const targetIndex = Math.max(0, Math.min(newIndex, tasksByStatus[newStatus].length));
+
+    tasksByStatus[newStatus].splice(targetIndex, 0, { ...task, status: newStatus, position_index: targetIndex });
+
+    // Re-index and collect updates
+    const updates: { id: string, position_index: number, status: string }[] = [];
+
+    // Helper to re-index a column
+    const reindexColumn = (status: string) => {
+      tasksByStatus[status].forEach((t, idx) => {
+        t.position_index = idx;
+        updates.push({ id: t.id, position_index: idx, status: status });
+      });
+    };
+
+    reindexColumn(oldStatus);
+    if (newStatus !== oldStatus) reindexColumn(newStatus);
+
+    // Update local state
+    const flatTasks = Object.values(tasksByStatus).flat();
+    setTasks(flatTasks);
+
+    // Persist to Supabase
+    // We only need to update the tasks that changed index or status
+    // Using upsert for batch update
+    if (updates.length > 0) {
+      const { error } = await supabase
+        .from("kanban_tasks")
+        .upsert(updates.map(u => ({
+          id: u.id,
+          position_index: u.position_index,
+          status: u.status,
+          updated_at: new Date().toISOString()
+        })));
+
+      if (error) {
+        console.error("Error reordering tasks:", error);
+        toast({ title: "Erro ao salvar ordenação", variant: "destructive" });
+        loadTasks(); // Revert
+      }
+    }
+  }, [tasks, loadTasks, toast]);
+
   const handleMoveTask = async (taskId: string, direction: 'left' | 'right') => {
     const task = tasks.find(t => t.id === taskId);
     if (!task) return;
@@ -378,6 +456,8 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
              teamMembers={teamMembers}
              viewMode={viewMode}
              onTaskMove={onFreeTaskMove}
+             // @ts-expect-error - onReorder will be added to FreeKanbanBoard in next step
+             onReorder={handleTaskReorder}
              onTaskUpdate={(t) => setTasks(prev => prev.map(old => old.id === t.id ? t : old))}
              onEdit={(id, e) => {
                 e.stopPropagation();

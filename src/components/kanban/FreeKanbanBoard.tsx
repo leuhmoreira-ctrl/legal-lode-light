@@ -1,14 +1,44 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from "react";
 import Draggable from "react-draggable";
 import { KanbanTask, KANBAN_COLUMNS, ViewMode } from "@/types/kanban";
 import { KanbanCard } from "./KanbanCard";
 import { cn } from "@/lib/utils";
+
+// Helper component to measure card height
+const MeasureCard = ({
+  children,
+  onHeightChange
+}: {
+  children: React.ReactNode;
+  onHeightChange: (height: number) => void;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const onHeightChangeRef = useRef(onHeightChange);
+
+  useLayoutEffect(() => {
+    onHeightChangeRef.current = onHeightChange;
+  });
+
+  useLayoutEffect(() => {
+    if (!ref.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        onHeightChangeRef.current(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height);
+      }
+    });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return <div ref={ref} className="h-full">{children}</div>;
+};
 
 interface FreeKanbanBoardProps {
   tasks: KanbanTask[];
   teamMembers: any[];
   viewMode: ViewMode;
   onTaskMove: (taskId: string, x: number, y: number, status: string, zIndex: number) => void;
+  onReorder?: (taskId: string, newStatus: string, newIndex: number) => void;
   onTaskUpdate: (task: KanbanTask) => void;
   // Pass-through props for KanbanCard
   onEdit: (id: string, e: React.MouseEvent) => void;
@@ -26,6 +56,7 @@ export function FreeKanbanBoard({
   teamMembers,
   viewMode,
   onTaskMove,
+  onReorder,
   onTaskUpdate,
   onEdit,
   onDelete,
@@ -41,6 +72,14 @@ export function FreeKanbanBoard({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [dragZ, setDragZ] = useState<number>(0);
+  const [cardHeights, setCardHeights] = useState<Record<string, number>>({});
+
+  const handleHeightChange = useCallback((id: string, height: number) => {
+    setCardHeights(prev => {
+      if (Math.abs((prev[id] || 0) - height) < 1) return prev; // Avoid tiny updates
+      return { ...prev, [id]: height };
+    });
+  }, []);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -65,44 +104,66 @@ export function FreeKanbanBoard({
     return "done";
   };
 
-  const getCalculatedPosition = (task: KanbanTask, index: number, totalWidth: number) => {
-    // If we have explicit coordinates
-    if (task.position_x != null && task.position_y != null) {
-      // Treat x as percentage (0-1), y as pixels
-      // Robustness check: if x > 1, assume it's legacy pixel value and normalize?
-      // Or just assume data is correct percentage.
-      // Let's assume percentage if <= 1.
-      let x = task.position_x;
-      if (x > 1) x = x / totalWidth; // Attempt to fix legacy pixel data dynamically
+  const layout = React.useMemo(() => {
+    const newLayout: Record<string, { x: number; y: number }> = {};
+    if (containerDimensions.width === 0) return newLayout;
 
-      return { x: x * totalWidth, y: task.position_y };
-    }
+    const colWidth = containerDimensions.width / 3;
+    const GAP = 16;
+    const TOP_MARGIN = 80;
 
-    // Fallback: Calculate default position based on column
-    if (totalWidth === 0) return { x: 0, y: 0 };
+    // Group tasks by status
+    const tasksByStatus: Record<string, KanbanTask[]> = {
+      todo: [],
+      in_progress: [],
+      done: []
+    };
 
-    const colIndex = KANBAN_COLUMNS.findIndex(c => c.id === task.status);
-    const colWidth = totalWidth / 3;
+    tasks.forEach(task => {
+      let status = task.status;
+      if (status === 'review') status = 'in_progress';
 
-    // Simple stacking logic for tasks without coords
-    const tasksInSameCol = tasks
-      .filter(t => t.status === task.status && (t.position_x == null))
-      .sort((a, b) => a.position_index - b.position_index);
+      if (tasksByStatus[status]) {
+        tasksByStatus[status].push(task);
+      } else {
+        // Fallback for unknown status
+        if (!tasksByStatus['todo']) tasksByStatus['todo'] = [];
+        tasksByStatus['todo'].push(task);
+      }
+    });
 
-    const relativeIndex = tasksInSameCol.findIndex(t => t.id === task.id);
-    const actualIndex = relativeIndex === -1 ? index : relativeIndex;
+    // Sort and calculate
+    ['todo', 'in_progress', 'done'].forEach((status, colIndex) => {
+       const colTasks = tasksByStatus[status] || [];
+       colTasks.sort((a, b) => a.position_index - b.position_index);
 
-    const x = (colIndex * colWidth) + 20;
-    const y = (actualIndex * 200) + 60; // Spacing
-    return { x, y };
-  };
+       let currentY = TOP_MARGIN;
+       const colXStart = colIndex * colWidth;
+
+       colTasks.forEach(task => {
+          // X: centered in column
+          const cardWidth = viewMode === 'compact' ? 250 : 320;
+          const x = colXStart + (colWidth - cardWidth) / 2;
+
+          newLayout[task.id] = { x, y: currentY };
+
+          const height = cardHeights[task.id] || 150; // default height if not measured
+          currentY += height + GAP;
+       });
+    });
+
+    return newLayout;
+  }, [tasks, containerDimensions.width, cardHeights, viewMode]);
 
   const getMaxZ = () => Math.max(0, ...tasks.map(t => t.z_index || 0));
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full border rounded-lg bg-background/50 overflow-auto shadow-inner select-none"
+      className={cn(
+        "relative w-full border rounded-lg bg-background/50 overflow-auto shadow-inner select-none transition-opacity duration-200",
+        containerDimensions.width === 0 ? "opacity-0" : "opacity-100"
+      )}
       style={{ height: 'calc(100vh - 140px)', minHeight: '800px' }}
     >
       {/* Background Columns */}
@@ -128,11 +189,12 @@ export function FreeKanbanBoard({
         const canDelete = task.user_id === currentUserId || isAdmin;
 
         // Calculate position: either the current drag pos (if dragging) or the stored/calc pos
-        const calculatedPos = getCalculatedPosition(task, index, containerDimensions.width);
+        const calculatedPos = layout[task.id] || { x: 0, y: 0 };
         const currentPos = (draggingId === task.id) ? dragPos : calculatedPos;
 
         // z-index: during drag, use the new high Z, otherwise use stored Z
-        const currentZ = (draggingId === task.id) ? dragZ : (task.z_index || 10);
+        // If not dragging, we can use index based z-index to ensure stacking order if overlap occurs (though it shouldn't)
+        const currentZ = (draggingId === task.id) ? (getMaxZ() + 100) : (task.z_index || 10);
 
         return (
           <Draggable
@@ -150,34 +212,69 @@ export function FreeKanbanBoard({
             onStop={(e, data) => {
                setDraggingId(null);
                const newStatus = getColumnForX(data.x, containerDimensions.width);
-               // Save x as percentage
-               const xPercent = data.x / containerDimensions.width;
-               onTaskMove(task.id, xPercent, data.y, newStatus, dragZ);
+
+               if (onReorder) {
+                 // Calculate insertion index
+                 const targetTasks = tasks
+                   .filter(t => {
+                      let s = t.status;
+                      if (s === 'review') s = 'in_progress';
+                      return s === newStatus && t.id !== task.id;
+                   })
+                   .sort((a, b) => a.position_index - b.position_index);
+
+                 let newIndex = targetTasks.length;
+                 let currentY = 80; // TOP_MARGIN
+                 const GAP = 16;
+
+                 for (let i = 0; i < targetTasks.length; i++) {
+                   const t = targetTasks[i];
+                   const h = cardHeights[t.id] || 150;
+                   const centerY = currentY + h / 2;
+
+                   if (data.y < centerY) {
+                     newIndex = i;
+                     break;
+                   }
+                   currentY += h + GAP;
+                 }
+
+                 onReorder(task.id, newStatus, newIndex);
+               } else {
+                 // Fallback
+                 const xPercent = data.x / containerDimensions.width;
+                 onTaskMove(task.id, xPercent, data.y, newStatus, dragZ);
+               }
             }}
             bounds="parent"
           >
             <div
-              className="absolute transition-shadow"
+              className={cn(
+                "absolute transition-shadow",
+                draggingId !== task.id && "transition-transform duration-300 cubic-bezier(0.25, 0.1, 0.25, 1)"
+              )}
               style={{
                 width: viewMode === 'compact' ? '250px' : '320px',
                 zIndex: currentZ
               }}
             >
-               <KanbanCard
-                 task={task}
-                 index={index}
-                 viewMode={viewMode}
-                 isDragging={draggingId === task.id}
-                 onEdit={onEdit}
-                 onDelete={onDelete}
-                 onToggleToday={onToggleToday}
-                 onMove={onMove}
-                 onComplete={onComplete}
-                 onClick={() => onClick(task.id)}
-                 dragHandleProps={{ className: "drag-handle" }}
-                 teamMembers={teamMembers}
-                 canDelete={canDelete}
-               />
+               <MeasureCard onHeightChange={(h) => handleHeightChange(task.id, h)}>
+                 <KanbanCard
+                   task={task}
+                   index={index}
+                   viewMode={viewMode}
+                   isDragging={draggingId === task.id}
+                   onEdit={onEdit}
+                   onDelete={onDelete}
+                   onToggleToday={onToggleToday}
+                   onMove={onMove}
+                   onComplete={onComplete}
+                   onClick={() => onClick(task.id)}
+                   dragHandleProps={{ className: "drag-handle" }}
+                   teamMembers={teamMembers}
+                   canDelete={canDelete}
+                 />
+               </MeasureCard>
                {/* Debug coords */}
                {draggingId === task.id && (
                   <div className="absolute -top-6 left-0 bg-black/70 text-white text-xs px-2 py-1 rounded">
