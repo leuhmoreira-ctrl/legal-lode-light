@@ -1,73 +1,73 @@
 export const darkTheme = {
   // Backgrounds
   background: {
-    primary: '#0f172a',      // Main background (cards, modals) - derived from --card
-    secondary: '#0f172a',    // Page background - derived from --background
-    tertiary: '#1e293b',     // Sidebar, headers - approximated (slate-800)
-    hover: '#1e293b',        // Hover states
-    active: '#334155',       // Active states
+    primary: '#000000',      // --bg-primary
+    secondary: '#1C1C1E',    // --bg-secondary
+    tertiary: '#2C2C2E',     // --bg-tertiary
+    hover: 'rgba(120, 120, 128, 0.24)', // --fill-tertiary
+    active: 'rgba(120, 120, 128, 0.32)', // --fill-secondary
   },
 
   // Texts
   text: {
-    primary: '#f8fafc',      // Titles, main text - derived from --foreground
-    secondary: '#cbd5e1',    // Subtitles, labels - approximated (slate-300)
-    tertiary: '#94a3b8',     // Auxiliary text - approximated (slate-400)
-    disabled: '#64748b',     // Disabled text - approximated (slate-500)
-    inverse: '#0f172a',      // Text on light backgrounds
+    primary: '#FFFFFF',      // --text-primary
+    secondary: '#EBEBF5',    // --text-secondary
+    tertiary: 'rgba(235, 235, 245, 0.6)', // --text-tertiary
+    disabled: 'rgba(235, 235, 245, 0.3)', // --text-quaternary
+    inverse: '#000000',
   },
 
   // Borders
   border: {
-    light: '#1e293b',        // Subtle borders - derived from --border
-    medium: '#334155',       // Standard borders
-    strong: '#475569',       // Highlighted borders
-    input: '#1e293b',        // Input borders - derived from --input
+    light: 'rgba(255, 255, 255, 0.1)', // --separator
+    medium: '#38383A',       // --separator-opaque
+    strong: 'rgba(235, 235, 245, 0.3)', // Darker separator
+    input: 'rgba(120, 120, 128, 0.24)', // Input border approx
   },
 
   // Surfaces
   surface: {
-    card: '#0f172a',         // Cards
-    elevated: '#1e293b',     // Elevated elements
-    input: '#0f172a',        // Inputs
-    sidebar: '#0f172a',      // Sidebar - derived from --sidebar-background
+    card: '#1C1C1E',
+    elevated: '#2C2C2E',     // --bg-tertiary
+    input: 'rgba(120, 120, 128, 0.24)', // --fill-tertiary
+    sidebar: 'rgba(30, 30, 30, 0.8)',
   },
 
-  // Status (using dark mode equivalents from urgency classes)
+  // Status
   status: {
     success: {
-      bg: 'rgba(20, 83, 45, 0.3)',   // Success - background (green-900/30)
-      text: '#4ade80',               // Success - text (green-400)
-      border: 'rgba(20, 83, 45, 0.5)', // Success - border
+      bg: 'rgba(48, 209, 88, 0.2)',
+      text: '#30D158',
+      border: 'transparent',
     },
     warning: {
-      bg: 'rgba(113, 63, 18, 0.3)',  // Warning - background (yellow-900/30)
-      text: '#facc15',               // Warning - text (yellow-400)
-      border: 'rgba(113, 63, 18, 0.5)', // Warning - border
+      bg: 'rgba(255, 159, 10, 0.2)',
+      text: '#FF9F0A',
+      border: 'transparent',
     },
     error: {
-      bg: 'rgba(127, 29, 29, 0.3)',  // Error - background (red-900/30)
-      text: '#f87171',               // Error - text (red-400)
-      border: 'rgba(127, 29, 29, 0.5)', // Error - border
+      bg: 'rgba(255, 69, 58, 0.2)',
+      text: '#FF453A',
+      border: 'transparent',
     },
   },
 
-  // Accent (System Blue - adjust for dark mode visibility if needed)
+  // Accent (Apple Blue Dark)
   primary: {
     50: '#1e3a8a',
     100: '#1d4ed8',
     200: '#2563eb',
-    500: '#3b82f6',          // Primary - derived from --primary
-    600: '#60a5fa',
-    700: '#93c5fd',
-    800: '#bfdbfe',
+    500: '#0A84FF',          // Apple Blue Dark
+    600: '#64D2FF',
+    700: '#0066CC',
+    800: '#0040A5',
   },
 
-  // Shadows (usually subtle or none in dark mode)
+  // Shadows
   shadow: {
-    sm: 'none',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
-    card: 'none',
+    sm: '0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.2)',
+    md: '0 4px 8px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3)',
+    lg: '0 12px 24px rgba(0, 0, 0, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4)',
+    card: '0 2px 8px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2)',
   }
 };

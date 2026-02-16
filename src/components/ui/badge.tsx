@@ -4,20 +4,20 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-[6px] border px-2.5 py-1 text-[13px] font-semibold tracking-[0.2px] transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-lg px-2.5 py-0.5 text-[13px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+          "badge-blue-light dark:badge-blue-dark hover:opacity-80",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-fill-tertiary text-text-secondary hover:bg-fill-secondary",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-        success: "border-[var(--status-success-border)] bg-[var(--status-success-bg)] text-[var(--status-success-text)] hover:opacity-80",
-        warning: "border-[var(--status-warning-border)] bg-[var(--status-warning-bg)] text-[var(--status-warning-text)] hover:opacity-80",
-        urgent: "border-[var(--status-error-border)] bg-[var(--status-error-bg)] text-[var(--status-error-text)] hover:opacity-80",
+          "badge-red-light dark:badge-red-dark hover:opacity-80",
+        outline: "text-foreground border border-input",
+        success: "badge-green-light dark:badge-green-dark hover:opacity-80",
+        warning: "badge-orange-light dark:badge-orange-dark hover:opacity-80",
+        urgent: "badge-red-light dark:badge-red-dark hover:opacity-80",
       },
     },
     defaultVariants: {
