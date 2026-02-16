@@ -55,6 +55,60 @@ export default function ProcessoDetail() {
   const [syncing, setSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
   const [acaoManualOpen, setAcaoManualOpen] = useState(false);
+
+  // Sync handler
+  const handleSync = useCallback(async () => {
+    if (!processo || !processo.sigla_tribunal || syncing) return;
+    setSyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sync-process", {
+        body: { numeroProcesso: processo.numero, tribunal: processo.sigla_tribunal },
+      });
+
+      if (error || data?.error) {
+        toast({ title: "Erro na sincronização", description: data?.error || error?.message || "Tente novamente", variant: "destructive" });
+        return;
+      }
+
+      // Save movimentações
+      if (data?.movimentacoes?.length > 0) {
+        const movsToInsert = data.movimentacoes.map((mov: any) => ({
+          processo_id: processo.id,
+          data_movimento: mov.data,
+          descricao: mov.descricao,
+          complemento: mov.complemento || null,
+        }));
+
+        await supabase.from("movimentacoes").upsert(movsToInsert, {
+          onConflict: "processo_id,data_movimento,descricao",
+          ignoreDuplicates: true,
+        });
+
+        // Refresh movimentações list
+        const { data: freshMovs } = await supabase
+          .from("movimentacoes")
+          .select("*")
+          .eq("processo_id", processo.id)
+          .order("data_movimento", { ascending: false });
+        setMovimentacoes(freshMovs || []);
+      }
+
+      // Update processo sync timestamp
+      const updateData: any = { data_ultima_sincronizacao: new Date().toISOString() };
+      if (data?.movimentacoes?.[0]) {
+        updateData.ultima_movimentacao = data.movimentacoes[0].data;
+        updateData.descricao_movimentacao = data.movimentacoes[0].descricao;
+      }
+      await supabase.from("processos").update(updateData).eq("id", processo.id);
+      setProcesso(prev => prev ? { ...prev, ...updateData } : prev);
+
+      toast({ title: "Sincronização concluída", description: `${data?.movimentacoes?.length || 0} movimentações atualizadas` });
+    } catch (err: any) {
+      toast({ title: "Erro na sincronização", description: err.message, variant: "destructive" });
+    } finally {
+      setSyncing(false);
+    }
+  }, [processo, syncing, toast]);
   const [ultimaAcaoManual, setUltimaAcaoManual] = useState<string | null>(null);
   const [novaTarefaOpen, setNovaTarefaOpen] = useState(false);
   const [emailComposerOpen, setEmailComposerOpen] = useState(false);
@@ -209,6 +263,8 @@ export default function ProcessoDetail() {
             dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
             proximoPrazo={proximoPrazo}
             onViewTimeline={() => setActiveTab("timeline")}
+            onSync={processo.sigla_tribunal ? handleSync : undefined}
+            syncing={syncing}
           />
         </div>
 

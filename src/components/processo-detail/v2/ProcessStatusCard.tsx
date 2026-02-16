@@ -14,6 +14,8 @@ interface ProcessStatusCardProps {
     descricao: string;
   } | null;
   onViewTimeline: () => void;
+  onSync?: () => Promise<void>;
+  syncing?: boolean;
 }
 
 export function ProcessStatusCard({
@@ -22,6 +24,8 @@ export function ProcessStatusCard({
   dataUltimaSincronizacao,
   proximoPrazo,
   onViewTimeline,
+  onSync,
+  syncing = false,
 }: ProcessStatusCardProps) {
   return (
     <Card className="shadow-none border border-border/40 bg-card rounded-xl">
@@ -74,12 +78,20 @@ export function ProcessStatusCard({
           </div>
 
           {/* Sincronização */}
-          <div className="flex gap-3 items-start">
-            <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
-              <RefreshCw className="w-4 h-4 text-green-600 dark:text-green-400" />
+          <div
+            className={`flex gap-3 items-start ${onSync && !syncing ? "cursor-pointer group" : ""}`}
+            onClick={onSync && !syncing ? onSync : undefined}
+            role={onSync ? "button" : undefined}
+            tabIndex={onSync ? 0 : undefined}
+            title="Clique para sincronizar"
+          >
+            <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0 group-hover:bg-green-500/20 transition-colors">
+              <RefreshCw className={`w-4 h-4 text-green-600 dark:text-green-400 ${syncing ? "animate-spin" : ""}`} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Sincronização</p>
+              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                {syncing ? "Sincronizando..." : "Sincronização"}
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {dataUltimaSincronizacao
                   ? formatDistanceToNow(new Date(dataUltimaSincronizacao), { locale: ptBR, addSuffix: true })
