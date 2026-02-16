@@ -96,10 +96,8 @@ export function ProcessoHeader({
             </Badge>
           )}
           {portalLink && (
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" asChild>
-              <a href={portalLink} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="w-3 h-3" /> Portal do Tribunal
-              </a>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => window.open(portalLink, '_blank', 'noopener,noreferrer')}>
+              <ExternalLink className="w-3 h-3" /> Portal do Tribunal
             </Button>
           )}
         </div>
