@@ -48,8 +48,12 @@ const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
 >(({ className, style, ...props }, ref) => {
-  const { origin } = useAnimationOrigin();
+  const { origin, setOrigin } = useAnimationOrigin();
   const [styles, setStyles] = React.useState<React.CSSProperties>({});
+
+  React.useEffect(() => {
+    return () => setOrigin(null);
+  }, [setOrigin]);
 
   React.useLayoutEffect(() => {
     if (origin) {

@@ -50,8 +50,12 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, style, ...props }, ref) => {
-  const { origin } = useAnimationOrigin();
+  const { origin, setOrigin } = useAnimationOrigin();
   const [styles, setStyles] = React.useState<React.CSSProperties>({});
+
+  React.useEffect(() => {
+    return () => setOrigin(null);
+  }, [setOrigin]);
 
   React.useLayoutEffect(() => {
     if (origin) {
