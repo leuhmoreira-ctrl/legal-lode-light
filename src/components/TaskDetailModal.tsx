@@ -405,7 +405,7 @@ export function TaskDetailModal({
         ) : (
           <>
             {/* Header */}
-            <DialogHeader className="p-4 sm:p-6 pb-0 sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b">
+            <DialogHeader className="p-4 sm:p-6 pb-0 sticky sm:static top-0 z-20 bg-background border-b sm:border-b-0">
               {editingTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
