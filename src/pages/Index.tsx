@@ -29,6 +29,7 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
+import { CountUp } from "@/components/ui/count-up";
 
 const faseData = [
   { name: "Conhecimento", value: 3 },
@@ -170,8 +171,8 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
-                  {prazosUrgentes.length}
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                  <CountUp end={prazosUrgentes.length} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
                   <CalendarDays className="w-3.5 h-3.5 text-[#86868B]" />
@@ -193,8 +194,8 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
-                  {processosMock.length}
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                  <CountUp end={processosMock.length} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
                   <ArrowUpRight className="w-3.5 h-3.5 text-[#34C759]" />
@@ -216,8 +217,8 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
-                  {tarefasPendentes.length}
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                  <CountUp end={tarefasPendentes.length} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#FF9500]" />
@@ -239,8 +240,8 @@ export default function Dashboard() {
                 </div>
               </div>
               <div>
-                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-[countUp_0.6s_ease-out]">
-                  2
+                <div className="text-[40px] md:text-[52px] font-bold tracking-[-1.2px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                  <CountUp end={2} />
                 </div>
                 <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
                   <CalendarDays className="w-3.5 h-3.5 text-[#86868B]" />

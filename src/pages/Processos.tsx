@@ -333,7 +333,7 @@ export default function Processos() {
               const syncResult = syncResults[proc.id];
 
               return (
-                <Card key={proc.id} className="p-0 hover:shadow-card-hover transition-all duration-200 cursor-pointer overflow-hidden border-border/60" onClick={() => navigate(`/processos/${proc.id}`)}>
+                <Card key={proc.id} className="apple-card p-0 cursor-pointer overflow-hidden border-border/60" onClick={() => navigate(`/processos/${proc.id}`)}>
                   <div className="p-5">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-start gap-4">

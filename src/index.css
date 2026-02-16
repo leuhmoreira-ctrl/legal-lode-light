@@ -342,14 +342,17 @@
 
   /* New Apple Design System Refinements */
   .apple-card {
-    @apply bg-white dark:bg-[#1C1C1E] rounded-[16px] border-[0.5px] border-black/5 dark:border-white/10 transition-all duration-200;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    @apply bg-white dark:bg-[#1C1C1E] rounded-[16px] border-[0.5px] border-black/5 dark:border-white/10 transition-all duration-200 ease-apple-ease active:scale-[0.98];
     box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
   }
 
   .apple-card:hover {
     @apply -translate-y-[2px];
     box-shadow: 0 8px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  .shake {
+    animation: shake 0.4s ease-in-out;
   }
 
   .bg-gradient-urgent {

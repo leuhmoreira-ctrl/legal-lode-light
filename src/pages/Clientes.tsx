@@ -81,7 +81,7 @@ export default function Clientes() {
                 return (
                 <Card
                     key={cliente.id}
-                    className="p-5 hover:shadow-md transition-shadow relative group"
+                    className="apple-card p-5 relative group"
                 >
                     <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={(e) => handleEdit(cliente, e)}>
