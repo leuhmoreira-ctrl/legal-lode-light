@@ -7,9 +7,6 @@ export interface KanbanTask {
   status: string;
   priority: string;
   position_index: number;
-  position_x?: number;
-  position_y?: number;
-  z_index?: number;
   due_date: string | null;
   user_id: string;
   created_at: string;
@@ -36,7 +33,7 @@ export interface TaskActivity {
 
 export type KanbanColumnId = 'todo' | 'in_progress' | 'done';
 
-export type ViewMode = 'compact' | 'normal' | 'expanded';
+export type ViewMode = 'compact' | 'normal';
 
 export const KANBAN_COLUMNS: { id: KanbanColumnId; title: string; bgColor: string; borderColor: string }[] = [
   { id: "todo", title: "A Fazer", bgColor: "bg-[#F8F9FA] dark:bg-[#1C1C1E]", borderColor: "border-t-[#007AFF]" },

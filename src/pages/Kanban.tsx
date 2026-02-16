@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -8,8 +8,6 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -17,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, X, Filter, Star, List, Layout, Maximize2 } from "lucide-react";
+import { Loader2, X, Filter, Star, List, Layout } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
@@ -25,7 +23,7 @@ import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { useAnimationOrigin } from "@/contexts/AnimationOriginContext";
 import { KanbanCard } from "@/components/kanban/KanbanCard";
 import { KanbanColumn } from "@/components/kanban/KanbanColumn";
-import { FreeKanbanBoard } from "@/components/kanban/FreeKanbanBoard";
+
 import { KanbanTask, TaskActivity, ViewMode, KANBAN_COLUMNS as COLUMNS } from "@/types/kanban";
 import { getStageEntryDate, getTaskStartDate, getTaskCompletionDate } from "@/utils/kanbanUtils";
 
@@ -50,7 +48,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<KanbanTask | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("normal");
-  const [isFreeMode, setIsFreeMode] = useState(true);
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -171,18 +168,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       .eq("id", draggableId);
   };
 
-  const onFreeTaskMove = async (taskId: string, x: number, y: number, status: string, zIndex: number) => {
-    // Optimistic update
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, position_x: x, position_y: y, status, z_index: zIndex } : t))
-    );
-
-    // Save to Supabase (debounced ideally, but direct for now)
-    await supabase
-      .from("kanban_tasks")
-      .update({ position_x: x, position_y: y, status, z_index: zIndex })
-      .eq("id", taskId);
-  };
 
   const handleTaskReorder = useCallback(async (taskId: string, newStatus: string, newIndex: number) => {
     const task = tasks.find((t) => t.id === taskId);
@@ -358,14 +343,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
             </p>
           </div>
           <div className="flex items-center gap-4">
-             {/* Free Mode Toggle */}
-             <div className="flex items-center space-x-2 bg-muted p-2 rounded-lg border">
-                <Switch id="free-mode" checked={isFreeMode} onCheckedChange={setIsFreeMode} />
-                <Label htmlFor="free-mode" className="text-sm font-medium cursor-pointer">
-                  Modo Livre
-                </Label>
-             </div>
-
              <div className="flex bg-muted p-1 rounded-lg border">
                 <Button
                    variant={viewMode === 'compact' ? 'secondary' : 'ghost'}
@@ -385,16 +362,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                 >
                    <Layout className="w-4 h-4" />
                 </Button>
-                <Button
-                   variant={viewMode === 'expanded' ? 'secondary' : 'ghost'}
-                   size="icon"
-                   className="h-7 w-7"
-                   onClick={() => setViewMode('expanded')}
-                   title="Modo Expandido"
-                >
-                   <Maximize2 className="w-4 h-4" />
-                </Button>
-             </div>
+              </div>
              <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
           </div>
         </div>
@@ -451,36 +419,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
-        ) : isFreeMode ? (
-           <FreeKanbanBoard
-             tasks={tasksFilteredByProcess}
-             teamMembers={teamMembers}
-             viewMode={viewMode}
-             onTaskMove={onFreeTaskMove}
-             onReorder={handleTaskReorder}
-             onTaskUpdate={(t) => setTasks(prev => prev.map(old => old.id === t.id ? t : old))}
-             onEdit={(id, e) => {
-                e.stopPropagation();
-                setOrigin({ x: e.clientX, y: e.clientY });
-                setSelectedTaskId(id);
-             }}
-             onDelete={(task, e) => {
-                e.stopPropagation();
-                setOrigin({ x: e.clientX, y: e.clientY });
-                setDeleteTarget(task);
-             }}
-             onToggleToday={async (task, e) => {
-                e.stopPropagation();
-                const newVal = !task.marked_for_today;
-                setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
-                await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
-             }}
-             onMove={handleMoveTask}
-             onComplete={handleCompleteTask}
-             onClick={(id) => setSelectedTaskId(id)}
-             isAdmin={isAdmin}
-             currentUserId={user?.id}
-           />
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-250px)] min-h-[500px]">
