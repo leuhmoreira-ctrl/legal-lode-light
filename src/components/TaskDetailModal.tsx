@@ -392,7 +392,8 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+        <div className="overflow-y-auto max-h-[90vh]">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -677,6 +678,7 @@ export function TaskDetailModal({
             </div>
           </>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
