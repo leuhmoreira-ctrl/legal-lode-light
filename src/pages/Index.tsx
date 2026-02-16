@@ -38,18 +38,21 @@ const faseData = [
   { name: "Execução", value: 1 },
 ];
 
-const BAR_COLORS = [
-  "hsl(207,90%,54%)", "hsl(38,92%,50%)", "hsl(152,60%,40%)",
-  "hsl(340,75%,55%)", "hsl(262,60%,55%)", "hsl(15,85%,55%)",
-];
+const getProductivityColor = (value: number) => {
+  if (value >= 30) return "hsl(152, 40%, 35%)";   // verde escuro — alta
+  if (value >= 25) return "hsl(152, 30%, 45%)";   // verde médio
+  if (value >= 20) return "hsl(200, 25%, 50%)";   // azul acinzentado — médio
+  if (value >= 15) return "hsl(220, 20%, 55%)";   // cinza azulado — baixo
+  return "hsl(220, 15%, 65%)";                     // cinza — muito baixo
+};
 
 const produtividadeData = [
-  { mes: "Set", tarefas: 18, fill: BAR_COLORS[0] },
-  { mes: "Out", tarefas: 24, fill: BAR_COLORS[1] },
-  { mes: "Nov", tarefas: 21, fill: BAR_COLORS[2] },
-  { mes: "Dez", tarefas: 28, fill: BAR_COLORS[3] },
-  { mes: "Jan", tarefas: 32, fill: BAR_COLORS[4] },
-  { mes: "Fev", tarefas: 26, fill: BAR_COLORS[5] },
+  { mes: "Set", tarefas: 18 },
+  { mes: "Out", tarefas: 24 },
+  { mes: "Nov", tarefas: 21 },
+  { mes: "Dez", tarefas: 28 },
+  { mes: "Jan", tarefas: 32 },
+  { mes: "Fev", tarefas: 26 },
 ];
 
 const PIE_COLORS = [
@@ -241,7 +244,7 @@ export default function Dashboard() {
                 <Tooltip />
                 <Bar dataKey="tarefas" radius={[4, 4, 0, 0]}>
                   {produtividadeData.map((entry, index) => (
-                    <Cell key={index} fill={entry.fill} />
+                    <Cell key={index} fill={getProductivityColor(entry.tarefas)} />
                   ))}
                 </Bar>
               </BarChart>
