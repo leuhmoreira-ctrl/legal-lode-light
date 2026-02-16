@@ -29,7 +29,7 @@ export function KanbanColumn({
   return (
     <div className={cn("flex flex-col h-full rounded-xl transition-colors duration-300", bgColor)}>
       {/* Header */}
-      <div className={cn("px-4 py-3 rounded-t-xl bg-white/50 backdrop-blur-sm border-t-[3px]", borderColor)}>
+      <div className={cn("px-4 py-3 rounded-t-xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border-t-[3px]", borderColor)}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-bold text-base text-foreground flex items-center gap-2">
             {title}
