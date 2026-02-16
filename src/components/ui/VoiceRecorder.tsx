@@ -18,8 +18,9 @@ import {
 
 interface VoiceRecorderProps {
   onTranscribe: (text: string) => void;
-  onAttachAudio: (blob: Blob) => void;
-  onBoth: (text: string, blob: Blob) => void;
+  onAttachAudio?: (blob: Blob) => void;
+  onBoth?: (text: string, blob: Blob) => void;
+  mode?: "default" | "description-note";
 }
 
 function checkBrowserSupport() {
@@ -38,7 +39,7 @@ function getSupportedMimeType(): string {
   return "";
 }
 
-export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceRecorderProps) {
+export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth, mode = "default" }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -197,9 +198,16 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
   const handleAction = (type: "transcribe" | "attach" | "both") => {
     if (!audioBlob) return;
     const text = editableText.trim();
-    if (type === "transcribe") onTranscribe(text);
-    else if (type === "attach") onAttachAudio(audioBlob);
-    else onBoth(text, audioBlob);
+
+    if (type === "transcribe") {
+      // In description-note mode, always register as note even without automatic transcript.
+      const fallback = text || `[Áudio gravado sem transcrição automática • duração ${formatTime(timer)}]`;
+      onTranscribe(mode === "description-note" ? fallback : text);
+    } else if (type === "attach") {
+      onAttachAudio?.(audioBlob);
+    } else {
+      onBoth?.(text, audioBlob);
+    }
     cleanup();
   };
 
@@ -253,7 +261,9 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Gravar áudio / Ditado por voz</p>
+              <p className="text-xs">
+                {mode === "description-note" ? "Ditar anotação da descrição" : "Gravar áudio / Ditado por voz"}
+              </p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -262,10 +272,17 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
       <Dialog open={showModal} onOpenChange={(open) => { if (!open) cleanup(); }}>
         <DialogContent className="sm:max-w-sm p-6 gap-3">
           <DialogHeader className="pb-0">
-            <DialogTitle className="text-lg">Gravação Finalizada</DialogTitle>
+            <DialogTitle className="text-lg">
+              {mode === "description-note" ? "Anotação por Voz" : "Gravação Finalizada"}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">
+            {mode === "description-note" && (
+              <div className="text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2">
+                Esse conteúdo será salvo como anotação da descrição, não como anexo.
+              </div>
+            )}
             <div className="bg-muted p-3 rounded-lg flex items-center gap-3">
               {audioUrl && (
                 <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-full" onClick={togglePreview}>
@@ -297,19 +314,28 @@ export function VoiceRecorder({ onTranscribe, onAttachAudio, onBoth }: VoiceReco
             )}
           </div>
 
-          <DialogFooter className="grid grid-cols-3 gap-2 pt-1">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("transcribe")} disabled={!editableText.trim()}>
-              <Type className="w-3.5 h-3.5 shrink-0" />
-              Texto
-            </Button>
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("attach")}>
-              <FileAudio className="w-3.5 h-3.5 shrink-0" />
-              Áudio
-            </Button>
-            <Button size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("both")}>
-              Ambos
-            </Button>
-          </DialogFooter>
+          {mode === "description-note" ? (
+            <DialogFooter className="pt-1">
+              <Button size="sm" className="gap-1.5 text-xs w-full" onClick={() => handleAction("transcribe")}>
+                <Type className="w-3.5 h-3.5 shrink-0" />
+                Adicionar anotação na descrição
+              </Button>
+            </DialogFooter>
+          ) : (
+            <DialogFooter className="grid grid-cols-3 gap-2 pt-1">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("transcribe")} disabled={!editableText.trim()}>
+                <Type className="w-3.5 h-3.5 shrink-0" />
+                Texto
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("attach")} disabled={!onAttachAudio}>
+                <FileAudio className="w-3.5 h-3.5 shrink-0" />
+                Áudio
+              </Button>
+              <Button size="sm" className="gap-1.5 text-xs" onClick={() => handleAction("both")} disabled={!onBoth}>
+                Ambos
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </>

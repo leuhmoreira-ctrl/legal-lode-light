@@ -346,48 +346,16 @@ export function TaskDetailModal({
   };
 
   const handleTranscribe = (text: string) => {
-    const newDesc = editDesc ? editDesc + "\n" + text : text;
+    const noteTimestamp = format(new Date(), "dd/MM/yyyy 'às' HH:mm");
+    const noteText = text.trim() || "[Anotação de voz sem transcrição automática]";
+    const voiceNoteBlock = `\n\n[Anotação por voz • ${noteTimestamp}]\n${noteText}`;
+    const newDesc = editDesc ? editDesc + voiceNoteBlock : `[Anotação por voz • ${noteTimestamp}]\n${noteText}`;
     setEditDesc(newDesc);
     setEditingDesc(true);
-  };
-
-  const handleAttachAudio = async (blob: Blob) => {
-    if (!taskId || !user) return;
-    try {
-      const file = new File([blob], `audio_${format(new Date(), "dd-MM-yyyy_HH-mm")}.webm`, { type: "audio/webm" });
-      const path = `${user.id}/${taskId}/${crypto.randomUUID()}.webm`;
-      const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
-      if (upErr) throw upErr;
-
-      const { error: attachmentErr } = await supabase.from("task_attachments").insert({
-        task_id: taskId,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type,
-        storage_path: path,
-        uploaded_by: user.id,
-      });
-      if (attachmentErr) throw attachmentErr;
-
-      if (task?.processo_id) {
-        const { error: metadataErr } = await supabase.from("document_metadata").insert({
-          process_id: task.processo_id,
-          storage_path: path,
-          original_name: file.name,
-          mime_type: file.type,
-          size_bytes: file.size,
-          category: "other",
-          uploaded_by: user.id,
-          task_id: taskId,
-        });
-        if (metadataErr) throw metadataErr;
-      }
-
-      toast({ title: "Áudio anexado com sucesso!" });
-      loadTaskDetails();
-    } catch (err: any) {
-      toast({ title: "Erro ao anexar áudio", description: err.message, variant: "destructive" });
-    }
+    toast({
+      title: "Anotação adicionada",
+      description: "Revise e clique em Salvar para persistir na descrição.",
+    });
   };
 
   if (!open) return null;
@@ -446,12 +414,8 @@ export function TaskDetailModal({
                       <Edit2 className="w-4 h-4" /> Descrição
                     </h3>
                     <VoiceRecorder
+                      mode="description-note"
                       onTranscribe={handleTranscribe}
-                      onAttachAudio={handleAttachAudio}
-                      onBoth={(text, blob) => {
-                        handleTranscribe(text);
-                        handleAttachAudio(blob);
-                      }}
                     />
                   </div>
                   {editingDesc ? (
