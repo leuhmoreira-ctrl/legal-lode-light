@@ -355,11 +355,11 @@ export function TaskDetailModal({
     if (!taskId || !user) return;
     try {
       const file = new File([blob], `audio_${format(new Date(), "dd-MM-yyyy_HH-mm")}.webm`, { type: "audio/webm" });
-      const path = `${taskId}/${crypto.randomUUID()}.webm`;
+      const path = `${user.id}/${taskId}/${crypto.randomUUID()}.webm`;
       const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
       if (upErr) throw upErr;
 
-      await supabase.from("task_attachments").insert({
+      const { error: attachmentErr } = await supabase.from("task_attachments").insert({
         task_id: taskId,
         file_name: file.name,
         file_size: file.size,
@@ -367,9 +367,10 @@ export function TaskDetailModal({
         storage_path: path,
         uploaded_by: user.id,
       });
+      if (attachmentErr) throw attachmentErr;
 
       if (task?.processo_id) {
-        await supabase.from("document_metadata").insert({
+        const { error: metadataErr } = await supabase.from("document_metadata").insert({
           process_id: task.processo_id,
           storage_path: path,
           original_name: file.name,
@@ -379,6 +380,7 @@ export function TaskDetailModal({
           uploaded_by: user.id,
           task_id: taskId,
         });
+        if (metadataErr) throw metadataErr;
       }
 
       toast({ title: "Áudio anexado com sucesso!" });

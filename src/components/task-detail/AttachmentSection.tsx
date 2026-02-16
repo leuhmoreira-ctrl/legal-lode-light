@@ -182,31 +182,37 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
   const performUpload = async (file: File, category = "other") => {
     setUploading(true);
     try {
+      if (!user?.id) {
+        throw new Error("Usuário não autenticado");
+      }
+
       const ext = file.name.split(".").pop();
-      const path = `${taskId}/${crypto.randomUUID()}.${ext}`;
+      const path = `${user.id}/${taskId}/${crypto.randomUUID()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
       if (upErr) throw upErr;
 
-      await supabase.from("task_attachments").insert({
+      const { error: attachmentErr } = await supabase.from("task_attachments").insert({
         task_id: taskId,
         file_name: file.name,
         file_size: file.size,
         mime_type: file.type,
         storage_path: path,
-        uploaded_by: user!.id,
+        uploaded_by: user.id,
       });
+      if (attachmentErr) throw attachmentErr;
 
       if (processoId) {
-        await supabase.from("document_metadata").insert({
+        const { error: metadataErr } = await supabase.from("document_metadata").insert({
           process_id: processoId,
           storage_path: path,
           original_name: file.name,
           mime_type: file.type,
           size_bytes: file.size,
           category: category,
-          uploaded_by: user!.id,
+          uploaded_by: user.id,
           task_id: taskId,
         });
+        if (metadataErr) throw metadataErr;
       }
 
       toast({ title: "✅ Arquivo anexado" });
@@ -249,26 +255,32 @@ export function AttachmentSection({ attachments, taskId, processoId, onReload }:
     }
     setUploading(true);
     try {
+        if (!user?.id) {
+            throw new Error("Usuário não autenticado");
+        }
+
         await supabase.storage.from("task-attachments").remove([replaceTarget.storage_path]);
         const ext = file.name.split(".").pop();
-        const path = `${taskId}/${crypto.randomUUID()}.${ext}`;
+        const path = `${user.id}/${taskId}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage.from("task-attachments").upload(path, file);
         if (upErr) throw upErr;
 
-        await supabase.from("task_attachments").update({
+        const { error: replaceErr } = await supabase.from("task_attachments").update({
             file_name: file.name,
             file_size: file.size,
             mime_type: file.type,
             storage_path: path,
         }).eq("id", replaceTarget.id);
+        if (replaceErr) throw replaceErr;
 
         if (processoId) {
-            await supabase.from("document_metadata").update({
+            const { error: metadataUpdateErr } = await supabase.from("document_metadata").update({
                 original_name: file.name,
                 mime_type: file.type,
                 size_bytes: file.size,
                 storage_path: path,
             }).eq("storage_path", replaceTarget.storage_path);
+            if (metadataUpdateErr) throw metadataUpdateErr;
         }
         toast({ title: "✅ Arquivo substituído" });
         onReload();
