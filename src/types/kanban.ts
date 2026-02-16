@@ -7,6 +7,9 @@ export interface KanbanTask {
   status: string;
   priority: string;
   position_index: number;
+  position_x?: number;
+  position_y?: number;
+  z_index?: number;
   due_date: string | null;
   user_id: string;
   created_at: string;
