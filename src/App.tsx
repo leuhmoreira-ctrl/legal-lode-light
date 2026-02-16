@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeContextProvider } from "@/contexts/ThemeContext";
+import { AnimationOriginProvider } from "@/contexts/AnimationOriginContext";
 
 const queryClient = new QueryClient();
 
@@ -37,11 +38,12 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <ThemeContextProvider>
-        <TooltipProvider>
-          <AuthProvider>
-            <PermissionsProvider>
-              <BrowserRouter>
-                <ErrorBoundary>
+        <AnimationOriginProvider>
+          <TooltipProvider>
+            <AuthProvider>
+              <PermissionsProvider>
+                <BrowserRouter>
+                  <ErrorBoundary>
                   <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/cadastro" element={<Cadastro />} />
@@ -74,6 +76,7 @@ const App = () => (
           <Toaster />
           <SonnerToaster />
         </TooltipProvider>
+        </AnimationOriginProvider>
       </ThemeContextProvider>
     </ThemeProvider>
   </QueryClientProvider>
