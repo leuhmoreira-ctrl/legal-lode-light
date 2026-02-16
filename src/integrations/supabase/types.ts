@@ -154,57 +154,42 @@ export type Database = {
       }
       document_metadata: {
         Row: {
-          caminho_completo: string | null
           category: string
           created_at: string
-          drive_file_id: string | null
           id: string
           mime_type: string
-          ordem_na_pasta: number
           original_name: string
-          pasta_categoria: string | null
           process_id: string
           size_bytes: number
           storage_path: string
-          subpasta: string | null
           tags: string[] | null
           task_id: string | null
           uploaded_by: string
           version: number
         }
         Insert: {
-          caminho_completo?: string | null
           category?: string
           created_at?: string
-          drive_file_id?: string | null
           id?: string
           mime_type: string
-          ordem_na_pasta?: number
           original_name: string
-          pasta_categoria?: string | null
           process_id: string
           size_bytes: number
           storage_path: string
-          subpasta?: string | null
           tags?: string[] | null
           task_id?: string | null
           uploaded_by: string
           version?: number
         }
         Update: {
-          caminho_completo?: string | null
           category?: string
           created_at?: string
-          drive_file_id?: string | null
           id?: string
           mime_type?: string
-          ordem_na_pasta?: number
           original_name?: string
-          pasta_categoria?: string | null
           process_id?: string
           size_bytes?: number
           storage_path?: string
-          subpasta?: string | null
           tags?: string[] | null
           task_id?: string | null
           uploaded_by?: string
@@ -226,71 +211,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      drive_folders: {
-        Row: {
-          atualizado_em: string
-          criado_em: string
-          drive_folder_id: string | null
-          estrutura_subpastas: Json
-          id: string
-          nome_pasta: string
-          processo_id: string
-          sincronizado: boolean
-        }
-        Insert: {
-          atualizado_em?: string
-          criado_em?: string
-          drive_folder_id?: string | null
-          estrutura_subpastas?: Json
-          id?: string
-          nome_pasta: string
-          processo_id: string
-          sincronizado?: boolean
-        }
-        Update: {
-          atualizado_em?: string
-          criado_em?: string
-          drive_folder_id?: string | null
-          estrutura_subpastas?: Json
-          id?: string
-          nome_pasta?: string
-          processo_id?: string
-          sincronizado?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "drive_folders_processo_id_fkey"
-            columns: ["processo_id"]
-            isOneToOne: true
-            referencedRelation: "processos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      file_structure_templates: {
-        Row: {
-          atualizado_em: string
-          criado_em: string
-          estrutura_subpastas: Json
-          id: string
-          user_id: string
-        }
-        Insert: {
-          atualizado_em?: string
-          criado_em?: string
-          estrutura_subpastas?: Json
-          id?: string
-          user_id: string
-        }
-        Update: {
-          atualizado_em?: string
-          criado_em?: string
-          estrutura_subpastas?: Json
-          id?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       kanban_tasks: {
         Row: {
