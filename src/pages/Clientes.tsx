@@ -1,27 +1,43 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, User, Mail, Phone, DollarSign } from "lucide-react";
-import { clientesMock } from "@/data/mockData";
+import { Search, Plus, User, Mail, Phone, Pencil, Trash2, Building2 } from "lucide-react";
 import { useState } from "react";
-
-const paymentStatus: Record<string, { label: string; class: string }> = {
-  em_dia: { label: "Em dia", class: "urgency-low" },
-  pendente: { label: "Pendente", class: "urgency-medium" },
-  atrasado: { label: "Atrasado", class: "urgency-high" },
-};
+import { useClientes } from "@/hooks/useClientes";
+import { ClientFormModal } from "@/components/clientes/ClientFormModal";
+import { DeleteClientDialog } from "@/components/clientes/DeleteClientDialog";
+import { Cliente, ClienteRow } from "@/types/cliente";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Clientes() {
   const [search, setSearch] = useState("");
+  const { clientes, isLoading } = useClientes();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
 
-  const filtered = clientesMock.filter(
+  const filtered = clientes?.filter(
     (c) =>
       c.nome.toLowerCase().includes(search.toLowerCase()) ||
-      c.cpfCnpj.includes(search) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
-  );
+      c.cpf_cnpj.includes(search) ||
+      (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
+  ) || [];
+
+  const handleEdit = (cliente: ClienteRow) => {
+      setSelectedCliente(cliente as unknown as Cliente);
+      setIsFormOpen(true);
+  };
+
+  const handleDelete = (cliente: ClienteRow) => {
+      setSelectedCliente(cliente as unknown as Cliente);
+      setIsDeleteOpen(true);
+  };
+
+  const handleCreate = () => {
+      setSelectedCliente(null);
+      setIsFormOpen(true);
+  }
 
   return (
     <AppLayout>
@@ -30,10 +46,10 @@ export default function Clientes() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {clientesMock.length} clientes cadastrados
+              {clientes?.length || 0} clientes cadastrados
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleCreate}>
             <Plus className="w-4 h-4" /> Novo Cliente
           </Button>
         </div>
@@ -48,58 +64,69 @@ export default function Clientes() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {filtered.map((cliente) => {
-            const ps = paymentStatus[cliente.statusPagamento];
-            return (
-              <Card
-                key={cliente.id}
-                className="p-5 hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <User className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-foreground truncate">
-                      {cliente.nome}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">{cliente.cpfCnpj}</p>
-                  </div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${ps.class}`}>
-                    {ps.label}
-                  </span>
-                </div>
+        {isLoading ? (
+             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                 {[1,2,3].map(i => (
+                     <Skeleton key={i} className="h-40 w-full" />
+                 ))}
+             </div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {filtered.map((cliente) => {
+                return (
+                <Card
+                    key={cliente.id}
+                    className="p-5 hover:shadow-md transition-shadow relative group"
+                >
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(cliente)}>
+                            <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(cliente)}>
+                            <Trash2 className="w-4 h-4" />
+                        </Button>
+                    </div>
 
-                <div className="space-y-2 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5" />
-                    {cliente.email}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5" />
-                    {cliente.telefone}
-                  </div>
-                </div>
+                    <div className="flex items-start gap-3 mb-4 pr-16">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        {cliente.tipo === 'pj' ? <Building2 className="w-5 h-5 text-primary" /> : <User className="w-5 h-5 text-primary" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-foreground truncate">
+                        {cliente.nome}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">{cliente.cpf_cnpj}</p>
+                    </div>
+                    </div>
 
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">Processos: </span>
-                    <span className="font-semibold text-foreground">
-                      {cliente.processosAtivos}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs">
-                    <DollarSign className="w-3.5 h-3.5 text-success" />
-                    <span className="font-semibold text-foreground">
-                      R$ {cliente.totalHonorarios.toLocaleString("pt-BR")}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5" />
+                        {cliente.email || "-"}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5" />
+                        {cliente.telefone || "-"}
+                    </div>
+                    </div>
+                </Card>
+                );
+            })}
+            </div>
+        )}
+
+        <ClientFormModal
+            open={isFormOpen}
+            onOpenChange={setIsFormOpen}
+            clienteToEdit={selectedCliente}
+        />
+
+        <DeleteClientDialog
+            open={isDeleteOpen}
+            onOpenChange={setIsDeleteOpen}
+            cliente={selectedCliente}
+        />
+
       </div>
     </AppLayout>
   );
