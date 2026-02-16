@@ -38,13 +38,18 @@ const faseData = [
   { name: "Execução", value: 1 },
 ];
 
+const BAR_COLORS = [
+  "hsl(207,90%,54%)", "hsl(38,92%,50%)", "hsl(152,60%,40%)",
+  "hsl(340,75%,55%)", "hsl(262,60%,55%)", "hsl(15,85%,55%)",
+];
+
 const produtividadeData = [
-  { mes: "Set", tarefas: 18 },
-  { mes: "Out", tarefas: 24 },
-  { mes: "Nov", tarefas: 21 },
-  { mes: "Dez", tarefas: 28 },
-  { mes: "Jan", tarefas: 32 },
-  { mes: "Fev", tarefas: 26 },
+  { mes: "Set", tarefas: 18, fill: BAR_COLORS[0] },
+  { mes: "Out", tarefas: 24, fill: BAR_COLORS[1] },
+  { mes: "Nov", tarefas: 21, fill: BAR_COLORS[2] },
+  { mes: "Dez", tarefas: 28, fill: BAR_COLORS[3] },
+  { mes: "Jan", tarefas: 32, fill: BAR_COLORS[4] },
+  { mes: "Fev", tarefas: 26, fill: BAR_COLORS[5] },
 ];
 
 const PIE_COLORS = [
@@ -234,7 +239,11 @@ export default function Dashboard() {
                 <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
                 <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
                 <Tooltip />
-                <Bar dataKey="tarefas" fill="hsl(220,60%,22%)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="tarefas" radius={[4, 4, 0, 0]}>
+                  {produtividadeData.map((entry, index) => (
+                    <Cell key={index} fill={entry.fill} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </Card>
