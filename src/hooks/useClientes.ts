@@ -13,6 +13,7 @@ export function useClientes() {
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
+        // @ts-expect-error - tabela clientes nao esta nos tipos gerados
         .from("clientes")
         .select("*")
         .order("nome", { ascending: true });
@@ -26,8 +27,8 @@ export function useClientes() {
   const createCliente = useMutation({
     mutationFn: async (newCliente: Omit<Cliente, "id">) => {
       if (!user) throw new Error("User not authenticated");
-      // @ts-expect-error - Supabase types might not be updated yet
       const { data, error } = await supabase
+        // @ts-expect-error - tabela clientes nao esta nos tipos gerados
         .from("clientes")
         .insert([{ ...newCliente, user_id: user.id }])
         .select()
@@ -49,8 +50,8 @@ export function useClientes() {
   const updateCliente = useMutation({
     mutationFn: async (cliente: Cliente) => {
       if (!cliente.id) throw new Error("Client ID required for update");
-      // @ts-expect-error - Supabase types might not be updated yet
       const { data, error } = await supabase
+        // @ts-expect-error - tabela clientes nao esta nos tipos gerados
         .from("clientes")
         .update({
             nome: cliente.nome,
@@ -79,7 +80,7 @@ export function useClientes() {
 
   const deleteCliente = useMutation({
     mutationFn: async (id: string) => {
-      // @ts-expect-error - Supabase types might not be updated yet
+      // @ts-expect-error - tabela clientes nao esta nos tipos gerados
       const { error } = await supabase.from("clientes").delete().eq("id", id);
       if (error) throw error;
     },
