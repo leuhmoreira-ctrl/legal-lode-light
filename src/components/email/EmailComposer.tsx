@@ -149,7 +149,7 @@ export function EmailComposer({ open, onOpenChange, initialTo = "", initialSubje
         {/* Header */}
         <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0">
           <DialogTitle>Nova Mensagem</DialogTitle>
-          <div className="flex items-center gap-2 mr-6"> {/* Added mr-6 to avoid overlapping with absolute close button if needed, but we rely on built-in close or our own controls */}
+          <div className="flex items-center gap-2 mr-6">
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsExpanded(!isExpanded)}>
               {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </Button>
