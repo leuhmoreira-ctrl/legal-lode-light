@@ -4,22 +4,12 @@ import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePermissions } from "@/contexts/PermissionsContext";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DocumentUploader } from "@/components/DocumentUploader";
-import { DocumentList } from "@/components/DocumentList";
-import { ProcessChat } from "@/components/chat/ProcessChat";
 import { ProcessoComunicacoesTab } from "@/components/processo-detail/ProcessoComunicacoesTab";
-import { ProcessoHeader } from "@/components/processo-detail/ProcessoHeader";
-import { ProcessoInfoGrid } from "@/components/processo-detail/ProcessoInfoGrid";
 import { EmailComposer } from "@/components/email/EmailComposer";
-
 import { MovimentacoesTimeline, type Movimentacao } from "@/components/processo-detail/MovimentacoesTimeline";
-
-import { ClienteCommunicationCard } from "@/components/processo/ClienteCommunicationCard";
 import { ProcessoNotes } from "@/components/processo/ProcessoNotes";
 import { DiasParadoBadge } from "@/components/processo/DiasParadoBadge";
 import { RegistrarAcaoManualDialog } from "@/components/processo/RegistrarAcaoManualDialog";
@@ -27,6 +17,12 @@ import { ProcessoTarefasTab } from "@/components/processo-detail/ProcessoTarefas
 import { NovaTarefaProcessoDialog } from "@/components/processo-detail/NovaTarefaProcessoDialog";
 import { ProcessoTaskHistory } from "@/components/processo-detail/ProcessoTaskHistory";
 import { differenceInDays, format } from "date-fns";
+
+// V2 Components
+import { ProcessHeader } from "@/components/processo-detail/v2/ProcessHeader";
+import { ProcessStatusCard } from "@/components/processo-detail/v2/ProcessStatusCard";
+import { ProcessPartiesCard } from "@/components/processo-detail/v2/ProcessPartiesCard";
+import { ProcessDocuments } from "@/components/processo-detail/v2/ProcessDocuments";
 
 interface Processo {
   id: string;
@@ -59,7 +55,6 @@ export default function ProcessoDetail() {
   const [movsLoading, setMovsLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncLogs, setSyncLogs] = useState<any[]>([]);
-  const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [acaoManualOpen, setAcaoManualOpen] = useState(false);
   const [ultimaAcaoManual, setUltimaAcaoManual] = useState<string | null>(null);
   const [novaTarefaOpen, setNovaTarefaOpen] = useState(false);
@@ -67,6 +62,7 @@ export default function ProcessoDetail() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [tarefasRefreshKey, setTarefasRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState("docs");
+  const [proximoPrazo, setProximoPrazo] = useState<{data: string, descricao: string} | null>(null);
 
   // Load processo
   useEffect(() => {
@@ -121,6 +117,29 @@ export default function ProcessoDetail() {
     };
     load();
   }, [id]);
+
+  // Load next deadline
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from("kanban_tasks")
+        .select("due_date, title")
+        .eq("processo_id", id)
+        .gte("due_date", new Date().toISOString())
+        .order("due_date", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (data && data.due_date) {
+        setProximoPrazo({ data: data.due_date, descricao: data.title });
+      } else {
+        setProximoPrazo(null);
+      }
+    };
+    load();
+  }, [id]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -133,92 +152,16 @@ export default function ProcessoDetail() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // Sync handler
-  const handleSync = useCallback(async () => {
-    if (!processo?.sigla_tribunal) return;
-    setSyncing(true);
-    const startTime = Date.now();
-
-    try {
-      const { data, error } = await supabase.functions.invoke("sync-process", {
-        body: { numeroProcesso: processo.numero, tribunal: processo.sigla_tribunal },
-      });
-
-      const responseTime = Date.now() - startTime;
-
-      if (error || data?.error) {
-        setSyncLogs((prev) => [
-          { timestamp: new Date().toISOString(), status: "error", movsFound: 0, responseTime, errorMessage: data?.error || error?.message },
-          ...prev,
-        ]);
-        toast({
-          title: "Erro na sincronização",
-          description: data?.error || error?.message || "Falha ao conectar com o tribunal",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Save new movimentações (deduplicated via unique constraint)
-      const newMovs = data?.movimentacoes || [];
-      if (newMovs.length > 0) {
-        const movsToInsert = newMovs.map((mov: any) => ({
-          processo_id: processo.id,
-          data_movimento: mov.data,
-          descricao: mov.descricao,
-          complemento: mov.complemento || null,
-        }));
-
-        await supabase.from("movimentacoes").upsert(movsToInsert, {
-          onConflict: "processo_id,data_movimento,descricao",
-          ignoreDuplicates: true,
-        });
-      }
-
-      // Update sync timestamp
-      await supabase
-        .from("processos")
-        .update({ data_ultima_sincronizacao: new Date().toISOString() })
-        .eq("id", processo.id);
-
-      setProcesso((prev) => prev ? { ...prev, data_ultima_sincronizacao: new Date().toISOString() } : prev);
-
-      // Reload movimentações
-      const { data: updatedMovs } = await supabase
-        .from("movimentacoes")
-        .select("*")
-        .eq("processo_id", processo.id)
-        .order("data_movimento", { ascending: false });
-      setMovimentacoes(updatedMovs || []);
-
-      setSyncLogs((prev) => [
-        { timestamp: new Date().toISOString(), status: "success", movsFound: newMovs.length, responseTime: Date.now() - startTime },
-        ...prev,
-      ]);
-
-      toast({
-        title: "✅ Sincronização concluída",
-        description: `${newMovs.length} movimentação(ões) encontrada(s)`,
-      });
-    } catch (err: any) {
-      setSyncLogs((prev) => [
-        { timestamp: new Date().toISOString(), status: "error", movsFound: 0, responseTime: Date.now() - startTime, errorMessage: err.message },
-        ...prev,
-      ]);
-      toast({ title: "Erro na sincronização", description: err.message, variant: "destructive" });
-    } finally {
-      setSyncing(false);
+  // Handle Delete Process
+  const handleDeleteProcess = async () => {
+    if (!processo || !confirm("Tem certeza que deseja excluir este processo?")) return;
+    const { error } = await supabase.from("processos").delete().eq("id", processo.id);
+    if (error) {
+      toast({ title: "Erro ao excluir processo", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Processo excluído com sucesso" });
+      navigate("/processos");
     }
-  }, [processo, toast]);
-
-  const getSyncStatus = () => {
-    if (!processo?.sigla_tribunal) return "not_configured" as const;
-    if (syncing) return "pending" as const;
-    if (!processo.data_ultima_sincronizacao) return "pending" as const;
-    // If last sync was more than 24h ago, show pending
-    const lastSync = new Date(processo.data_ultima_sincronizacao);
-    const hoursSince = (Date.now() - lastSync.getTime()) / (1000 * 60 * 60);
-    return hoursSince > 24 ? "pending" as const : "synced" as const;
   };
 
   if (loading) {
@@ -235,97 +178,130 @@ export default function ProcessoDetail() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        {/* Header with badges */}
-        <ProcessoHeader
-          processoId={processo.id || ""}
-          numero={processo.numero || ""}
-          cliente={processo.cliente || ""}
+      <div className="space-y-8 animate-fade-up max-w-[1600px] mx-auto pb-12">
+        {/* New Header */}
+        <ProcessHeader
+          processoId={processo.id}
+          numero={processo.numero}
+          cliente={processo.cliente}
           parteContraria={processo.parte_contraria}
-          vara={processo.vara || ""}
-          comarca={processo.comarca || ""}
-          fase={processo.fase}
           siglaTribunal={processo.sigla_tribunal}
           sistemaTribunal={processo.sistema_tribunal}
-          syncActive={!!processo.sigla_tribunal && !!processo.data_ultima_sincronizacao}
-          unreadMovCount={movimentacoes.length}
-          pendingPrazosCount={0}
-          onScrollToTimeline={() => timelineRef.current?.scrollIntoView({ behavior: "smooth" })}
+          dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
+          movimentacoesCount={movimentacoes.length}
+          fase={processo.fase}
           onNewTask={() => setNovaTarefaOpen(true)}
           onViewTasks={() => setActiveTab("tarefas")}
-          onViewHistory={() => setHistoryOpen(true)}
+          onDelete={handleDeleteProcess}
+          onEdit={() => toast({ title: "Em breve", description: "Edição rápida em desenvolvimento" })}
         />
 
-        {/* Days stalled indicator */}
+        {/* Status and Parties Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ProcessStatusCard
+            fase={processo.fase}
+            dataUltimaMovimentacao={movimentacoes[0]?.data_movimento || null}
+            dataUltimaSincronizacao={processo.data_ultima_sincronizacao}
+            proximoPrazo={proximoPrazo}
+            onViewTimeline={() => setActiveTab("timeline")}
+          />
+          <ProcessPartiesCard
+            cliente={processo.cliente}
+            parteContraria={processo.parte_contraria}
+            advogado={processo.advogado}
+            vara={processo.vara}
+            comarca={processo.comarca}
+            tipoAcao={processo.tipo_acao}
+            dataDistribuicao={processo.data_distribuicao}
+          />
+        </div>
+
+        {/* Days stalled indicator (Preserved functionality) */}
         {movimentacoes.length > 0 && (() => {
           const ultimaMovDate = movimentacoes[0]?.data_movimento || null;
           const dias = ultimaMovDate ? differenceInDays(new Date(), new Date(ultimaMovDate)) : 0;
           return dias > 30 ? (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20">
               <DiasParadoBadge ultimaMovimentacao={ultimaMovDate} ultimaAcaoManual={ultimaAcaoManual} />
-              <span className="text-xs text-muted-foreground flex-1">
+              <span className="text-xs text-orange-700 dark:text-orange-300 flex-1">
                 Última movimentação: {ultimaMovDate ? format(new Date(ultimaMovDate), "dd/MM/yyyy") : "—"}
               </span>
-              <Button size="sm" variant="outline" className="text-xs" onClick={() => setAcaoManualOpen(true)}>
+              <Button size="sm" variant="ghost" className="text-xs h-7 hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-700 dark:text-orange-300" onClick={() => setAcaoManualOpen(true)}>
                 Registrar Ação Manual
               </Button>
             </div>
           ) : null;
         })()}
 
-        {/* Process info */}
-        <ProcessoInfoGrid processo={processo} />
+        {/* Tabs Content */}
+        <div className="mt-8">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="bg-transparent border-b border-border/40 w-full justify-start h-auto p-0 rounded-none gap-8">
+              <TabsTrigger
+                value="docs"
+                className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"
+              >
+                Documentos
+              </TabsTrigger>
+              <TabsTrigger
+                value="tarefas"
+                className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"
+              >
+                Tarefas
+              </TabsTrigger>
+              <TabsTrigger
+                value="notas"
+                className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"
+              >
+                Notas
+              </TabsTrigger>
+              <TabsTrigger
+                value="timeline"
+                className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"
+              >
+                Timeline <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full text-foreground font-normal">{movimentacoes.length}</span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="comunicacoes"
+                className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"
+              >
+                Comunicações
+              </TabsTrigger>
+            </TabsList>
 
-        {/* Three columns: Sync + Communication | Tabs | Notes */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="space-y-4">
-            <ClienteCommunicationCard processoId={processo.id} />
-          </div>
+            <TabsContent value="docs" className="focus-visible:ring-0 outline-none mt-6">
+              <ProcessDocuments processId={processo.id} />
+            </TabsContent>
 
-          <div className="lg:col-span-2">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="docs">Documentos</TabsTrigger>
-                <TabsTrigger value="tarefas">📋 Tarefas</TabsTrigger>
-                <TabsTrigger value="notas">📝 Notas</TabsTrigger>
-                <TabsTrigger value="comunicacoes">💬 Comunicações</TabsTrigger>
-              </TabsList>
-              <TabsContent value="docs">
-                <div className="space-y-6">
-                  <DocumentUploader
-                    processId={processo.id}
-                    onUploadComplete={() => setDocsRefreshKey((k) => k + 1)}
-                  />
-                  <DocumentList processId={processo.id} refreshKey={docsRefreshKey} />
-                </div>
-              </TabsContent>
-              <TabsContent value="tarefas">
-                <ProcessoTarefasTab
-                  processoId={processo.id}
-                  onNewTask={() => setNovaTarefaOpen(true)}
-                  onViewHistory={() => setHistoryOpen(true)}
-                  refreshKey={tarefasRefreshKey}
-                />
-              </TabsContent>
-              <TabsContent value="notas">
-                <ProcessoNotes processoId={processo.id} />
-              </TabsContent>
-              <TabsContent value="comunicacoes">
-                <ProcessoComunicacoesTab
-                  processoId={processo.id}
-                  onNewEmail={() => setEmailComposerOpen(true)}
-                />
-              </TabsContent>
-            </Tabs>
-          </div>
+            <TabsContent value="tarefas" className="focus-visible:ring-0 outline-none mt-6">
+              <ProcessoTarefasTab
+                processoId={processo.id}
+                onNewTask={() => setNovaTarefaOpen(true)}
+                onViewHistory={() => setHistoryOpen(true)}
+                refreshKey={tarefasRefreshKey}
+              />
+            </TabsContent>
+
+            <TabsContent value="notas" className="focus-visible:ring-0 outline-none mt-6">
+              <ProcessoNotes processoId={processo.id} />
+            </TabsContent>
+
+            <TabsContent value="timeline" className="focus-visible:ring-0 outline-none mt-6">
+              <div ref={timelineRef}>
+                <MovimentacoesTimeline movimentacoes={movimentacoes} loading={movsLoading} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="comunicacoes" className="focus-visible:ring-0 outline-none mt-6">
+              <ProcessoComunicacoesTab
+                processoId={processo.id}
+                onNewEmail={() => setEmailComposerOpen(true)}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
 
-        {/* Movimentações Timeline */}
-        <div ref={timelineRef}>
-          <MovimentacoesTimeline movimentacoes={movimentacoes} loading={movsLoading} />
-        </div>
-
-        {/* Manual action dialog */}
+        {/* Dialogs */}
         <RegistrarAcaoManualDialog
           processoId={processo.id}
           open={acaoManualOpen}
@@ -335,7 +311,6 @@ export default function ProcessoDetail() {
           }}
         />
 
-        {/* Nova Tarefa Dialog */}
         <NovaTarefaProcessoDialog
           processoId={processo.id}
           processoNumero={processo.numero}
@@ -345,14 +320,12 @@ export default function ProcessoDetail() {
           onSuccess={() => setTarefasRefreshKey((k) => k + 1)}
         />
 
-        {/* Task History Dialog */}
         <ProcessoTaskHistory
           processoId={processo.id}
           open={historyOpen}
           onOpenChange={setHistoryOpen}
         />
 
-        {/* Email Composer */}
         <EmailComposer
           open={emailComposerOpen}
           onOpenChange={setEmailComposerOpen}
