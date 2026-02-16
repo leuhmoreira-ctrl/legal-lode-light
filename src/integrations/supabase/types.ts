@@ -159,6 +159,7 @@ export type Database = {
           created_at: string
           id: string
           mime_type: string
+          ordem_na_pasta: number | null
           original_name: string
           pasta_categoria: string | null
           process_id: string
@@ -176,6 +177,7 @@ export type Database = {
           created_at?: string
           id?: string
           mime_type: string
+          ordem_na_pasta?: number | null
           original_name: string
           pasta_categoria?: string | null
           process_id: string
@@ -193,6 +195,7 @@ export type Database = {
           created_at?: string
           id?: string
           mime_type?: string
+          ordem_na_pasta?: number | null
           original_name?: string
           pasta_categoria?: string | null
           process_id?: string
@@ -220,6 +223,71 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      drive_folders: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          drive_folder_id: string | null
+          estrutura_subpastas: Json | null
+          id: string
+          nome_pasta: string
+          processo_id: string
+          sincronizado: boolean | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          drive_folder_id?: string | null
+          estrutura_subpastas?: Json | null
+          id?: string
+          nome_pasta?: string
+          processo_id: string
+          sincronizado?: boolean | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          drive_folder_id?: string | null
+          estrutura_subpastas?: Json | null
+          id?: string
+          nome_pasta?: string
+          processo_id?: string
+          sincronizado?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_folders_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_structure_templates: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          estrutura_subpastas: Json | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          estrutura_subpastas?: Json | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          estrutura_subpastas?: Json | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       kanban_tasks: {
         Row: {
