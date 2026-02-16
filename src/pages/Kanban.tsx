@@ -247,6 +247,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     if (updates.length > 0) {
       const { error } = await supabase
         .from("kanban_tasks")
+        // @ts-expect-error - upsert parcial com id existente
         .upsert(updates.map(u => ({
           id: u.id,
           position_index: u.position_index,
@@ -456,7 +457,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
              teamMembers={teamMembers}
              viewMode={viewMode}
              onTaskMove={onFreeTaskMove}
-             // @ts-expect-error - onReorder will be added to FreeKanbanBoard in next step
              onReorder={handleTaskReorder}
              onTaskUpdate={(t) => setTasks(prev => prev.map(old => old.id === t.id ? t : old))}
              onEdit={(id, e) => {
