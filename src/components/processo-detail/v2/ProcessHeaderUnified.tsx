@@ -115,7 +115,7 @@ export function ProcessHeaderUnified({
   return (
     <header
       className={`
-        bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_2px_8px_rgba(0,0,0,0.02)] py-8
+        bg-white shadow-[0_1px_3px_rgba(0,0,0,0.03),0_2px_8px_rgba(0,0,0,0.02)] py-8 rounded-xl
         -mx-6 -mt-6 px-0
         ${className}
       `}
