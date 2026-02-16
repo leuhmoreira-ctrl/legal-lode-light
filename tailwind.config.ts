@@ -14,9 +14,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["-apple-system", "BlinkMacSystemFont", "SF Pro Display", "SF Pro Text", "Segoe UI", "Inter", "sans-serif"],
+        sans: ["SF Pro Display", "SF Pro Text", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Inter", "sans-serif"],
       },
       colors: {
+        // Standard Shadcn colors (HSL based)
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -25,8 +26,6 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
-          dark: "hsl(var(--primary-dark))",
-          light: "hsl(var(--primary-light))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -52,22 +51,37 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
+
+        // Apple Design System Specifics
+        "bg-primary": "var(--bg-primary)",
+        "bg-secondary": "var(--bg-secondary)",
+        "bg-tertiary": "var(--bg-tertiary)",
+        "bg-elevated": "var(--bg-elevated)",
+
+        "text-primary": "var(--text-primary)",
+        "text-secondary": "var(--text-secondary)",
+        "text-tertiary": "var(--text-tertiary)",
+        "text-quaternary": "var(--text-quaternary)",
+
+        separator: "var(--separator)",
+        "separator-opaque": "var(--separator-opaque)",
+
+        "fill-primary": "var(--fill-primary)",
+        "fill-secondary": "var(--fill-secondary)",
+        "fill-tertiary": "var(--fill-tertiary)",
+        "fill-quaternary": "var(--fill-quaternary)",
+
+        blue: {
+          DEFAULT: "var(--blue)",
+          light: "var(--blue-light)",
         },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
-        },
-        error: {
-          DEFAULT: "hsl(var(--error))",
-          foreground: "hsl(var(--error-foreground))",
-        },
-        urgent: {
-          DEFAULT: "hsl(var(--urgent))",
-          foreground: "hsl(var(--urgent-foreground))",
-        },
+        green: "var(--green)",
+        orange: "var(--orange)",
+        red: "var(--red)",
+        purple: "var(--purple)",
+        pink: "var(--pink)",
+        yellow: "var(--yellow)",
+
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -91,7 +105,6 @@ export default {
         full: "9999px",
       },
       spacing: {
-        // Enforcing the consistent scale
         '4px': '4px',
         '8px': '8px',
         '16px': '16px',
@@ -105,14 +118,10 @@ export default {
         md: "0 4px 8px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02)",
         lg: "0 12px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.03)",
         xl: "0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04)",
-        // Backwards compatibility
-        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-        'medium': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-        'large': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-        'xlarge': '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-        'card': '0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.02)',
-        'card-hover': '0 4px 8px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02)',
-        'modal': '0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04)',
+        // Custom Apple shadows
+        'apple-card': '0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
+        'apple-card-hover': '0 12px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04)',
+        'apple-button': '0 4px 14px rgba(0, 122, 255, 0.4)',
       },
       transitionTimingFunction: {
         "apple-ease": "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -146,6 +155,14 @@ export default {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.6" },
         },
+        shimmer: {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
+        bounce: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -155,6 +172,8 @@ export default {
         "fade-up": "fade-up 0.4s ease-out",
         "fade-in-scale": "fade-in-scale 0.2s ease-out",
         "pulse-urgent": "pulse-urgent 2s ease-in-out infinite",
+        shimmer: "shimmer 2s infinite",
+        bounce: "bounce 1s infinite",
       },
     },
   },

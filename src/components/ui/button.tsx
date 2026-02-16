@@ -6,25 +6,25 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 ease-apple-ease focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] hover:-translate-y-px",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-[17px] font-semibold tracking-[-0.4px] ring-offset-background transition-all duration-200 ease-apple-ease focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-gradient-to-b from-[#2196F3] to-[#1976D2] text-primary-foreground hover:brightness-110 shadow-[0_2px_8px_rgba(33,150,243,0.25)] hover:shadow-[0_4px_12px_rgba(33,150,243,0.35)] border border-transparent",
+        default: "btn-primary-light dark:btn-primary-dark hover:-translate-y-px",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm hover:shadow-md",
         outline:
-          "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow-md",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm hover:shadow-md",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm hover:shadow-md",
-        ghost: "hover:bg-accent hover:text-accent-foreground hover:shadow-sm",
-        link: "text-primary underline-offset-4 hover:underline",
+          "btn-secondary-light dark:btn-secondary-dark hover:bg-blue-50/10",
+        ghost: "hover:bg-fill-tertiary text-text-primary hover:text-text-primary",
+        link: "text-blue underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 py-2 text-[15px]",
-        sm: "h-8 rounded-sm px-3 text-xs",
-        lg: "h-12 rounded-lg px-8 text-base",
-        icon: "h-10 w-10",
+        default: "h-[44px] px-[22px] py-[11px]",
+        sm: "h-[36px] rounded-md px-3 text-[13px]",
+        lg: "h-[50px] rounded-xl px-8 text-[17px]",
+        icon: "h-[44px] w-[44px]",
       },
     },
     defaultVariants: {

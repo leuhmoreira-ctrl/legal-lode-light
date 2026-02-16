@@ -1,73 +1,73 @@
 export const lightTheme = {
   // Backgrounds
   background: {
-    primary: '#FFFFFF',      // Main background (cards, modals)
-    secondary: '#F8F9FA',    // Page background
-    tertiary: '#F1F3F5',     // Sidebar, headers
-    hover: '#E9ECEF',        // Hover states
-    active: '#DEE2E6',       // Active states
+    primary: '#FFFFFF',      // --bg-primary
+    secondary: '#F5F5F7',    // --bg-secondary
+    tertiary: '#FAFAFA',     // --bg-tertiary
+    hover: 'rgba(120, 120, 128, 0.08)', // --fill-quaternary (approx)
+    active: 'rgba(120, 120, 128, 0.16)', // --fill-secondary (approx)
   },
 
   // Texts
   text: {
-    primary: '#212529',      // Titles, main text
-    secondary: '#495057',    // Subtitles, labels
-    tertiary: '#6C757D',     // Auxiliary text, placeholders
-    disabled: '#ADB5BD',     // Disabled text
-    inverse: '#FFFFFF',      // Text on dark backgrounds
+    primary: '#1D1D1F',      // --text-primary
+    secondary: '#6E6E73',    // --text-secondary
+    tertiary: '#86868B',     // --text-tertiary
+    disabled: '#C7C7CC',     // --text-quaternary
+    inverse: '#FFFFFF',
   },
 
   // Borders
   border: {
-    light: '#E9ECEF',        // Subtle borders
-    medium: '#DEE2E6',       // Standard borders
-    strong: '#CED4DA',       // Highlighted borders
-    input: '#CED4DA',        // Input borders
+    light: 'rgba(0, 0, 0, 0.1)', // --separator
+    medium: '#E5E5EA',       // --separator-opaque
+    strong: '#C7C7CC',       // Darker separator
+    input: 'rgba(120, 120, 128, 0.2)', // Input border approx
   },
 
   // Surfaces
   surface: {
-    card: '#FFFFFF',         // Cards
-    elevated: '#FFFFFF',     // Elevated elements (dropdowns, tooltips)
-    input: '#FFFFFF',        // Inputs, textareas
-    sidebar: '#F8F9FA',      // Sidebar
+    card: '#FFFFFF',
+    elevated: '#FFFFFF',
+    input: 'rgba(120, 120, 128, 0.12)', // --fill-tertiary
+    sidebar: 'rgba(248, 249, 250, 0.8)',
   },
 
   // Status
   status: {
     success: {
-      bg: '#D1F4E0',         // Success - background
-      text: '#0F5132',       // Success - text
-      border: '#A3E1C0',     // Success - border
+      bg: 'rgba(52, 199, 89, 0.12)',
+      text: '#34C759',
+      border: 'transparent',
     },
     warning: {
-      bg: '#FFF3CD',         // Warning - background
-      text: '#856404',       // Warning - text
-      border: '#FFE69C',     // Warning - border
+      bg: 'rgba(255, 149, 0, 0.12)',
+      text: '#FF9500',
+      border: 'transparent',
     },
     error: {
-      bg: '#F8D7DA',         // Error - background
-      text: '#721C24',       // Error - text
-      border: '#F1AEB5',     // Error - border
+      bg: 'rgba(255, 59, 48, 0.12)',
+      text: '#FF3B30',
+      border: 'transparent',
     },
   },
 
-  // Accent (System Blue)
+  // Accent (Apple Blue)
   primary: {
-    50: '#E3F2FD',
+    50: '#E3F2FD', // Keep as fallback
     100: '#BBDEFB',
     200: '#90CAF9',
-    500: '#2196F3',          // Main primary color
-    600: '#1E88E5',
-    700: '#1976D2',
-    800: '#1565C0',
+    500: '#007AFF',          // Apple Blue
+    600: '#0066CC',
+    700: '#0051D5',
+    800: '#0040A5',
   },
 
   // Shadows
   shadow: {
-    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-    card: '0 1px 3px 0 rgba(0, 0, 0, 0.08)',
+    sm: '0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.02)',
+    md: '0 4px 8px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02)',
+    lg: '0 12px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.03)',
+    card: '0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
   }
 };
