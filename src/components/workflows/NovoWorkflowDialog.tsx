@@ -90,6 +90,7 @@ export function NovoWorkflowDialog({
   const [urgencia, setUrgencia] = useState("normal");
   const [tagsInput, setTagsInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [file, setFile] = useState<File | null>(null);
 
   // Step 2 fields
   const [template, setTemplate] = useState("padrao");
@@ -126,6 +127,7 @@ export function NovoWorkflowDialog({
     setUrgencia("normal");
     setTags([]);
     setTagsInput("");
+    setFile(null);
     setTemplate("padrao");
     setEtapas([...TEMPLATES.padrao]);
   };
@@ -201,6 +203,20 @@ export function NovoWorkflowDialog({
 
       if (wfErr) throw wfErr;
 
+      // Upload file if exists
+      let storagePath = null;
+      if (file) {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const path = `${user!.id}/${fileName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("workflow-documents")
+          .upload(path, file);
+
+        if (uploadError) throw uploadError;
+        storagePath = path;
+      }
+
       // Create etapas
       const etapasToInsert = etapas.map((e, idx) => ({
         workflow_id: wf.id,
@@ -220,6 +236,9 @@ export function NovoWorkflowDialog({
         numero_versao: 1,
         autor_id: user!.id,
         motivo: "Criação do workflow",
+        storage_path: storagePath,
+        file_type: file?.type,
+        file_name: file?.name,
       });
 
       // Log action
@@ -227,7 +246,7 @@ export function NovoWorkflowDialog({
         workflow_id: wf.id,
         usuario_id: user!.id,
         acao: "criado",
-        comentario: `Workflow "${titulo}" criado`,
+        comentario: `Workflow "${titulo}" criado${file ? ` com arquivo: ${file.name}` : ""}`,
       });
 
       // Notify first stage assignee
@@ -303,6 +322,20 @@ export function NovoWorkflowDialog({
             <div className="space-y-1.5">
               <Label>Descrição</Label>
               <Textarea placeholder="Objetivo do workflow..." value={descricao} onChange={(e) => setDescricao(e.target.value)} rows={3} />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Arquivo (PDF/DOCX)</Label>
+              <Input
+                type="file"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+              />
+              {file && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selecionado: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

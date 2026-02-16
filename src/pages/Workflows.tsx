@@ -44,6 +44,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { NovoWorkflowDialog } from "@/components/workflows/NovoWorkflowDialog";
 import { WorkflowApprovalActions } from "@/components/workflows/WorkflowApprovalActions";
+import { WorkflowMetrics } from "@/components/workflows/WorkflowMetrics";
 
 type WorkflowStatus = "rascunho" | "em_andamento" | "concluido" | "rejeitado" | "cancelado";
 
@@ -223,10 +224,19 @@ export default function Workflows() {
   }, [workflows, activeTab, searchTerm, filterTipo, filterUrgencia, user]);
 
   const aguardandoCount = workflows.filter((w) => isMyAction(w) && w.status === "em_andamento").length;
+  const inProgressCount = workflows.filter((w) => w.status === "em_andamento").length;
+  const completedCount = workflows.filter((w) => w.status === "concluido").length;
 
   return (
     <AppLayout>
       <div className="space-y-6 animate-fade-up">
+        {/* Metrics */}
+        <WorkflowMetrics
+          pendingCount={aguardandoCount}
+          inProgressCount={inProgressCount}
+          completedCount={completedCount}
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
