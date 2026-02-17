@@ -1183,15 +1183,8 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             <Button
               variant="outline"
               size="sm"
+              disabled={!selected.pastaCategoria}
               onClick={() => {
-                if (!selected.pastaCategoria) {
-                  toast({
-                    title: "Selecione uma pasta",
-                    description: "Escolha uma pasta na estrutura para renomear.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
                 const currentName = selected.subpasta || selected.pastaCategoria || "";
                 setRenameValue(currentName);
                 setRenameWithDocsConfirmed(false);
@@ -1204,15 +1197,8 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             <Button
               variant="outline"
               size="sm"
+              disabled={!selected.pastaCategoria}
               onClick={() => {
-                if (!selected.pastaCategoria) {
-                  toast({
-                    title: "Selecione uma pasta",
-                    description: "Escolha uma pasta na estrutura para excluir.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
                 setDeleteWithDocsConfirmed(false);
                 setDeleteMoveValue(deleteDestinationOptions[0]?.value || "");
                 setDeleteOpen(true);
