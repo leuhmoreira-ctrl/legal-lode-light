@@ -23,6 +23,7 @@ import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { KanbanCard } from "@/components/kanban/KanbanCard";
 import { KanbanColumn } from "@/components/kanban/KanbanColumn";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 import { KanbanTask, TaskActivity, ViewMode, KANBAN_COLUMNS as COLUMNS } from "@/types/kanban";
 import { getStageEntryDate, getTaskStartDate, getTaskCompletionDate } from "@/utils/kanbanUtils";
@@ -339,47 +340,43 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
   return (
     <AppLayout>
-      <div className="space-y-4 sm:space-y-6 animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="mobile-page-title font-bold text-foreground">
-              {personalOnly ? "Minhas Tarefas" : "Tarefas do Escritório"}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {pendingTasksCount} tarefas pendentes
-              {personalOnly ? " atribuídas a você" : " no total"}
-            </p>
-          </div>
-          <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2.5 sm:gap-4 w-full sm:w-auto">
-             <div className="flex bg-muted p-1 rounded-lg border">
+      <div className="page-shell">
+        <PageHeader
+          eyebrow={personalOnly ? "Painel pessoal" : "Gestão do escritório"}
+          title={personalOnly ? "Minhas Tarefas" : "Tarefas do Escritório"}
+          subtitle={`${pendingTasksCount} tarefas pendentes${personalOnly ? " atribuídas a você" : " no total"}`}
+          actions={
+            <div className="flex w-full sm:w-auto items-center justify-between gap-2.5 sm:justify-start">
+              <div className="inline-flex bg-muted p-1 rounded-lg border">
                 <Button
-                   variant={viewMode === 'compact' ? 'secondary' : 'ghost'}
-                   size="icon"
-                   className="h-10 w-10 sm:h-9 sm:w-9"
-                   onClick={() => setViewMode('compact')}
-                   title="Modo Compacto"
+                  variant={viewMode === "compact" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setViewMode("compact")}
+                  title="Modo Compacto"
                 >
-                   <List className="w-4 h-4" />
+                  <List className="w-4 h-4" />
                 </Button>
                 <Button
-                   variant={viewMode === 'normal' ? 'secondary' : 'ghost'}
-                   size="icon"
-                   className="h-10 w-10 sm:h-9 sm:w-9"
-                   onClick={() => setViewMode('normal')}
-                   title="Modo Normal"
+                  variant={viewMode === "normal" ? "secondary" : "ghost"}
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => setViewMode("normal")}
+                  title="Modo Normal"
                 >
-                   <Layout className="w-4 h-4" />
+                  <Layout className="w-4 h-4" />
                 </Button>
               </div>
-             <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
-          </div>
-        </div>
+              <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
+            </div>
+          }
+        />
 
         {/* Process filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
+        <div className="page-surface flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
           <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={filtroProcesso} onValueChange={setFiltroProcesso}>
-            <SelectTrigger className="w-full sm:w-72 h-10">
+            <SelectTrigger className="w-full sm:w-72 h-10 touch-target">
               <SelectValue placeholder="Filtrar por processo..." />
             </SelectTrigger>
             <SelectContent>
@@ -433,7 +430,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               className={cn(
                 "gap-4 lg:gap-6",
                 isMobile
-                  ? "grid grid-flow-col auto-cols-[88vw] overflow-x-auto snap-x snap-mandatory pb-2 min-h-[340px]"
+                  ? "grid grid-flow-col auto-cols-[84vw] overflow-x-auto snap-x snap-mandatory pb-2 min-h-[300px]"
                   : "grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-250px)] min-h-[500px]"
               )}
             >

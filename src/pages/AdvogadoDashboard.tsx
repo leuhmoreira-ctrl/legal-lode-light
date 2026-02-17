@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { FileText, ListTodo, Shield, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const roleLabels: Record<UserRole, string> = {
   admin: "Administrador",
@@ -88,7 +89,13 @@ export default function AdvogadoDashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Perfil profissional"
+          title={advogado.full_name}
+          subtitle={advogado.email}
+        />
+
         {/* Profile header */}
         <Card className="p-6">
           <div className="flex items-center gap-4">

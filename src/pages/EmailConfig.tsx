@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Mail, Shield, RefreshCw, CheckCircle2, Loader2 } from "lucide-react";
 import { EmailIntegration } from "@/types/email";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function EmailConfig() {
   const { user } = useAuth();
@@ -66,13 +67,13 @@ export default function EmailConfig() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl animate-fade-up">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Integração de Email</h2>
-        <p className="text-muted-foreground">
-          Conecte sua conta de email para gerenciar comunicações diretamente do JurisControl.
-        </p>
-      </div>
+    <AppLayout>
+      <div className="page-shell max-w-4xl">
+      <PageHeader
+        eyebrow="Conectividade"
+        title="Integração de Email"
+        subtitle="Conecte sua conta para gerenciar comunicações diretamente no JurisControl."
+      />
 
       {config ? (
         <Card className="border-green-200 bg-green-50/50 dark:bg-green-900/10">
@@ -139,10 +140,10 @@ export default function EmailConfig() {
                   Conecte-se de forma segura usando OAuth. Nós não armazenamos sua senha.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+            <CardContent className="space-y-4">
                 <Button
                   variant="outline"
-                  className="w-full h-12 justify-start gap-3 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
+                  className="w-full min-h-[44px] justify-start gap-3 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors"
                   onClick={() => toast({ title: "Em breve", description: "Integração Google em desenvolvimento" })}
                 >
                   <Mail className="w-5 h-5 text-red-500" />
@@ -150,7 +151,7 @@ export default function EmailConfig() {
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full h-12 justify-start gap-3 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
+                  className="w-full min-h-[44px] justify-start gap-3 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200 transition-colors"
                   onClick={() => toast({ title: "Em breve", description: "Integração Outlook em desenvolvimento" })}
                 >
                   <Mail className="w-5 h-5 text-blue-500" />
@@ -182,7 +183,7 @@ export default function EmailConfig() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="imap">Servidor IMAP (Entrada)</Label>
                       <Input id="imap" placeholder="imap.exemplo.com" value={imapHost} onChange={(e) => setImapHost(e.target.value)} required />
@@ -193,7 +194,7 @@ export default function EmailConfig() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="smtp">Servidor SMTP (Saída)</Label>
                       <Input id="smtp" placeholder="smtp.exemplo.com" value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} required />
@@ -246,7 +247,7 @@ export default function EmailConfig() {
             <Switch defaultChecked />
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Frequência de Atualização</Label>
               <Select defaultValue="15min">
@@ -279,6 +280,7 @@ export default function EmailConfig() {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

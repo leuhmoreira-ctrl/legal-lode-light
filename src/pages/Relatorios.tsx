@@ -1,6 +1,5 @@
 import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   BarChart,
   Bar,
@@ -17,6 +16,9 @@ import {
 } from "recharts";
 import { FileDown, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const advogadoData = [
   { nome: "Dr. Carlos", processos: 12, tarefas: 34, prazos: 8 },
@@ -43,78 +45,100 @@ const tipoData = [
 const COLORS = ["hsl(207,90%,54%)", "hsl(38,92%,50%)", "hsl(152,60%,40%)", "hsl(340,75%,55%)"];
 
 export default function Relatorios() {
+  const isMobile = useIsMobile();
+  const [mobileChart, setMobileChart] = useState<"advogados" | "tipos" | "prazos">("advogados");
+
+  const productivityByLawyerCard = (
+    <Card className="stat-card">
+      <h3 className="text-sm font-semibold text-foreground mb-4">
+        Produtividade por Advogado
+      </h3>
+      <ResponsiveContainer width="100%" height={isMobile ? 210 : 250}>
+        <BarChart data={advogadoData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,90%)" />
+          <XAxis dataKey="nome" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
+          <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
+          <Tooltip />
+          <Bar dataKey="processos" fill="hsl(207,90%,54%)" name="Processos" radius={[4,4,0,0]} />
+          <Bar dataKey="tarefas" fill="hsl(38,92%,50%)" name="Tarefas" radius={[4,4,0,0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+
+  const processTypeCard = (
+    <Card className="stat-card">
+      <h3 className="text-sm font-semibold text-foreground mb-4">
+        Processos por Tipo de Ação
+      </h3>
+      <ResponsiveContainer width="100%" height={isMobile ? 210 : 250}>
+        <PieChart>
+          <Pie data={tipoData} cx="50%" cy="50%" outerRadius={isMobile ? 72 : 90} paddingAngle={3} dataKey="value" label={!isMobile ? ({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%` : false}>
+            {tipoData.map((_, i) => (
+              <Cell key={i} fill={COLORS[i]} />
+            ))}
+          </Pie>
+          <Tooltip />
+        </PieChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+
+  const deadlineComplianceCard = (
+    <Card className="stat-card lg:col-span-2">
+      <h3 className="text-sm font-semibold text-foreground mb-4">
+        Cumprimento de Prazos (mensal)
+      </h3>
+      <ResponsiveContainer width="100%" height={isMobile ? 210 : 250}>
+        <LineChart data={prazosData}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,90%)" />
+          <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
+          <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
+          <Tooltip />
+          <Line type="monotone" dataKey="total" stroke="hsl(207,90%,54%)" strokeWidth={2} name="Total" dot={{ r: 4 }} />
+          <Line type="monotone" dataKey="cumpridos" stroke="hsl(152,60%,40%)" strokeWidth={2} name="Cumpridos" dot={{ r: 4 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Relatórios</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Análise de produtividade e desempenho
-            </p>
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Business intelligence"
+          title="Relatórios"
+          subtitle="Análise de produtividade, distribuição e cumprimento de prazos."
+          actions={
+            <>
+              <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
+                <FileDown className="w-4 h-4" /> Exportar PDF
+              </Button>
+              <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
+                <Printer className="w-4 h-4" /> Imprimir
+              </Button>
+            </>
+          }
+        />
+
+        {isMobile ? (
+          <div className="space-y-2.5">
+            <div className="inline-segmented">
+              <button data-active={mobileChart === "advogados"} onClick={() => setMobileChart("advogados")}>Produtividade</button>
+              <button data-active={mobileChart === "tipos"} onClick={() => setMobileChart("tipos")}>Tipos</button>
+              <button data-active={mobileChart === "prazos"} onClick={() => setMobileChart("prazos")}>Prazos</button>
+            </div>
+            {mobileChart === "advogados" && productivityByLawyerCard}
+            {mobileChart === "tipos" && processTypeCard}
+            {mobileChart === "prazos" && deadlineComplianceCard}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <FileDown className="w-4 h-4" /> Exportar PDF
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Printer className="w-4 h-4" /> Imprimir
-            </Button>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {productivityByLawyerCard}
+            {processTypeCard}
+            {deadlineComplianceCard}
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Produtividade por advogado */}
-          <Card className="stat-card">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
-              Produtividade por Advogado
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={advogadoData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,90%)" />
-                <XAxis dataKey="nome" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
-                <Tooltip />
-                <Bar dataKey="processos" fill="hsl(207,90%,54%)" name="Processos" radius={[4,4,0,0]} />
-                <Bar dataKey="tarefas" fill="hsl(38,92%,50%)" name="Tarefas" radius={[4,4,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Processos por tipo */}
-          <Card className="stat-card">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
-              Processos por Tipo de Ação
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={tipoData} cx="50%" cy="50%" outerRadius={90} paddingAngle={3} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                  {tipoData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </Card>
-
-          {/* Cumprimento de prazos */}
-          <Card className="stat-card lg:col-span-2">
-            <h3 className="text-sm font-semibold text-foreground mb-4">
-              Cumprimento de Prazos (mensal)
-            </h3>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={prazosData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,15%,90%)" />
-                <XAxis dataKey="mes" tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
-                <YAxis tick={{ fontSize: 12 }} stroke="hsl(220,10%,46%)" />
-                <Tooltip />
-                <Line type="monotone" dataKey="total" stroke="hsl(207,90%,54%)" strokeWidth={2} name="Total" dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="cumpridos" stroke="hsl(152,60%,40%)" strokeWidth={2} name="Cumpridos" dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </div>
+        )}
       </div>
     </AppLayout>
   );

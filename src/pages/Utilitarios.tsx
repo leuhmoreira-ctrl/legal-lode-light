@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { FileText, DollarSign, Repeat, Receipt } from "lucide-react";
 import { CalculadoraPrazos } from "@/components/CalculadoraPrazos";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const tools = [
   {
@@ -29,20 +30,19 @@ const tools = [
 export default function Utilitarios() {
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Utilitários Jurídicos</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Ferramentas para o dia a dia do escritório
-          </p>
-        </div>
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Ferramentas"
+          title="Utilitários Jurídicos"
+          subtitle="Ferramentas para o dia a dia do escritório."
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="page-grid-3">
           <CalculadoraPrazos />
           {tools.map((tool) => (
             <Card
               key={tool.title}
-              className="p-6 hover:shadow-md transition-all cursor-pointer group"
+              className="p-4 sm:p-6 hover:shadow-md transition-all cursor-pointer group"
             >
               <div className="p-3 rounded-lg bg-primary/5 w-fit mb-4 group-hover:bg-primary/10 transition-colors">
                 <tool.icon className="w-6 h-6 text-primary" />

@@ -9,6 +9,7 @@ import { ClientFormModal } from "@/components/clientes/ClientFormModal";
 import { DeleteClientDialog } from "@/components/clientes/DeleteClientDialog";
 import { Cliente, ClienteRow } from "@/types/cliente";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 export default function Clientes() {
   const [search, setSearch] = useState("");
@@ -41,37 +42,36 @@ export default function Clientes() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Clientes</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {clientes?.length || 0} clientes cadastrados
-            </p>
-          </div>
-          <Button className="gap-2" onClick={handleCreate}>
-            <Plus className="w-4 h-4" /> Novo Cliente
-          </Button>
-        </div>
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Relacionamento"
+          title="Clientes"
+          subtitle={`${clientes?.length || 0} clientes cadastrados`}
+          actions={
+            <Button className="gap-2 w-full sm:w-auto" onClick={handleCreate}>
+              <Plus className="w-4 h-4" /> Novo Cliente
+            </Button>
+          }
+        />
 
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome, CPF/CNPJ ou email..."
-            className="pl-9"
+            className="pl-9 touch-target"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
         {isLoading ? (
-             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+             <div className="page-grid-3">
                  {[1,2,3].map(i => (
                      <Skeleton key={i} className="h-40 w-full" />
                  ))}
              </div>
         ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="page-grid-3">
             {filtered.map((cliente) => {
                 return (
                 <Card

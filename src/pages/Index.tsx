@@ -10,6 +10,7 @@ import {
   Scale,
   Star,
   Loader2,
+  Plus,
 } from "lucide-react";
 import {
   BarChart,
@@ -33,20 +34,15 @@ import { CountUp } from "@/components/ui/count-up";
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const faseData = [
   { name: "Conhecimento", value: 3 },
   { name: "Recursal", value: 1 },
   { name: "Execução", value: 1 },
 ];
-
-const getProductivityColor = (value: number) => {
-  if (value >= 30) return "hsl(152, 40%, 35%)";   // verde escuro — alta
-  if (value >= 25) return "hsl(152, 30%, 45%)";   // verde médio
-  if (value >= 20) return "hsl(200, 25%, 50%)";   // azul acinzentado — médio
-  if (value >= 15) return "hsl(220, 20%, 55%)";   // cinza azulado — baixo
-  return "hsl(220, 15%, 65%)";                     // cinza — muito baixo
-};
 
 const produtividadeData = [
   { mes: "Set", tarefas: 18 },
@@ -56,25 +52,6 @@ const produtividadeData = [
   { mes: "Jan", tarefas: 32 },
   { mes: "Fev", tarefas: 26 },
 ];
-
-const PIE_COLORS = [
-  "hsl(220, 60%, 22%)",
-  "hsl(220, 45%, 40%)",
-  "hsl(38, 92%, 50%)",
-  "hsl(152, 60%, 40%)",
-];
-
-const statusLabel: Record<string, string> = {
-  urgente: "Urgente",
-  proximo: "Próximo",
-  em_dia: "Em dia",
-};
-
-const statusClass: Record<string, string> = {
-  urgente: "urgency-high",
-  proximo: "urgency-medium",
-  em_dia: "urgency-low",
-};
 
 export default function Dashboard() {
   const hoje = new Date();
@@ -203,14 +180,28 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-up pb-6 sm:pb-8">
-        {/* Header */}
-        <div>
-          <h1 className="mobile-page-title font-bold text-[#1D1D1F] dark:text-white">Dashboard</h1>
-          <p className="mobile-page-subtitle font-normal text-[#6E6E73] dark:text-white/60 mt-1 flex flex-wrap items-center gap-2">
-            Visão geral do escritório <span className="text-[#86868B]">•</span> {format(hoje, "EEEE, d 'de' MMMM", { locale: ptBR })}
-          </p>
-        </div>
+      <div className="page-shell pb-6 sm:pb-8">
+        <PageHeader
+          eyebrow="Painel principal"
+          title="Dashboard"
+          subtitle={`Visão geral do escritório • ${format(hoje, "EEEE, d 'de' MMMM", { locale: ptBR })}`}
+          actions={
+            <>
+              <Button asChild className="flex-1 sm:flex-none">
+                <Link to="/processos">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Novo processo
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="flex-1 sm:flex-none">
+                <Link to="/minhas-tarefas">
+                  <ListChecks className="w-4 h-4 mr-2" />
+                  Minhas tarefas
+                </Link>
+              </Button>
+            </>
+          }
+        />
 
         {/* Meu Foco Hoje */}
         {loadingToday ? (
@@ -349,26 +340,16 @@ export default function Dashboard() {
         {/* Charts Row */}
         {isMobile ? (
           <div className="space-y-2.5">
-            <div className="inline-flex w-full rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-1">
+            <div className="inline-segmented">
               <button
                 onClick={() => setMobileChartView("productivity")}
-                className={cn(
-                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
-                  mobileChartView === "productivity"
-                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
-                    : "text-[#6E6E73] dark:text-white/70"
-                )}
+                data-active={mobileChartView === "productivity"}
               >
                 Produtividade
               </button>
               <button
                 onClick={() => setMobileChartView("phase")}
-                className={cn(
-                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
-                  mobileChartView === "phase"
-                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
-                    : "text-[#6E6E73] dark:text-white/70"
-                )}
+                data-active={mobileChartView === "phase"}
               >
                 Fases
               </button>
@@ -386,26 +367,16 @@ export default function Dashboard() {
         {/* Prazos + Movimentações */}
         {isMobile ? (
           <div className="space-y-3">
-            <div className="inline-flex w-full rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-1">
+            <div className="inline-segmented">
               <button
                 onClick={() => setMobileTimelineView("deadlines")}
-                className={cn(
-                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
-                  mobileTimelineView === "deadlines"
-                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
-                    : "text-[#6E6E73] dark:text-white/70"
-                )}
+                data-active={mobileTimelineView === "deadlines"}
               >
                 Prazos
               </button>
               <button
                 onClick={() => setMobileTimelineView("movements")}
-                className={cn(
-                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
-                  mobileTimelineView === "movements"
-                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
-                    : "text-[#6E6E73] dark:text-white/70"
-                )}
+                data-active={mobileTimelineView === "movements"}
               >
                 Movimentações
               </button>

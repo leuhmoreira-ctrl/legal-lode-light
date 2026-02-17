@@ -30,7 +30,8 @@ import {
   Calendar,
   Paperclip,
   Pencil,
-  Loader2
+  Loader2,
+  ChevronDown,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DocumentUploader } from "@/components/DocumentUploader";
@@ -55,6 +56,9 @@ import { useProcessos } from "@/hooks/useProcessos";
 import { ProcessosSkeleton } from "@/components/skeletons/ProcessosSkeleton";
 import { AnimatedTabContent } from "@/components/AnimatedTabContent";
 import { ProcessosToggle } from "@/components/processo/ProcessosToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const faseColor: Record<string, string> = {
   Conhecimento: "bg-primary/10 text-primary border-primary/20",
@@ -101,6 +105,7 @@ interface Processo {
 export default function Processos() {
   const { user } = useAuth();
   const { isSenior } = usePermissions();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -119,6 +124,7 @@ export default function Processos() {
   const [editTarget, setEditTarget] = useState<Processo | null>(null);
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
   const [syncResults, setSyncResults] = useState<Record<string, SyncResult>>({});
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   const [viewMode, setViewMode] = useState<"meus" | "todos">(() => {
     const saved = localStorage.getItem("processos_view_mode") as "meus" | "todos";
@@ -147,6 +153,10 @@ export default function Processos() {
   useEffect(() => {
     localStorage.setItem("processos_view_mode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    if (!isMobile) setShowAdvancedFilters(true);
+  }, [isMobile]);
 
   const filtered = useMemo(() => {
     const searchLower = search.toLowerCase();
@@ -192,50 +202,49 @@ export default function Processos() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="mobile-page-title font-bold text-foreground">Processos</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {filtered.length} processo{filtered.length !== 1 ? "s" : ""} cadastrado{filtered.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-          <div className="flex w-full sm:w-auto gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 sm:h-9 sm:w-9"
-              disabled={syncMutation.isPending || processos.length === 0}
-              onClick={handleSyncAll}
-              title={syncMutation.isPending ? "Sincronizando..." : "Atualizar Todos"}
-            >
-              <RefreshCw className={`w-4 h-4 ${syncMutation.isPending ? "animate-spin" : ""}`} />
-            </Button>
-            <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2 w-full sm:w-auto">
-                  <Plus className="w-4 h-4" /> Novo Processo
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="w-full max-w-2xl h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">
-                <div className="px-4 sm:px-6 py-4 border-b">
-                  <DialogHeader className="p-0">
-                    <DialogTitle>Cadastrar Novo Processo</DialogTitle>
-                  </DialogHeader>
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <NovoProcessoForm
-                    onSuccess={() => {
-                      setNovoProcessoOpen(false);
-                      // refetch handled by hook invalidation
-                    }}
-                    onCancel={() => setNovoProcessoOpen(false)}
-                  />
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Gestão jurídica"
+          title="Processos"
+          subtitle={`${filtered.length} processo${filtered.length !== 1 ? "s" : ""} cadastrado${filtered.length !== 1 ? "s" : ""}`}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none"
+                disabled={syncMutation.isPending || processos.length === 0}
+                onClick={handleSyncAll}
+                title={syncMutation.isPending ? "Sincronizando..." : "Atualizar Todos"}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${syncMutation.isPending ? "animate-spin" : ""}`} />
+                Atualizar
+              </Button>
+              <Dialog open={novoProcessoOpen} onOpenChange={setNovoProcessoOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2 flex-1 sm:flex-none">
+                    <Plus className="w-4 h-4" /> Novo Processo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-full max-w-2xl h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">
+                  <div className="px-4 sm:px-6 py-4 border-b">
+                    <DialogHeader className="p-0">
+                      <DialogTitle>Cadastrar Novo Processo</DialogTitle>
+                    </DialogHeader>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <NovoProcessoForm
+                      onSuccess={() => {
+                        setNovoProcessoOpen(false);
+                        // refetch handled by hook invalidation
+                      }}
+                      onCancel={() => setNovoProcessoOpen(false)}
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </>
+          }
+        />
 
         {/* Sync indicator */}
         {syncMutation.isPending && (
@@ -263,46 +272,64 @@ export default function Processos() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+        <div className="page-surface space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por número, cliente ou advogado..."
-              className="pl-10"
+              placeholder="Buscar por número, cliente, parte ou advogado..."
+              className="pl-9 touch-target"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Select value={faseFilter} onValueChange={setFaseFilter}>
-            <SelectTrigger className="w-full lg:w-[220px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Fase" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as fases</SelectItem>
-              <SelectItem value="Conhecimento">Conhecimento</SelectItem>
-              <SelectItem value="Recursal">Recursal</SelectItem>
-              <SelectItem value="Execução">Execução</SelectItem>
-              <SelectItem value="Encerrado">Encerrado</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center w-full lg:w-auto">
-             <Input
-               type="date"
-               className="w-full"
-               value={dateStart}
-               onChange={e => setDateStart(e.target.value)}
-               title="Data Início (Última Movimentação)"
-             />
-             <span className="text-muted-foreground">-</span>
-             <Input
-               type="date"
-               className="w-full"
-               value={dateEnd}
-               onChange={e => setDateEnd(e.target.value)}
-               title="Data Fim (Última Movimentação)"
-             />
-          </div>
+
+          <Collapsible open={isMobile ? showAdvancedFilters : true} onOpenChange={setShowAdvancedFilters}>
+            {isMobile && (
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between touch-target">
+                  <span className="inline-flex items-center gap-2 text-sm">
+                    <Filter className="w-4 h-4" />
+                    Filtros avançados
+                  </span>
+                  <ChevronDown className={cn("w-4 h-4 transition-transform", showAdvancedFilters && "rotate-180")} />
+                </Button>
+              </CollapsibleTrigger>
+            )}
+            <CollapsibleContent className="pt-1">
+              <div className="flex flex-col lg:flex-row gap-3">
+                <Select value={faseFilter} onValueChange={setFaseFilter}>
+                  <SelectTrigger className="w-full lg:w-[220px] touch-target">
+                    <Filter className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Fase" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as fases</SelectItem>
+                    <SelectItem value="Conhecimento">Conhecimento</SelectItem>
+                    <SelectItem value="Recursal">Recursal</SelectItem>
+                    <SelectItem value="Execução">Execução</SelectItem>
+                    <SelectItem value="Encerrado">Encerrado</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-2 items-center w-full lg:w-auto">
+                  <Input
+                    type="date"
+                    className="w-full touch-target"
+                    value={dateStart}
+                    onChange={e => setDateStart(e.target.value)}
+                    title="Data Início (Última Movimentação)"
+                  />
+                  <span className="text-muted-foreground hidden sm:inline">-</span>
+                  <Input
+                    type="date"
+                    className="w-full touch-target"
+                    value={dateEnd}
+                    onChange={e => setDateEnd(e.target.value)}
+                    title="Data Fim (Última Movimentação)"
+                  />
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         {/* Loading */}

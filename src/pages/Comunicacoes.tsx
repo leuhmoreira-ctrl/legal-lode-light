@@ -3,7 +3,6 @@ import { AppLayout } from "@/components/AppLayout";
 import { MessageSquare, Bell, Mail, Inbox, Search, Plus, ArrowLeft } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useComunicacoesUnificadas, type UnifiedItem } from "@/hooks/useComunicacoesUnificadas";
@@ -24,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useChat } from "@/hooks/useChat";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 function UnifiedListItem({
   item,
@@ -220,56 +220,50 @@ export default function Comunicacoes() {
 
   return (
     <AppLayout>
-      <div className="h-[calc(100vh-100px)] flex flex-col animate-fade-up">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <MessageSquare className="w-6 h-6 text-primary" />
-            Comunicações
-            {counts.total > 0 && (
-              <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">
-                {counts.total}
-              </span>
-            )}
-          </h1>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
+      <div className="page-shell min-h-0">
+        <PageHeader
+          eyebrow="Inbox unificada"
+          title={counts.total > 0 ? `Comunicações (${counts.total})` : "Comunicações"}
+          subtitle="Notificações, mensagens e e-mails em uma única fila."
+          actions={
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                    placeholder="Buscar em tudo..."
-                    className="pl-9 h-9 bg-background shadow-sm"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar em tudo..."
+                  className="pl-9 h-10 touch-target bg-background shadow-sm"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
                 />
-            </div>
+              </div>
 
-            <DropdownMenu>
+              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button className="gap-2 shadow-sm whitespace-nowrap">
-                        <Plus className="w-4 h-4" />
-                        <span className="hidden sm:inline">Nova Comunicação</span>
-                        <span className="sm:hidden">Novo</span>
-                    </Button>
+                  <Button className="gap-2 shadow-sm whitespace-nowrap">
+                    <Plus className="w-4 h-4" />
+                    <span className="hidden sm:inline">Nova Comunicação</span>
+                    <span className="sm:hidden">Novo</span>
+                  </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEmailOpen(true)}>
-                        <Mail className="w-4 h-4 mr-2" /> Novo Email
-                    </DropdownMenuItem>
-                    <div onClick={(e) => e.stopPropagation()}>
-                        <NewConversationDialog
-                            onCreateDirect={handleCreateChat}
-                            trigger={
-                                <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
-                                    <MessageSquare className="w-4 h-4 mr-2" /> Nova Mensagem
-                                </div>
-                            }
-                        />
-                    </div>
+                  <DropdownMenuItem onClick={() => setEmailOpen(true)}>
+                    <Mail className="w-4 h-4 mr-2" /> Novo Email
+                  </DropdownMenuItem>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <NewConversationDialog
+                      onCreateDirect={handleCreateChat}
+                      trigger={
+                        <div className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50">
+                          <MessageSquare className="w-4 h-4 mr-2" /> Nova Mensagem
+                        </div>
+                      }
+                    />
+                  </div>
                 </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
+              </DropdownMenu>
+            </div>
+          }
+        />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="w-full justify-start bg-muted/50 p-1 mb-4 h-auto flex-wrap gap-1">
@@ -295,7 +289,7 @@ export default function Comunicacoes() {
             </TabsTrigger>
           </TabsList>
 
-          <Card className="flex-1 flex overflow-hidden border-border/60 shadow-sm min-h-0 bg-background/50 backdrop-blur-sm">
+          <Card className="flex-1 flex overflow-hidden border-border/60 shadow-sm min-h-[68dvh] lg:min-h-[72dvh] bg-background/50 backdrop-blur-sm">
             {/* Left: List */}
             <div
               className={cn(

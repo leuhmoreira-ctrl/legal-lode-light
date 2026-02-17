@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Shield, Users, User, Mail, Crown, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface TeamMember {
   id: string;
@@ -110,22 +111,19 @@ export default function Equipe() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Equipe</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {members.length} membro{members.length !== 1 ? "s" : ""} • Gerencie cargos e permissões
-            </p>
-          </div>
-        </div>
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Pessoas e acesso"
+          title="Equipe"
+          subtitle={`${members.length} membro${members.length !== 1 ? "s" : ""} • Gerencie cargos e permissões`}
+        />
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="page-grid-3">
             {members.map((member) => (
               <Card key={member.id} className="p-5 hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-3 mb-4">

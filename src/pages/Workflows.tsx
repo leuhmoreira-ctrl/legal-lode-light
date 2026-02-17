@@ -32,7 +32,6 @@ import {
   Clock,
   Calendar,
   User,
-  Scale,
   Loader2,
   CheckCircle2,
   Circle,
@@ -45,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { NovoWorkflowDialog } from "@/components/workflows/NovoWorkflowDialog";
 import { WorkflowApprovalActions } from "@/components/workflows/WorkflowApprovalActions";
 import { WorkflowMetrics } from "@/components/workflows/WorkflowMetrics";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type WorkflowStatus = "rascunho" | "em_andamento" | "concluido" | "rejeitado" | "cancelado";
 
@@ -97,7 +97,7 @@ const tipoDocLabel: Record<string, string> = {
 
 export default function Workflows() {
   const { user } = useAuth();
-  const { teamMembers, isSenior } = usePermissions();
+  const { teamMembers } = usePermissions();
   const { toast } = useToast();
   const [workflows, setWorkflows] = useState<WorkflowWithEtapas[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,7 +229,7 @@ export default function Workflows() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
+      <div className="page-shell">
         {/* Metrics */}
         <WorkflowMetrics
           pendingCount={aguardandoCount}
@@ -238,33 +238,30 @@ export default function Workflows() {
         />
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Workflows de Aprovação</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Gerencie revisões e aprovações de documentos jurídicos
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={() => setDialogOpen(true)} className="gap-2">
+        <PageHeader
+          eyebrow="Colaboração e aprovação"
+          title="Workflows de Aprovação"
+          subtitle="Gerencie revisões e aprovações de documentos jurídicos."
+          actions={
+            <Button onClick={() => setDialogOpen(true)} className="gap-2 w-full sm:w-auto">
               <Plus className="w-4 h-4" /> Novo Workflow
             </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Search and filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="page-surface flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por título, processo ou responsável..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
+              className="pl-9 touch-target"
             />
           </div>
           <Select value={filterTipo} onValueChange={setFilterTipo}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px] touch-target">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -278,7 +275,7 @@ export default function Workflows() {
             </SelectContent>
           </Select>
           <Select value={filterUrgencia} onValueChange={setFilterUrgencia}>
-            <SelectTrigger className="w-[160px]">
+            <SelectTrigger className="w-full sm:w-[160px] touch-target">
               <SelectValue placeholder="Urgência" />
             </SelectTrigger>
             <SelectContent>

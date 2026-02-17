@@ -15,8 +15,9 @@ export function AppLayout({ children }: AppLayoutProps) {
       <AppSidebar />
       <main className="flex-1 overflow-auto overflow-x-hidden transition-all duration-300 ease-in-out">
         <div
-          className="max-w-[1400px] mx-auto animate-fade-in-scale"
+          className="w-full mx-auto animate-fade-in-scale"
           style={{
+            maxWidth: "var(--page-max-width)",
             paddingInline: "var(--app-container-x)",
             paddingTop: "var(--app-container-top)",
             paddingBottom: "var(--app-container-bottom)",
