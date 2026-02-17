@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +54,6 @@ import {
   folderKey,
   folderValue,
   getSubfolderName,
-  isCustomSubfolder,
   listFolderOptions,
   parseFolderStructure,
   parseFolderValue,
@@ -150,6 +150,18 @@ function splitFileName(name: string): { base: string; ext: string } {
   };
 }
 
+function ensureUniqueNameInSet(rawName: string, usedNames: Set<string>): string {
+  if (!usedNames.has(rawName.toLowerCase())) return rawName;
+  const { base, ext } = splitFileName(rawName);
+  let index = 2;
+  let candidate = `${base} (${index})${ext}`;
+  while (usedNames.has(candidate.toLowerCase())) {
+    index += 1;
+    candidate = `${base} (${index})${ext}`;
+  }
+  return candidate;
+}
+
 export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -172,7 +184,10 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   const [newFolderParent, setNewFolderParent] = useState("__root");
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [renameWithDocsConfirmed, setRenameWithDocsConfirmed] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteMoveValue, setDeleteMoveValue] = useState("");
+  const [deleteWithDocsConfirmed, setDeleteWithDocsConfirmed] = useState(false);
   const [moveTarget, setMoveTarget] = useState<DocumentMeta | null>(null);
   const [moveValue, setMoveValue] = useState("");
 
@@ -254,22 +269,34 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     return docs.filter((d) => d.pasta_categoria === selected.pastaCategoria && d.subpasta === selected.subpasta);
   }, [docs, selected]);
 
-  const selectedCategory = useMemo(
-    () => structure.subpastas.find((cat) => cat.nome === selected.pastaCategoria) || null,
-    [structure, selected.pastaCategoria]
-  );
+  const selectedDocs = useMemo(() => {
+    if (!selected.pastaCategoria) return [];
+    if (!selected.subpasta) {
+      return docs.filter((doc) => doc.pasta_categoria === selected.pastaCategoria);
+    }
+    return docs.filter(
+      (doc) => doc.pasta_categoria === selected.pastaCategoria && (doc.subpasta || "") === selected.subpasta
+    );
+  }, [docs, selected]);
 
-  const selectedIsCustom = useMemo(() => {
-    if (!selectedCategory || !selected.pastaCategoria) return false;
-    if (!selected.subpasta) return !!selectedCategory.custom;
-    const sub = selectedCategory.subpastas.find((item) => getSubfolderName(item) === selected.subpasta);
-    return !!(sub && isCustomSubfolder(sub));
-  }, [selectedCategory, selected]);
+  const selectedCount = selectedDocs.length;
+  const selectedFolderLabel = useMemo(() => {
+    if (!selected.pastaCategoria) return "";
+    if (!selected.subpasta) return selected.pastaCategoria;
+    return `${selected.pastaCategoria} > ${selected.subpasta}`;
+  }, [selected]);
 
-  const selectedCount = useMemo(
-    () => counts[folderKey(selected.pastaCategoria, selected.subpasta)] || 0,
-    [counts, selected]
-  );
+  const deleteDestinationOptions = useMemo(() => {
+    if (!selected.pastaCategoria) return [];
+    return folderOptions.filter((option) => {
+      if (!selected.subpasta) {
+        return option.pastaCategoria !== selected.pastaCategoria;
+      }
+      return !(
+        option.pastaCategoria === selected.pastaCategoria && (option.subpasta || "") === (selected.subpasta || "")
+      );
+    });
+  }, [folderOptions, selected]);
 
   const persistStructure = async (nextStructure: FolderStructure) => {
     if (driveFolder?.id) {
@@ -622,10 +649,18 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   };
 
   const handleRenameFolder = async () => {
-    if (!selected.pastaCategoria || !selectedIsCustom) return;
+    if (!selected.pastaCategoria) return;
     const nextName = renameValue.trim();
     if (!nextName) {
       toast({ title: "Informe o novo nome", variant: "destructive" });
+      return;
+    }
+    if (selectedCount > 0 && !renameWithDocsConfirmed) {
+      toast({
+        title: "Confirme a alteração",
+        description: "Marque a confirmação para renomear pasta com documentos.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -634,39 +669,62 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     const next = cloneStructure(structure);
 
     if (!oldSub) {
-      const idx = next.subpastas.findIndex((cat) => cat.nome === oldCategory && cat.custom);
+      const idx = next.subpastas.findIndex((cat) => cat.nome === oldCategory);
       if (idx < 0) return;
+      const duplicated = next.subpastas.some(
+        (cat, catIndex) => catIndex !== idx && cat.nome.trim().toLowerCase() === nextName.toLowerCase()
+      );
+      if (duplicated) {
+        toast({ title: "Ja existe uma pasta com esse nome", variant: "destructive" });
+        return;
+      }
       next.subpastas[idx].nome = nextName;
     } else {
       const cat = next.subpastas.find((item) => item.nome === oldCategory);
       if (!cat) return;
-      const subIdx = cat.subpastas.findIndex((sub) => getSubfolderName(sub) === oldSub && isCustomSubfolder(sub));
+      const subIdx = cat.subpastas.findIndex((sub) => getSubfolderName(sub) === oldSub);
       if (subIdx < 0) return;
-      cat.subpastas[subIdx] = { nome: nextName, custom: true };
+      const duplicated = cat.subpastas.some(
+        (sub, subIndex) =>
+          subIndex !== subIdx && getSubfolderName(sub).trim().toLowerCase() === nextName.toLowerCase()
+      );
+      if (duplicated) {
+        toast({ title: "Ja existe subpasta com esse nome", variant: "destructive" });
+        return;
+      }
+      const current = cat.subpastas[subIdx];
+      cat.subpastas[subIdx] = typeof current === "string" ? nextName : { ...current, nome: nextName };
     }
 
     try {
       await persistStructure(next);
 
       if (!oldSub) {
-        await supabase
+        const { error } = await supabase
           .from("document_metadata")
           .update({ pasta_categoria: nextName })
           .eq("process_id", processId)
           .eq("pasta_categoria", oldCategory);
+        if (error) throw error;
         setSelected({ pastaCategoria: nextName, subpasta: null });
       } else {
-        await supabase
+        const { error } = await supabase
           .from("document_metadata")
           .update({ subpasta: nextName })
           .eq("process_id", processId)
           .eq("pasta_categoria", oldCategory)
           .eq("subpasta", oldSub);
+        if (error) throw error;
         setSelected({ pastaCategoria: oldCategory, subpasta: nextName });
       }
 
-      toast({ title: "Pasta renomeada" });
+      toast({
+        title: "Pasta renomeada",
+        description:
+          selectedCount > 0 ? `${selectedCount} documento(s) tiveram o caminho atualizado.` : undefined,
+      });
       setRenameOpen(false);
+      setRenameWithDocsConfirmed(false);
       setRefreshKey((k) => k + 1);
     } catch (err: any) {
       toast({ title: "Erro ao renomear", description: err.message, variant: "destructive" });
@@ -674,29 +732,167 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
   };
 
   const handleDeleteFolder = async () => {
-    if (!selected.pastaCategoria || !selectedIsCustom) return;
-    if (selectedCount > 0) {
-      toast({ title: "A pasta precisa estar vazia para excluir", variant: "destructive" });
-      return;
+    if (!selected.pastaCategoria) return;
+
+    const docsToMove = [...selectedDocs];
+    let destination: FolderTarget | null = null;
+    let renamedInTargetCount = 0;
+
+    if (docsToMove.length > 0) {
+      if (!deleteMoveValue) {
+        toast({
+          title: "Selecione a pasta de destino",
+          description: "Escolha para onde os documentos serao movidos antes de excluir.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!deleteWithDocsConfirmed) {
+        toast({
+          title: "Confirme a exclusao com documentos",
+          description: "Marque a confirmacao para mover os documentos e excluir a pasta.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const parsed = parseFolderValue(deleteMoveValue);
+      if (!selected.subpasta && parsed.pastaCategoria === selected.pastaCategoria) {
+        toast({
+          title: "Pasta de destino invalida",
+          description: "Ao excluir uma pasta principal, escolha outra categoria como destino.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (
+        selected.subpasta &&
+        parsed.pastaCategoria === selected.pastaCategoria &&
+        (parsed.subpasta || "") === (selected.subpasta || "")
+      ) {
+        toast({
+          title: "Pasta de destino invalida",
+          description: "Selecione uma pasta diferente da atual.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const incompatible = docsToMove.find((doc) => !canDropDocumentIntoFolder(doc, parsed));
+      if (incompatible) {
+        toast({
+          title: "Pasta incompatível",
+          description: `O documento "${incompatible.original_name}" nao pode ser movido para essa pasta.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      destination = parsed;
     }
 
     const next = cloneStructure(structure);
 
     if (!selected.subpasta) {
-      next.subpastas = next.subpastas.filter((cat) => !(cat.nome === selected.pastaCategoria && cat.custom));
+      next.subpastas = next.subpastas.filter((cat) => cat.nome !== selected.pastaCategoria);
     } else {
       const cat = next.subpastas.find((item) => item.nome === selected.pastaCategoria);
       if (!cat) return;
-      cat.subpastas = cat.subpastas.filter(
-        (sub) => !(getSubfolderName(sub) === selected.subpasta && isCustomSubfolder(sub))
-      );
+      cat.subpastas = cat.subpastas.filter((sub) => getSubfolderName(sub) !== selected.subpasta);
     }
 
     try {
+      if (destination && docsToMove.length > 0) {
+        const movingIds = new Set(docsToMove.map((doc) => doc.id));
+        const usedNames = new Set(
+          docs
+            .filter(
+              (doc) =>
+                !movingIds.has(doc.id) &&
+                (doc.pasta_categoria || "") === destination?.pastaCategoria &&
+                (doc.subpasta || "") === (destination?.subpasta || "")
+            )
+            .map((doc) => doc.original_name.toLowerCase())
+        );
+
+        const movedDocMap = new Map<
+          string,
+          { pasta_categoria: string; subpasta: string | null; original_name: string; caminho_completo: string }
+        >();
+
+        for (const doc of docsToMove) {
+          const nextName = ensureUniqueNameInSet(doc.original_name, usedNames);
+          if (nextName.toLowerCase() !== doc.original_name.toLowerCase()) {
+            renamedInTargetCount += 1;
+          }
+          usedNames.add(nextName.toLowerCase());
+
+          const { error: moveError } = await supabase
+            .from("document_metadata")
+            .update({
+              pasta_categoria: destination.pastaCategoria,
+              subpasta: destination.subpasta,
+              ordem_na_pasta: 0,
+              original_name: nextName,
+            })
+            .eq("id", doc.id);
+
+          if (moveError) throw moveError;
+
+          movedDocMap.set(doc.id, {
+            pasta_categoria: destination.pastaCategoria,
+            subpasta: destination.subpasta,
+            original_name: nextName,
+            caminho_completo: buildDocumentPath(
+              structure.raiz || "Processo",
+              destination.pastaCategoria,
+              destination.subpasta,
+              nextName
+            ),
+          });
+        }
+
+        setDocs((prev) =>
+          sortDocuments(
+            prev.map((doc) => {
+              const moved = movedDocMap.get(doc.id);
+              if (!moved) return doc;
+              return {
+                ...doc,
+                pasta_categoria: moved.pasta_categoria,
+                subpasta: moved.subpasta,
+                ordem_na_pasta: 0,
+                original_name: moved.original_name,
+                caminho_completo: moved.caminho_completo,
+              };
+            })
+          )
+        );
+      }
+
       await persistStructure(next);
       setDeleteOpen(false);
-      setSelected({ pastaCategoria: null, subpasta: null });
-      toast({ title: "Pasta removida" });
+      setDeleteMoveValue("");
+      setDeleteWithDocsConfirmed(false);
+      setSelected(destination || { pastaCategoria: null, subpasta: null });
+
+      const movedDocs = docsToMove.length;
+      const destinationLabel = destination
+        ? destination.subpasta
+          ? `${destination.pastaCategoria} > ${destination.subpasta}`
+          : destination.pastaCategoria
+        : "";
+
+      if (movedDocs > 0 && destination) {
+        toast({
+          title: "Pasta removida",
+          description:
+            renamedInTargetCount > 0
+              ? `${movedDocs} documento(s) movido(s) para ${destinationLabel}. ${renamedInTargetCount} foi(foram) renomeado(s) para evitar conflito.`
+              : `${movedDocs} documento(s) movido(s) para ${destinationLabel}.`,
+        });
+      } else {
+        toast({ title: "Pasta removida" });
+      }
     } catch (err: any) {
       toast({ title: "Erro ao remover pasta", description: err.message, variant: "destructive" });
     }
@@ -987,10 +1183,18 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             <Button
               variant="outline"
               size="sm"
-              disabled={!selectedIsCustom}
               onClick={() => {
+                if (!selected.pastaCategoria) {
+                  toast({
+                    title: "Selecione uma pasta",
+                    description: "Escolha uma pasta na estrutura para renomear.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
                 const currentName = selected.subpasta || selected.pastaCategoria || "";
                 setRenameValue(currentName);
+                setRenameWithDocsConfirmed(false);
                 setRenameOpen(true);
               }}
             >
@@ -1000,8 +1204,19 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
             <Button
               variant="outline"
               size="sm"
-              disabled={!selectedIsCustom}
-              onClick={() => setDeleteOpen(true)}
+              onClick={() => {
+                if (!selected.pastaCategoria) {
+                  toast({
+                    title: "Selecione uma pasta",
+                    description: "Escolha uma pasta na estrutura para excluir.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                setDeleteWithDocsConfirmed(false);
+                setDeleteMoveValue(deleteDestinationOptions[0]?.value || "");
+                setDeleteOpen(true);
+              }}
             >
               <FolderX className="w-3.5 h-3.5 mr-1.5" />
               Excluir
@@ -1188,15 +1403,38 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
           <DialogHeader>
             <DialogTitle>Renomear Pasta</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1.5">
-            <Label>Novo nome</Label>
-            <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Novo nome</Label>
+              <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
+            </div>
+
+            {selectedCount > 0 && (
+              <div className="rounded-lg border border-border/70 bg-muted/30 p-3 space-y-2">
+                <p className="text-sm text-foreground">
+                  Esta pasta possui <strong>{selectedCount}</strong> documento(s). O nome da pasta sera atualizado para
+                  todos eles.
+                </p>
+                <label className="flex items-start gap-2 text-sm text-foreground cursor-pointer">
+                  <Checkbox
+                    checked={renameWithDocsConfirmed}
+                    onCheckedChange={(checked) => setRenameWithDocsConfirmed(checked === true)}
+                  />
+                  <span>Confirmo que desejo renomear esta pasta mesmo contendo documentos.</span>
+                </label>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleRenameFolder}>Salvar</Button>
+            <Button
+              onClick={handleRenameFolder}
+              disabled={!renameValue.trim() || (selectedCount > 0 && !renameWithDocsConfirmed)}
+            >
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1204,14 +1442,58 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir pasta customizada?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir pasta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acao so e permitida para pasta vazia. Documentos na pasta atual: {selectedCount}.
+              {selectedFolderLabel
+                ? `Voce esta prestes a excluir "${selectedFolderLabel}".`
+                : "Voce esta prestes a excluir a pasta selecionada."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {selectedCount > 0 ? (
+            <div className="space-y-3">
+              <p className="text-sm text-foreground">
+                Esta pasta possui <strong>{selectedCount}</strong> documento(s). Para concluir a exclusao, mova-os para
+                outra pasta.
+              </p>
+              <div className="space-y-1.5">
+                <Label>Pasta de destino</Label>
+                <Select value={deleteMoveValue} onValueChange={setDeleteMoveValue}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma pasta de destino..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {deleteDestinationOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {deleteDestinationOptions.length === 0 && (
+                  <p className="text-xs text-destructive">
+                    Nenhuma pasta de destino disponivel. Crie outra pasta antes de excluir esta.
+                  </p>
+                )}
+              </div>
+              <label className="flex items-start gap-2 text-sm text-foreground cursor-pointer">
+                <Checkbox
+                  checked={deleteWithDocsConfirmed}
+                  onCheckedChange={(checked) => setDeleteWithDocsConfirmed(checked === true)}
+                />
+                <span>Confirmo mover os documentos para a pasta selecionada e excluir esta pasta.</span>
+              </label>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Nenhum documento sera afetado.</p>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteFolder}>Excluir</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleDeleteFolder}
+              disabled={selectedCount > 0 && (!deleteMoveValue || !deleteWithDocsConfirmed)}
+            >
+              Excluir
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
