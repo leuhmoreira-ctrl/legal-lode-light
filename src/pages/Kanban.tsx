@@ -20,7 +20,6 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
-import { useAnimationOrigin } from "@/contexts/AnimationOriginContext";
 import { KanbanCard } from "@/components/kanban/KanbanCard";
 import { KanbanColumn } from "@/components/kanban/KanbanColumn";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -41,7 +40,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const { user } = useAuth();
   const { teamMembers, isAdmin } = usePermissions();
   const { toast } = useToast();
-  const { setOrigin } = useAnimationOrigin();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroProcesso, setFiltroProcesso] = useState("");
@@ -466,12 +464,10 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                                              isDragging={snapshot.isDragging}
                                              onEdit={(id, e) => {
                                                 e.stopPropagation();
-                                                setOrigin({ x: e.clientX, y: e.clientY });
                                                 setSelectedTaskId(id);
                                              }}
                                              onDelete={(task, e) => {
                                                 e.stopPropagation();
-                                                setOrigin({ x: e.clientX, y: e.clientY });
                                                 setDeleteTarget(task);
                                              }}
                                              onToggleToday={async (task, e) => {

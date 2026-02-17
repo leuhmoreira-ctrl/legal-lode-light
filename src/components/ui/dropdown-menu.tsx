@@ -45,35 +45,53 @@ const DropdownMenuSubTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubTrigger> & {
     inset?: boolean;
   }
->(({ className, inset, children, ...props }, ref) => (
-  <DropdownMenuPrimitive.SubTrigger
-    ref={ref}
-    className={cn(
-      "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[state=open]:bg-accent focus:bg-accent",
-      inset && "pl-8",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-    <ChevronRight className="ml-auto h-4 w-4" />
-  </DropdownMenuPrimitive.SubTrigger>
-));
+>(({ className, inset, children, onPointerEnter, onFocus, ...props }, ref) => {
+  const { captureFromElement } = useOriginCapture();
+
+  return (
+    <DropdownMenuPrimitive.SubTrigger
+      ref={ref}
+      className={cn(
+        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[state=open]:bg-accent focus:bg-accent",
+        inset && "pl-8",
+        className,
+      )}
+      onPointerEnter={(e) => {
+        captureFromElement(e.currentTarget);
+        onPointerEnter?.(e);
+      }}
+      onFocus={(e) => {
+        captureFromElement(e.currentTarget);
+        onFocus?.(e);
+      }}
+      {...props}
+    >
+      {children}
+      <ChevronRight className="ml-auto h-4 w-4" />
+    </DropdownMenuPrimitive.SubTrigger>
+  );
+});
 DropdownMenuSubTrigger.displayName = DropdownMenuPrimitive.SubTrigger.displayName;
 
 const DropdownMenuSubContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.SubContent>
->(({ className, ...props }, ref) => (
-  <DropdownMenuPrimitive.SubContent
-    ref={ref}
-    className={cn(
-      "apple-origin-float-motion z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, style, ...props }, ref) => {
+  const localRef = React.useRef<React.ElementRef<typeof DropdownMenuPrimitive.SubContent>>(null);
+  const motionStyle = useOriginMotionStyle(localRef as React.RefObject<HTMLElement>);
+
+  return (
+    <DropdownMenuPrimitive.SubContent
+      ref={composeRefs(ref, localRef)}
+      style={{ ...style, ...motionStyle }}
+      className={cn(
+        "apple-origin-float-motion z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayName;
 
 const DropdownMenuContent = React.forwardRef<

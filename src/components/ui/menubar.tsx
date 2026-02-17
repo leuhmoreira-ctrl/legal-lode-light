@@ -61,35 +61,53 @@ const MenubarSubTrigger = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.SubTrigger> & {
     inset?: boolean;
   }
->(({ className, inset, children, ...props }, ref) => (
-  <MenubarPrimitive.SubTrigger
-    ref={ref}
-    className={cn(
-      "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[state=open]:bg-accent data-[state=open]:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-      inset && "pl-8",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-    <ChevronRight className="ml-auto h-4 w-4" />
-  </MenubarPrimitive.SubTrigger>
-));
+>(({ className, inset, children, onPointerEnter, onFocus, ...props }, ref) => {
+  const { captureFromElement } = useOriginCapture();
+
+  return (
+    <MenubarPrimitive.SubTrigger
+      ref={ref}
+      className={cn(
+        "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none data-[state=open]:bg-accent data-[state=open]:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+        inset && "pl-8",
+        className,
+      )}
+      onPointerEnter={(e) => {
+        captureFromElement(e.currentTarget);
+        onPointerEnter?.(e);
+      }}
+      onFocus={(e) => {
+        captureFromElement(e.currentTarget);
+        onFocus?.(e);
+      }}
+      {...props}
+    >
+      {children}
+      <ChevronRight className="ml-auto h-4 w-4" />
+    </MenubarPrimitive.SubTrigger>
+  );
+});
 MenubarSubTrigger.displayName = MenubarPrimitive.SubTrigger.displayName;
 
 const MenubarSubContent = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.SubContent>,
   React.ComponentPropsWithoutRef<typeof MenubarPrimitive.SubContent>
->(({ className, ...props }, ref) => (
-  <MenubarPrimitive.SubContent
-    ref={ref}
-    className={cn(
-      "apple-origin-float-motion z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, style, ...props }, ref) => {
+  const localRef = React.useRef<React.ElementRef<typeof MenubarPrimitive.SubContent>>(null);
+  const motionStyle = useOriginMotionStyle(localRef as React.RefObject<HTMLElement>);
+
+  return (
+    <MenubarPrimitive.SubContent
+      ref={composeRefs(ref, localRef)}
+      style={{ ...style, ...motionStyle }}
+      className={cn(
+        "apple-origin-float-motion z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 MenubarSubContent.displayName = MenubarPrimitive.SubContent.displayName;
 
 const MenubarContent = React.forwardRef<
