@@ -391,18 +391,17 @@ export function TaskDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-4xl h-[100dvh] sm:max-h-[90vh] overflow-hidden p-0">
-        <div className="overflow-y-auto h-full sm:max-h-[90vh]">
+      <DialogContent className="w-full max-w-4xl h-[100dvh] sm:max-h-[90vh] overflow-hidden p-0 flex flex-col">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex-1 flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         ) : !task ? (
-          <div className="p-6 text-center text-muted-foreground">Tarefa não encontrada</div>
+          <div className="flex-1 p-6 text-center text-muted-foreground">Tarefa não encontrada</div>
         ) : (
           <>
             {/* Header */}
-            <DialogHeader className="p-4 sm:p-6 pb-0 sticky sm:static top-0 z-20 bg-background border-b sm:border-b-0">
+            <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 pr-14 sm:pr-16 bg-background border-b shrink-0">
               {editingTitle ? (
                 <div className="flex items-center gap-2">
                   <Input
@@ -426,16 +425,20 @@ export function TaskDetailModal({
               )}
             </DialogHeader>
 
-            {/* Process Info Card */}
-            {task.processo_id && (
-              <div className="px-4 sm:px-6 pt-3">
-                <ProcessInfoCard processoId={task.processo_id} />
-              </div>
-            )}
+            <div
+              className="flex-1 overflow-y-auto pr-1 sm:pr-2"
+              style={{ scrollbarGutter: "stable" }}
+            >
+              {/* Process Info Card */}
+              {task.processo_id && (
+                <div className="px-4 sm:px-6 pt-3">
+                  <ProcessInfoCard processoId={task.processo_id} />
+                </div>
+              )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6 p-4 sm:p-6 pt-4">
-              {/* Main column */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-6 p-4 sm:p-6 pt-4">
+                {/* Main column */}
+                <div className="lg:col-span-2 space-y-6">
                 {/* Description */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
@@ -607,8 +610,8 @@ export function TaskDetailModal({
                 </div>
               </div>
 
-              {/* Sidebar */}
-              <div className="space-y-5 lg:border-l lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0 pb-4">
+                {/* Sidebar */}
+                <div className="space-y-5 lg:border-l lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0 pb-4">
                 <div>
                   <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</h4>
                   <Select value={task.status} onValueChange={handleStatusChange}>
@@ -726,11 +729,11 @@ export function TaskDetailModal({
                 >
                   <Trash2 className="w-4 h-4" /> Excluir tarefa
                 </Button>
+                </div>
               </div>
             </div>
           </>
         )}
-        </div>
       </DialogContent>
     </Dialog>
   );
