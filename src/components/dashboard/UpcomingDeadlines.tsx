@@ -25,13 +25,13 @@ export function UpcomingDeadlines() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-up">
+    <div className="space-y-4 animate-fade-up">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
          <div>
-          <h2 className="text-[20px] sm:text-[24px] font-bold tracking-[-0.4px] text-[#1D1D1F] dark:text-white">
+          <h2 className="text-[18px] sm:text-[20px] font-bold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">
             Próximos Prazos
           </h2>
-          <p className="text-[14px] sm:text-[15px] text-[#6E6E73] mt-1">
+          <p className="text-[13px] sm:text-[14px] text-[#6E6E73] mt-1">
             Visão geral das prioridades da semana
           </p>
         </div>
@@ -41,23 +41,23 @@ export function UpcomingDeadlines() {
         </Link>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Urgent Section */}
         {shownUrgent.length > 0 && (
-          <div className="rounded-[16px] bg-[#FFF5F5] dark:bg-red-900/10 shadow-sm overflow-hidden border-l-[4px] border-[#FF3B30]">
+          <div className="rounded-[14px] bg-[#FFF5F5] dark:bg-red-900/10 shadow-sm overflow-hidden border-l-[4px] border-[#FF3B30]">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 bg-[#FFE5E5] dark:bg-red-900/20 border-b border-[#FF3B30]/10">
+            <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFE5E5] dark:bg-red-900/20 border-b border-[#FF3B30]/10">
                 <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-[#FF3B30]" />
-                    <h3 className="text-[16px] sm:text-[17px] font-semibold text-[#1D1D1F] dark:text-white">Urgente</h3>
-                    <span className="bg-[#FF3B30] text-white text-[13px] font-bold px-2 py-0.5 rounded-full">
+                    <AlertTriangle className="w-4 h-4 text-[#FF3B30]" />
+                    <h3 className="text-[15px] sm:text-[16px] font-semibold text-[#1D1D1F] dark:text-white">Urgente</h3>
+                    <span className="bg-[#FF3B30] text-white text-[12px] font-bold px-2 py-0.5 rounded-full">
                         {shownUrgent.length}
                     </span>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="p-4 sm:p-5">
+            <div className="p-3 sm:p-4">
                 {shownUrgent.map((prazo) => (
                     <DeadlineItem key={prazo.id} prazo={prazo} />
                 ))}
@@ -67,20 +67,20 @@ export function UpcomingDeadlines() {
 
         {/* Upcoming Section */}
         {shownUpcoming.length > 0 && (
-          <div className="rounded-[16px] bg-[#FFFBF0] dark:bg-orange-900/10 shadow-sm overflow-hidden border-l-[4px] border-[#FF9500]">
+          <div className="rounded-[14px] bg-[#FFFBF0] dark:bg-orange-900/10 shadow-sm overflow-hidden border-l-[4px] border-[#FF9500]">
              {/* Header */}
-             <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 bg-[#FFF3CD] dark:bg-orange-900/20 border-b border-[#FF9500]/10">
+             <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFF3CD] dark:bg-orange-900/20 border-b border-[#FF9500]/10">
                 <div className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-[#FF9500]" />
-                    <h3 className="text-[16px] sm:text-[17px] font-semibold text-[#1D1D1F] dark:text-white">Próximos 7 dias</h3>
-                    <span className="bg-[#FF9500] text-white text-[13px] font-bold px-2 py-0.5 rounded-full">
+                    <Clock className="w-4 h-4 text-[#FF9500]" />
+                    <h3 className="text-[15px] sm:text-[16px] font-semibold text-[#1D1D1F] dark:text-white">Próximos 7 dias</h3>
+                    <span className="bg-[#FF9500] text-white text-[12px] font-bold px-2 py-0.5 rounded-full">
                         {shownUpcoming.length}
                     </span>
                 </div>
             </div>
 
              {/* Content */}
-             <div className="p-4 sm:p-5">
+             <div className="p-3 sm:p-4">
                 {shownUpcoming.map((prazo) => (
                     <DeadlineItem key={prazo.id} prazo={prazo} />
                 ))}
