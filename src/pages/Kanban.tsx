@@ -12,6 +12,16 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -25,7 +35,7 @@ import { KanbanColumn } from "@/components/kanban/KanbanColumn";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PageHeader } from "@/components/layout/PageHeader";
 
-import { KanbanTask, TaskActivity, ViewMode, KANBAN_COLUMNS as COLUMNS } from "@/types/kanban";
+import { KanbanTask, TaskActivity, ViewMode, KANBAN_COLUMNS as COLUMNS, KanbanColumnId } from "@/types/kanban";
 import { getStageEntryDate, getTaskStartDate, getTaskCompletionDate } from "@/utils/kanbanUtils";
 
 interface ProcessoMap {
@@ -38,18 +48,21 @@ interface KanbanProps {
 
 export default function Kanban({ personalOnly = false }: KanbanProps) {
   const isMobile = useIsMobile();
+  const [isPhone, setIsPhone] = useState(false);
   const { user } = useAuth();
   const { teamMembers, isAdmin } = usePermissions();
   const { toast } = useToast();
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtroProcesso, setFiltroProcesso] = useState("");
+  const [filtroProcesso, setFiltroProcesso] = useState("all");
   const [processos, setProcessos] = useState<{ id: string; numero: string }[]>([]);
   const [processoMap, setProcessoMap] = useState<ProcessoMap>({});
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<KanbanTask | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("normal");
   const [autoCompactApplied, setAutoCompactApplied] = useState(false);
+  const [mobileColumn, setMobileColumn] = useState<KanbanColumnId>("todo");
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -124,6 +137,18 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       setAutoCompactApplied(true);
     }
   }, [isMobile, autoCompactApplied]);
+
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 480px)");
+    const onChange = () => setIsPhone(mql.matches);
+    onChange();
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isPhone) setMobileFilterOpen(false);
+  }, [isPhone]);
 
   // Migrate 'review' tasks to 'in_progress'
   useEffect(() => {
@@ -317,6 +342,16 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     return tasks.filter((t) => t.status !== "done").length;
   }, [tasks]);
 
+  const activeProcess = useMemo(
+    () => processos.find((p) => p.id === filtroProcesso) || null,
+    [processos, filtroProcesso]
+  );
+
+  const columnsToRender = useMemo(
+    () => (isPhone ? COLUMNS.filter((col) => col.id === mobileColumn) : COLUMNS),
+    [isPhone, mobileColumn]
+  );
+
   const getMember = (id: string | null) => teamMembers.find((m) => m.id === id);
 
   const canDelete = (task: KanbanTask) => task.user_id === user?.id || isAdmin;
@@ -342,54 +377,134 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     <AppLayout>
       <div className="page-shell">
         <PageHeader
-          eyebrow={personalOnly ? "Painel pessoal" : "Gestão do escritório"}
           title={personalOnly ? "Minhas Tarefas" : "Tarefas do Escritório"}
-          subtitle={`${pendingTasksCount} tarefas pendentes${personalOnly ? " atribuídas a você" : " no total"}`}
+          subtitle={`${pendingTasksCount} pendentes${personalOnly ? " atribuídas a você" : " no escritório"}`}
+          className="gap-2"
           actions={
-            <div className="flex w-full sm:w-auto items-center justify-between gap-2.5 sm:justify-start">
+            <div className="flex w-full sm:w-auto items-center justify-between gap-2 sm:justify-start">
               <div className="inline-flex bg-muted p-1 rounded-lg border">
                 <Button
                   variant={viewMode === "compact" ? "secondary" : "ghost"}
                   size="icon"
-                  className="h-9 w-9"
+                  className="h-8 w-8"
                   onClick={() => setViewMode("compact")}
-                  title="Modo Compacto"
+                  title="Lista"
                 >
                   <List className="w-4 h-4" />
                 </Button>
                 <Button
                   variant={viewMode === "normal" ? "secondary" : "ghost"}
                   size="icon"
-                  className="h-9 w-9"
+                  className="h-8 w-8"
                   onClick={() => setViewMode("normal")}
-                  title="Modo Normal"
+                  title="Quadro"
                 >
                   <Layout className="w-4 h-4" />
                 </Button>
               </div>
-              <NovaTarefaDialog onSuccess={() => { loadTasks(); loadProcessos(); }} />
+              <NovaTarefaDialog
+                triggerLabel={isPhone ? "Nova" : "Nova Tarefa"}
+                triggerClassName={cn("w-auto h-9 px-3 text-[13px]", !isPhone && "h-10 px-4")}
+                onSuccess={() => { loadTasks(); loadProcessos(); }}
+              />
             </div>
           }
         />
 
         {/* Process filter */}
-        <div className="page-surface flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <Select value={filtroProcesso} onValueChange={setFiltroProcesso}>
-            <SelectTrigger className="w-full sm:w-72 h-10 touch-target">
-              <SelectValue placeholder="Filtrar por processo..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os processos</SelectItem>
-              {processos.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.numero}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {filtroProcesso && filtroProcesso !== "all" && (
-            <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={() => setFiltroProcesso("")}>
-              <X className="w-4 h-4 mr-1" /> Limpar
-            </Button>
+        <div className="page-surface">
+          {isPhone ? (
+            <div className="flex items-center gap-2">
+              <Drawer open={mobileFilterOpen} onOpenChange={setMobileFilterOpen}>
+                <DrawerTrigger asChild>
+                  <Button variant="outline" className="touch-target">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filtrar
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent>
+                  <DrawerHeader>
+                    <DrawerTitle>Filtrar por processo</DrawerTitle>
+                    <DrawerDescription>
+                      Escolha um processo para reduzir o quadro ao essencial.
+                    </DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pb-2 space-y-2 max-h-[56dvh] overflow-y-auto">
+                    <button
+                      onClick={() => {
+                        setFiltroProcesso("all");
+                        setMobileFilterOpen(false);
+                      }}
+                      className={cn(
+                        "w-full rounded-lg border text-left px-3 py-2.5 text-[13px] transition-colors",
+                        !filtroProcesso || filtroProcesso === "all"
+                          ? "border-primary/30 bg-primary/5 text-foreground"
+                          : "border-border bg-background text-muted-foreground"
+                      )}
+                    >
+                      Todos os processos
+                    </button>
+                    {processos.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setFiltroProcesso(p.id);
+                          setMobileFilterOpen(false);
+                        }}
+                        className={cn(
+                          "w-full rounded-lg border text-left px-3 py-2.5 text-[13px] transition-colors",
+                          filtroProcesso === p.id
+                            ? "border-primary/30 bg-primary/5 text-foreground"
+                            : "border-border bg-background text-muted-foreground"
+                        )}
+                      >
+                        {p.numero}
+                      </button>
+                    ))}
+                  </div>
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline">Fechar</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+
+              {activeProcess ? (
+                <Badge variant="outline" className="h-9 px-2.5 text-[12px] gap-1.5">
+                  Processo: {activeProcess.numero}
+                  <button
+                    onClick={() => setFiltroProcesso("all")}
+                    className="inline-flex items-center justify-center rounded-full hover:bg-muted p-0.5"
+                    aria-label="Limpar filtro"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ) : (
+                <span className="text-[12px] text-muted-foreground">Sem filtros ativos</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={filtroProcesso} onValueChange={setFiltroProcesso}>
+                <SelectTrigger className="w-full sm:w-72 h-10 touch-target">
+                  <SelectValue placeholder="Filtrar por processo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os processos</SelectItem>
+                  {processos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.numero}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {filtroProcesso && filtroProcesso !== "all" && (
+                <Button variant="ghost" size="sm" className="w-full sm:w-auto" onClick={() => setFiltroProcesso("all")}>
+                  <X className="w-4 h-4 mr-1" /> Limpar
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -420,6 +535,27 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           );
         })()}
 
+        {!loading && isPhone && (
+          <div className="inline-segmented">
+            {COLUMNS.map((col) => {
+              const count = tasksByStatus[col.id]?.length || 0;
+              return (
+                <button
+                  key={col.id}
+                  data-active={mobileColumn === col.id}
+                  onClick={() => setMobileColumn(col.id)}
+                  className="flex items-center justify-center gap-1.5 px-1"
+                >
+                  <span className="truncate">{col.title}</span>
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold bg-black/10 dark:bg-white/15">
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -429,76 +565,94 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
             <div
               className={cn(
                 "gap-4 lg:gap-6",
-                isMobile
-                  ? "grid grid-flow-col auto-cols-[84vw] overflow-x-auto snap-x snap-mandatory pb-2 min-h-[300px]"
-                  : "grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-250px)] min-h-[500px]"
+                isPhone
+                  ? "grid grid-cols-1 min-h-[320px]"
+                  : isMobile
+                    ? "grid grid-cols-2 min-h-[420px]"
+                    : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 min-h-[500px] xl:h-[calc(100vh-250px)]"
               )}
             >
-              {COLUMNS.map((col) => (
-                <div key={col.id} className={cn("h-full", isMobile && "snap-start")}>
-                  <KanbanColumn
-                    id={col.id}
-                    title={col.title}
-                    bgColor={col.bgColor}
-                    borderColor={col.borderColor}
-                    count={tasksByStatus[col.id]?.length || 0}
-                    totalTasks={tasksFilteredByProcess.length}
-                  >
-                     <Droppable droppableId={col.id}>
+              {columnsToRender.map((col) => {
+                const colTasks = tasksByStatus[col.id] || [];
+
+                return (
+                  <div key={col.id} className="h-full min-h-0">
+                    <KanbanColumn
+                      id={col.id}
+                      title={col.title}
+                      bgColor={col.bgColor}
+                      borderColor={col.borderColor}
+                      count={colTasks.length}
+                      totalTasks={tasksFilteredByProcess.length}
+                    >
+                      <Droppable droppableId={col.id}>
                         {(provided, snapshot) => (
-                           <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={cn(
-                                 "space-y-2 sm:space-y-3 min-h-[80px] transition-colors rounded-lg",
-                                 snapshot.isDraggingOver && "bg-black/5"
-                              )}
-                           >
-                              {tasksByStatus[col.id]?.map((task, index) => (
-                                 <Draggable key={task.id} draggableId={task.id} index={index}>
-                                    {(provided, snapshot) => (
-                                       <div
-                                          ref={provided.innerRef}
-                                          {...provided.draggableProps}
-                                          style={provided.draggableProps.style}
-                                       >
-                                          <KanbanCard
-                                             task={task}
-                                             index={index}
-                                             viewMode={viewMode}
-                                             isDragging={snapshot.isDragging}
-                                             onEdit={(id, e) => {
-                                                e.stopPropagation();
-                                                setSelectedTaskId(id);
-                                             }}
-                                             onDelete={(task, e) => {
-                                                e.stopPropagation();
-                                                setDeleteTarget(task);
-                                             }}
-                                             onToggleToday={async (task, e) => {
-                                                e.stopPropagation();
-                                                const newVal = !task.marked_for_today;
-                                                setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
-                                                await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
-                                             }}
-                                             onMove={handleMoveTask}
-                                             onComplete={handleCompleteTask}
-                                             onClick={() => setSelectedTaskId(task.id)}
-                                             dragHandleProps={provided.dragHandleProps}
-                                             teamMembers={teamMembers}
-                                             canDelete={canDelete(task)}
-                                          />
-                                       </div>
-                                    )}
-                                 </Draggable>
-                              ))}
-                              {provided.placeholder}
-                           </div>
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={cn(
+                              "space-y-2 sm:space-y-3 min-h-[80px] transition-colors rounded-lg",
+                              snapshot.isDraggingOver && "bg-black/5"
+                            )}
+                          >
+                            {colTasks.map((task, index) => (
+                              <Draggable key={task.id} draggableId={task.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    style={provided.draggableProps.style}
+                                  >
+                                    <KanbanCard
+                                      task={task}
+                                      index={index}
+                                      viewMode={viewMode}
+                                      isDragging={snapshot.isDragging}
+                                      onEdit={(id, e) => {
+                                        e.stopPropagation();
+                                        setSelectedTaskId(id);
+                                      }}
+                                      onDelete={(task, e) => {
+                                        e.stopPropagation();
+                                        setDeleteTarget(task);
+                                      }}
+                                      onToggleToday={async (task, e) => {
+                                        e.stopPropagation();
+                                        const newVal = !task.marked_for_today;
+                                        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
+                                        await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
+                                      }}
+                                      onMove={handleMoveTask}
+                                      onComplete={handleCompleteTask}
+                                      onClick={() => setSelectedTaskId(task.id)}
+                                      dragHandleProps={provided.dragHandleProps}
+                                      teamMembers={teamMembers}
+                                      canDelete={canDelete(task)}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {colTasks.length === 0 && (
+                              <div className="rounded-lg border border-dashed border-border/80 bg-background/70 p-4 text-center">
+                                <p className="text-[13px] font-medium text-foreground">
+                                  Sem tarefas em {col.title}
+                                </p>
+                                <p className="text-[12px] text-muted-foreground mt-1">
+                                  {col.id === "todo"
+                                    ? "Toque em Nova para criar a próxima tarefa."
+                                    : "Quando houver movimentação, elas aparecem aqui."}
+                                </p>
+                              </div>
+                            )}
+                            {provided.placeholder}
+                          </div>
                         )}
-                     </Droppable>
-                  </KanbanColumn>
-                </div>
-              ))}
+                      </Droppable>
+                    </KanbanColumn>
+                  </div>
+                );
+              })}
             </div>
           </DragDropContext>
         )}
