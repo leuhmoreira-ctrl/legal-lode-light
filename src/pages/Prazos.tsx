@@ -379,7 +379,7 @@ export default function Prazos() {
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        "h-24 rounded-lg p-1.5 text-[13px] border transition-colors",
+                        "h-24 min-w-0 overflow-hidden rounded-lg p-1.5 text-[13px] border transition-colors",
                         isToday
                           ? "border-primary bg-primary/5"
                           : "border-transparent hover:bg-muted/50"
@@ -400,7 +400,7 @@ export default function Prazos() {
                             <div
                               key={ev.id}
                               className={cn(
-                                "flex min-h-[20px] items-center gap-1 px-1 py-0.5 rounded text-[11px] truncate cursor-pointer hover:opacity-80 transition-opacity",
+                                "flex w-full min-w-0 min-h-[20px] items-center gap-1 px-1 py-0.5 rounded text-[11px] cursor-pointer hover:opacity-80 transition-opacity overflow-hidden",
                                 cfg.badgeClass
                               )}
                               onClick={() => setSelectedEvent(ev)}
@@ -408,7 +408,7 @@ export default function Prazos() {
                               <div
                                 className={cn("w-1.5 h-1.5 rounded-full shrink-0", cfg.dotClass)}
                               />
-                              {ev.title}
+                              <span className="min-w-0 flex-1 truncate">{ev.title}</span>
                             </div>
                           );
                         })}
