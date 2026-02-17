@@ -44,9 +44,9 @@ export function UpcomingDeadlines() {
       <div className="space-y-4">
         {/* Urgent Section */}
         {shownUrgent.length > 0 && (
-          <div className="rounded-[14px] bg-[#FFF5F5] dark:bg-red-900/10 shadow-sm overflow-hidden border-l-[4px] border-[#FF3B30]">
+          <div className="rounded-[14px] bg-[#FFF5F5] dark:bg-[rgba(255,69,58,0.12)] shadow-sm overflow-hidden border-l-[4px] border-[#FF3B30]">
             {/* Header */}
-            <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFE5E5] dark:bg-red-900/20 border-b border-[#FF3B30]/10">
+            <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFE5E5] dark:bg-[rgba(255,69,58,0.2)] border-b border-[#FF3B30]/10">
                 <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-[#FF3B30]" />
                     <h3 className="text-[15px] sm:text-[16px] font-semibold text-[#1D1D1F] dark:text-white">Urgente</h3>
@@ -67,9 +67,9 @@ export function UpcomingDeadlines() {
 
         {/* Upcoming Section */}
         {shownUpcoming.length > 0 && (
-          <div className="rounded-[14px] bg-[#FFFBF0] dark:bg-orange-900/10 shadow-sm overflow-hidden border-l-[4px] border-[#FF9500]">
+          <div className="rounded-[14px] bg-[#FFFBF0] dark:bg-[rgba(255,159,10,0.12)] shadow-sm overflow-hidden border-l-[4px] border-[#FF9500]">
              {/* Header */}
-             <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFF3CD] dark:bg-orange-900/20 border-b border-[#FF9500]/10">
+             <div className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#FFF3CD] dark:bg-[rgba(255,159,10,0.2)] border-b border-[#FF9500]/10">
                 <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-[#FF9500]" />
                     <h3 className="text-[15px] sm:text-[16px] font-semibold text-[#1D1D1F] dark:text-white">Próximos 7 dias</h3>
