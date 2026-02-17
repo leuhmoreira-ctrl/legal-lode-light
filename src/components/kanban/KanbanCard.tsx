@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, ArrowRight, Clock, GripVertical,
-  Check, Star, Flame, CheckCircle2
+  Check, Star, Flame, CheckCircle2, MoreHorizontal
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,8 @@ interface KanbanCardProps {
   dragHandleProps?: any;
   teamMembers: any[];
   canDelete: boolean;
+  isPhone?: boolean;
+  onOpenMoveSheet?: (task: KanbanTask, e: React.MouseEvent) => void;
 }
 
 const priorityConfig: Record<string, { label: string; icon: any; color: string; badgeClass: string }> = {
@@ -63,7 +65,9 @@ export function KanbanCard({
   onClick,
   dragHandleProps,
   teamMembers,
-  canDelete
+  canDelete,
+  isPhone = false,
+  onOpenMoveSheet
 }: KanbanCardProps) {
   const timeInStage = useMemo(() => {
     if (!task.stage_entry_date) return null;
@@ -134,14 +138,23 @@ export function KanbanCard({
            </>
         )}
 
-        <div className="flex items-start gap-2 w-full">
-          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing flex items-center justify-center", isCompact ? "h-9 w-6 mt-0" : "h-11 w-8 mt-0.5", dragHandleProps?.className)}>
-            <GripVertical className={cn("text-muted-foreground/40", isCompact ? "w-3.5 h-3.5" : "w-4 h-4")} />
-          </div>
+        <div className={cn("flex items-start w-full", dragHandleProps ? "gap-2" : "gap-0")}>
+          {dragHandleProps ? (
+            <div
+              {...dragHandleProps}
+              className={cn(
+                "cursor-grab active:cursor-grabbing flex items-center justify-center",
+                isCompact ? "h-9 w-6 mt-0" : "h-11 w-8 mt-0.5",
+                dragHandleProps?.className
+              )}
+            >
+              <GripVertical className={cn("text-muted-foreground/40", isCompact ? "w-3.5 h-3.5" : "w-4 h-4")} />
+            </div>
+          ) : null}
 
           <div className="flex-1 min-w-0">
             {/* Header: Title */}
-            <div className={cn("flex gap-1 mb-1", isCompact ? "items-center" : "items-start justify-between")}>
+            <div className={cn("flex items-start justify-between gap-1 mb-1", isCompact && "items-center")}>
               <div className="flex items-center gap-1.5 flex-1 min-w-0">
                 {!isCompact && (
                   <button
@@ -157,6 +170,21 @@ export function KanbanCard({
                 </p>
               </div>
 
+              {isPhone && onOpenMoveSheet && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 px-2.5 text-[11px] shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenMoveSheet(task, e);
+                  }}
+                >
+                  <MoreHorizontal className="w-3.5 h-3.5 mr-1" />
+                  Mover
+                </Button>
+              )}
             </div>
 
             {/* Compact Mode Content */}

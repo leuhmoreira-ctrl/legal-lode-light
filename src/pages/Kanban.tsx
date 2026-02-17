@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { DragDropContext, Droppable, Draggable, type DropResult } from "@hello-pangea/dnd";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,8 +25,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, X, Filter, Star, List, Layout } from "lucide-react";
+import { Loader2, X, Filter, Star, List, Layout, ListChecks, PlayCircle, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import { format } from "date-fns";
 import { NovaTarefaDialog } from "@/components/NovaTarefaDialog";
 import { TaskDetailModal } from "@/components/TaskDetailModal";
@@ -46,6 +47,25 @@ interface KanbanProps {
   personalOnly?: boolean;
 }
 
+type MoveSource = "dnd" | "arrow" | "sheet" | "undo" | "complete";
+
+interface TaskMoveRecord {
+  opId: string;
+  taskId: string;
+  fromStatus: KanbanColumnId;
+  fromIndex: number;
+  toStatus: KanbanColumnId;
+  toIndex: number;
+}
+
+interface MovePlan {
+  nextTasks: KanbanTask[];
+  updates: { id: string; position_index: number; status: string; updated_at: string }[];
+  record: Omit<TaskMoveRecord, "opId">;
+}
+
+const KANBAN_STATUS_ORDER: KanbanColumnId[] = ["todo", "in_progress", "done"];
+
 export default function Kanban({ personalOnly = false }: KanbanProps) {
   const isMobile = useIsMobile();
   const [isPhone, setIsPhone] = useState(false);
@@ -63,6 +83,10 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [autoCompactApplied, setAutoCompactApplied] = useState(false);
   const [mobileColumn, setMobileColumn] = useState<KanbanColumnId>("todo");
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const [moveSheetTask, setMoveSheetTask] = useState<KanbanTask | null>(null);
+  const [moveSheetOpen, setMoveSheetOpen] = useState(false);
+  const lastUndoRef = useRef<TaskMoveRecord | null>(null);
+  const latestOpByTaskRef = useRef<Record<string, string>>({});
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -150,6 +174,13 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     if (!isPhone) setMobileFilterOpen(false);
   }, [isPhone]);
 
+  useEffect(() => {
+    if (!isPhone) {
+      setMoveSheetOpen(false);
+      setMoveSheetTask(null);
+    }
+  }, [isPhone]);
+
   // Migrate 'review' tasks to 'in_progress'
   useEffect(() => {
     const migrateReviewTasks = async () => {
@@ -185,128 +216,271 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     return () => clearTimeout(timeout);
   }, [tasks, loadTasks]);
 
-  const onDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-    const { draggableId, destination } = result;
-    const newStatus = destination.droppableId;
-    const newPosition = destination.index;
+  const normalizeStatus = useCallback((status: string): KanbanColumnId => {
+    if (status === "todo" || status === "in_progress" || status === "done") return status;
+    if (status === "review") return "in_progress";
+    return "todo";
+  }, []);
 
-    // Optimistic update
-    setTasks((prev) =>
-      prev.map((t) => (t.id === draggableId ? { ...t, status: newStatus, position_index: newPosition } : t))
-    );
+  const getColumnTitle = useCallback(
+    (status: KanbanColumnId) => COLUMNS.find((col) => col.id === status)?.title || "Coluna",
+    []
+  );
 
-    await supabase
-      .from("kanban_tasks")
-      .update({ status: newStatus, position_index: newPosition })
-      .eq("id", draggableId);
-  };
+  const buildMovePlan = useCallback(
+    (
+      prevTasks: KanbanTask[],
+      taskId: string,
+      targetStatus: KanbanColumnId,
+      targetIndex?: number
+    ): MovePlan | null => {
+      const task = prevTasks.find((t) => t.id === taskId);
+      if (!task) return null;
 
+      const columns: Record<KanbanColumnId, string[]> = {
+        todo: [],
+        in_progress: [],
+        done: [],
+      };
+      const taskMap: Record<string, KanbanTask> = {};
 
-  const handleTaskReorder = useCallback(async (taskId: string, newStatus: string, newIndex: number) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
-
-    const oldStatus = task.status;
-
-    // Create a new array of tasks
-    let newTasks = tasks.filter(t => t.id !== taskId);
-
-    // Group by status
-    const tasksByStatus: Record<string, KanbanTask[]> = {
-      todo: [],
-      in_progress: [],
-      done: []
-    };
-
-    newTasks.forEach(t => {
-      if (tasksByStatus[t.status]) {
-        tasksByStatus[t.status].push(t);
-      } else {
-        // Fallback for unknown status
-        if (!tasksByStatus['todo']) tasksByStatus['todo'] = [];
-        tasksByStatus['todo'].push(t);
-      }
-    });
-
-    // Sort by current index to ensure stability
-    Object.keys(tasksByStatus).forEach(s => {
-      tasksByStatus[s].sort((a, b) => a.position_index - b.position_index);
-    });
-
-    // Insert task into new column
-    if (!tasksByStatus[newStatus]) tasksByStatus[newStatus] = [];
-
-    // Clamp index
-    const targetIndex = Math.max(0, Math.min(newIndex, tasksByStatus[newStatus].length));
-
-    tasksByStatus[newStatus].splice(targetIndex, 0, { ...task, status: newStatus, position_index: targetIndex });
-
-    // Re-index and collect updates
-    const updates: { id: string, position_index: number, status: string }[] = [];
-
-    // Helper to re-index a column
-    const reindexColumn = (status: string) => {
-      tasksByStatus[status].forEach((t, idx) => {
-        t.position_index = idx;
-        updates.push({ id: t.id, position_index: idx, status: status });
+      prevTasks.forEach((entry) => {
+        const normalized = normalizeStatus(entry.status);
+        columns[normalized].push(entry.id);
+        taskMap[entry.id] = entry;
       });
-    };
 
-    reindexColumn(oldStatus);
-    if (newStatus !== oldStatus) reindexColumn(newStatus);
+      KANBAN_STATUS_ORDER.forEach((status) => {
+        columns[status].sort((a, b) => taskMap[a].position_index - taskMap[b].position_index);
+      });
 
-    // Update local state
-    const flatTasks = Object.values(tasksByStatus).flat();
-    setTasks(flatTasks);
+      const fromStatus = normalizeStatus(task.status);
+      const fromColumn = columns[fromStatus];
+      const toColumn = columns[targetStatus];
+      const fromIndex = fromColumn.indexOf(taskId);
 
-    // Persist to Supabase
-    // We only need to update the tasks that changed index or status
-    // Using upsert for batch update
-    if (updates.length > 0) {
-      const { error } = await supabase
-        .from("kanban_tasks")
-        // @ts-expect-error - upsert parcial com id existente
-        .upsert(updates.map(u => ({
-          id: u.id,
-          position_index: u.position_index,
-          status: u.status,
-          updated_at: new Date().toISOString()
-        })));
+      if (fromIndex < 0) return null;
 
-      if (error) {
-        console.error("Error reordering tasks:", error);
-        toast({ title: "Erro ao salvar ordenação", variant: "destructive" });
-        loadTasks(); // Revert
+      fromColumn.splice(fromIndex, 1);
+
+      const requestedTarget = targetIndex ?? toColumn.length;
+      let insertIndex = Math.max(0, Math.min(requestedTarget, toColumn.length));
+      if (fromStatus === targetStatus && requestedTarget > fromIndex) {
+        insertIndex = Math.max(0, insertIndex - 1);
       }
-    }
-  }, [tasks, loadTasks, toast]);
 
-  const handleMoveTask = async (taskId: string, direction: 'left' | 'right') => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
+      if (fromStatus === targetStatus && insertIndex === fromIndex) return null;
 
-    const currentIndex = COLUMNS.findIndex(c => c.id === task.status);
-    let newIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+      toColumn.splice(insertIndex, 0, taskId);
 
-    if (newIndex >= 0 && newIndex < COLUMNS.length) {
-       const newStatus = COLUMNS[newIndex].id;
-       // Optimistic update
-       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+      const updateMap: Record<string, { status: KanbanColumnId; position_index: number }> = {};
+      KANBAN_STATUS_ORDER.forEach((status) => {
+        columns[status].forEach((id, idx) => {
+          updateMap[id] = { status, position_index: idx };
+        });
+      });
 
-       const { error } = await supabase.from('kanban_tasks').update({ status: newStatus }).eq('id', taskId);
-       if (!error) {
-         toast({ title: `Tarefa movida para ${COLUMNS[newIndex].title}` });
-       }
-    }
-  };
+      const updates: MovePlan["updates"] = [];
+      const nextTasks = prevTasks.map((entry) => {
+        const update = updateMap[entry.id];
+        if (!update) return entry;
 
-  const handleCompleteTask = async (taskId: string) => {
-    // Move to Done
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: 'done' } : t));
-    await supabase.from('kanban_tasks').update({ status: 'done' }).eq('id', taskId);
-    toast({ title: "Tarefa concluída! 🎉" });
-  };
+        const currentNormalized = normalizeStatus(entry.status);
+        if (currentNormalized === update.status && entry.position_index === update.position_index) {
+          return entry;
+        }
+
+        updates.push({
+          id: entry.id,
+          status: update.status,
+          position_index: update.position_index,
+          updated_at: new Date().toISOString(),
+        });
+
+        return { ...entry, status: update.status, position_index: update.position_index };
+      });
+
+      return {
+        nextTasks,
+        updates,
+        record: {
+          taskId,
+          fromStatus,
+          fromIndex,
+          toStatus: targetStatus,
+          toIndex: insertIndex,
+        },
+      };
+    },
+    [normalizeStatus]
+  );
+
+  const persistMove = useCallback(async (updates: MovePlan["updates"]) => {
+    if (updates.length === 0) return { error: null };
+    const { error } = await supabase
+      .from("kanban_tasks")
+      // @ts-expect-error - upsert parcial com id existente
+      .upsert(updates);
+    return { error };
+  }, []);
+
+  const applyTaskMove = useCallback(
+    async ({
+      taskId,
+      toStatus,
+      targetIndex,
+      source,
+      enableUndo = false,
+      successTitle,
+    }: {
+      taskId: string;
+      toStatus: KanbanColumnId;
+      targetIndex?: number;
+      source: MoveSource;
+      enableUndo?: boolean;
+      successTitle?: string;
+    }) => {
+      const opId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      let movePlan: MovePlan | null = null;
+
+      setTasks((prev) => {
+        movePlan = buildMovePlan(prev, taskId, toStatus, targetIndex);
+        return movePlan ? movePlan.nextTasks : prev;
+      });
+
+      if (!movePlan) return;
+
+      latestOpByTaskRef.current[taskId] = opId;
+      const moveRecord: TaskMoveRecord = { opId, ...movePlan.record };
+
+      if (!enableUndo && lastUndoRef.current?.taskId === taskId) {
+        lastUndoRef.current = null;
+      }
+
+      if (enableUndo) {
+        lastUndoRef.current = moveRecord;
+        toast({
+          title: `Movido para ${getColumnTitle(movePlan.record.toStatus)}`,
+          duration: 4000,
+          action: (
+            <ToastAction
+              altText="Desfazer"
+              onClick={() => {
+                if (!lastUndoRef.current || lastUndoRef.current.opId !== opId) return;
+                const undoRecord = lastUndoRef.current;
+                lastUndoRef.current = null;
+                void applyTaskMove({
+                  taskId: undoRecord.taskId,
+                  toStatus: undoRecord.fromStatus,
+                  targetIndex: undoRecord.fromIndex,
+                  source: "undo",
+                  enableUndo: false,
+                  successTitle: "Movimentação desfeita",
+                });
+              }}
+            >
+              Desfazer
+            </ToastAction>
+          ),
+        });
+      }
+
+      const { error } = await persistMove(movePlan.updates);
+      if (error) {
+        if (latestOpByTaskRef.current[taskId] !== opId) return;
+
+        setTasks((prev) => {
+          const rollbackPlan = buildMovePlan(
+            prev,
+            movePlan!.record.taskId,
+            movePlan!.record.fromStatus,
+            movePlan!.record.fromIndex
+          );
+          return rollbackPlan ? rollbackPlan.nextTasks : prev;
+        });
+
+        if (lastUndoRef.current?.opId === opId) {
+          lastUndoRef.current = null;
+        }
+
+        toast({ title: "Não foi possível mover. Tente novamente.", variant: "destructive" });
+        return;
+      }
+
+      if (source === "undo") {
+        toast({ title: successTitle || "Movimentação desfeita" });
+      } else if (source === "complete") {
+        toast({ title: successTitle || "Tarefa concluída! 🎉" });
+      }
+    },
+    [buildMovePlan, getColumnTitle, persistMove, toast]
+  );
+
+  const onDragEnd = useCallback(
+    async (result: DropResult) => {
+      if (!result.destination || isPhone) return;
+      const { draggableId, destination } = result;
+      const nextStatus = destination.droppableId as KanbanColumnId;
+      if (!KANBAN_STATUS_ORDER.includes(nextStatus)) return;
+
+      await applyTaskMove({
+        taskId: draggableId,
+        toStatus: nextStatus,
+        targetIndex: destination.index,
+        source: "dnd",
+        enableUndo: false,
+      });
+    },
+    [applyTaskMove, isPhone]
+  );
+
+  const getAdjacentStatus = useCallback(
+    (status: KanbanColumnId, direction: "left" | "right"): KanbanColumnId | null => {
+      const currentIndex = KANBAN_STATUS_ORDER.indexOf(status);
+      const nextIndex = direction === "left" ? currentIndex - 1 : currentIndex + 1;
+      if (nextIndex < 0 || nextIndex >= KANBAN_STATUS_ORDER.length) return null;
+      return KANBAN_STATUS_ORDER[nextIndex];
+    },
+    []
+  );
+
+  const handleMoveTask = useCallback(
+    async (taskId: string, direction: "left" | "right") => {
+      const task = tasks.find((entry) => entry.id === taskId);
+      if (!task) return;
+
+      const currentStatus = normalizeStatus(task.status);
+      const targetStatus = getAdjacentStatus(currentStatus, direction);
+
+      if (!targetStatus) {
+        toast({
+          title: direction === "left" ? "Já está no início" : "Já está concluído",
+          duration: 2000,
+        });
+        return;
+      }
+
+      await applyTaskMove({
+        taskId,
+        toStatus: targetStatus,
+        source: "arrow",
+        enableUndo: isPhone,
+      });
+    },
+    [tasks, normalizeStatus, getAdjacentStatus, applyTaskMove, toast, isPhone]
+  );
+
+  const handleCompleteTask = useCallback(
+    async (taskId: string) => {
+      await applyTaskMove({
+        taskId,
+        toStatus: "done",
+        source: "complete",
+        enableUndo: isPhone,
+      });
+    },
+    [applyTaskMove, isPhone]
+  );
 
   const tasksFilteredByProcess = useMemo(() => {
     if (!filtroProcesso || filtroProcesso === "all") return tasks;
@@ -331,6 +505,11 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
          if (grouped['todo']) grouped['todo'].push(task);
       }
     });
+
+    KANBAN_STATUS_ORDER.forEach((status) => {
+      grouped[status].sort((a, b) => a.position_index - b.position_index);
+    });
+
     return grouped;
   }, [tasksFilteredByProcess]);
 
@@ -352,9 +531,62 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     [isPhone, mobileColumn]
   );
 
+  const moveOptions = useMemo(
+    () => [
+      {
+        status: "todo" as KanbanColumnId,
+        title: "A Fazer",
+        description: "Voltar etapa",
+        icon: ListChecks,
+      },
+      {
+        status: "in_progress" as KanbanColumnId,
+        title: "Em andamento",
+        description: "Próxima etapa",
+        icon: PlayCircle,
+      },
+      {
+        status: "done" as KanbanColumnId,
+        title: "Concluído",
+        description: "Finalizar",
+        icon: CheckCircle2,
+      },
+    ],
+    []
+  );
+
+  const openMoveSheet = useCallback(
+    (task: KanbanTask) => {
+      if (!isPhone) return;
+      setMoveSheetTask(task);
+      setMoveSheetOpen(true);
+    },
+    [isPhone]
+  );
+
+  const handleMoveFromSheet = useCallback(
+    async (targetStatus: KanbanColumnId) => {
+      if (!moveSheetTask) return;
+      const currentStatus = normalizeStatus(moveSheetTask.status);
+      if (currentStatus === targetStatus) return;
+      setMoveSheetOpen(false);
+      await applyTaskMove({
+        taskId: moveSheetTask.id,
+        toStatus: targetStatus,
+        source: "sheet",
+        enableUndo: true,
+      });
+      setMoveSheetTask(null);
+    },
+    [moveSheetTask, normalizeStatus, applyTaskMove]
+  );
+
   const getMember = (id: string | null) => teamMembers.find((m) => m.id === id);
 
-  const canDelete = (task: KanbanTask) => task.user_id === user?.id || isAdmin;
+  const canDelete = useCallback(
+    (task: KanbanTask) => task.user_id === user?.id || isAdmin,
+    [user?.id, isAdmin]
+  );
 
   const handleDeleteTask = async () => {
     if (!deleteTarget) return;
@@ -370,6 +602,74 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       setDeleteTarget(null);
     }
   };
+
+  const renderEmptyColumnState = useCallback((columnId: KanbanColumnId, title: string) => (
+    <div className="rounded-lg border border-dashed border-border/80 bg-background/70 p-4 text-center">
+      <p className="text-[13px] font-medium text-foreground">Sem tarefas em {title}</p>
+      <p className="text-[12px] text-muted-foreground mt-1">
+        {columnId === "todo"
+          ? "Toque em Nova para criar a próxima tarefa."
+          : "Quando houver movimentação, elas aparecem aqui."}
+      </p>
+    </div>
+  ), []);
+
+  const renderKanbanCard = useCallback(
+    (
+      task: KanbanTask,
+      index: number,
+      options?: { isDragging?: boolean; dragHandleProps?: any }
+    ) => (
+      <KanbanCard
+        task={task}
+        index={index}
+        viewMode={viewMode}
+        isDragging={options?.isDragging}
+        onEdit={(id, e) => {
+          e.stopPropagation();
+          setSelectedTaskId(id);
+        }}
+        onDelete={(entry, e) => {
+          e.stopPropagation();
+          setDeleteTarget(entry);
+        }}
+        onToggleToday={async (entry, e) => {
+          e.stopPropagation();
+          const newVal = !entry.marked_for_today;
+          setTasks((prev) =>
+            prev.map((item) =>
+              item.id === entry.id
+                ? {
+                    ...item,
+                    marked_for_today: newVal,
+                    marked_for_today_at: newVal ? new Date().toISOString() : null,
+                  }
+                : item
+            )
+          );
+          await supabase
+            .from("kanban_tasks")
+            .update({
+              marked_for_today: newVal,
+              marked_for_today_at: newVal ? new Date().toISOString() : null,
+            })
+            .eq("id", entry.id);
+        }}
+        onMove={handleMoveTask}
+        onComplete={handleCompleteTask}
+        onClick={() => setSelectedTaskId(task.id)}
+        dragHandleProps={options?.dragHandleProps}
+        teamMembers={teamMembers}
+        canDelete={canDelete(task)}
+        isPhone={isPhone}
+        onOpenMoveSheet={(entry, e) => {
+          e.stopPropagation();
+          openMoveSheet(entry);
+        }}
+      />
+    ),
+    [viewMode, handleMoveTask, handleCompleteTask, teamMembers, canDelete, isPhone, openMoveSheet]
+  );
 
   const onUpdate = () => { loadTasks(); loadProcessos(); };
 
@@ -560,16 +860,40 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
+        ) : isPhone ? (
+          <div className="grid grid-cols-1 min-h-[320px] gap-4 lg:gap-6">
+            {columnsToRender.map((col) => {
+              const colTasks = tasksByStatus[col.id] || [];
+
+              return (
+                <div key={col.id} className="h-full min-h-0">
+                  <KanbanColumn
+                    id={col.id}
+                    title={col.title}
+                    bgColor={col.bgColor}
+                    borderColor={col.borderColor}
+                    count={colTasks.length}
+                    totalTasks={tasksFilteredByProcess.length}
+                  >
+                    <div className="space-y-2 sm:space-y-3 min-h-[80px] rounded-lg">
+                      {colTasks.map((task, index) => (
+                        <div key={task.id}>{renderKanbanCard(task, index)}</div>
+                      ))}
+                      {colTasks.length === 0 && renderEmptyColumnState(col.id, col.title)}
+                    </div>
+                  </KanbanColumn>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
             <div
               className={cn(
                 "gap-4 lg:gap-6",
-                isPhone
-                  ? "grid grid-cols-1 min-h-[320px]"
-                  : isMobile
-                    ? "grid grid-cols-2 min-h-[420px]"
-                    : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 min-h-[500px] xl:h-[calc(100vh-250px)]"
+                isMobile
+                  ? "grid grid-cols-2 min-h-[420px]"
+                  : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 min-h-[500px] xl:h-[calc(100vh-250px)]"
               )}
             >
               {columnsToRender.map((col) => {
@@ -597,54 +921,21 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                           >
                             {colTasks.map((task, index) => (
                               <Draggable key={task.id} draggableId={task.id} index={index}>
-                                {(provided, snapshot) => (
+                                {(draggableProvided, draggableSnapshot) => (
                                   <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    style={provided.draggableProps.style}
+                                    ref={draggableProvided.innerRef}
+                                    {...draggableProvided.draggableProps}
+                                    style={draggableProvided.draggableProps.style}
                                   >
-                                    <KanbanCard
-                                      task={task}
-                                      index={index}
-                                      viewMode={viewMode}
-                                      isDragging={snapshot.isDragging}
-                                      onEdit={(id, e) => {
-                                        e.stopPropagation();
-                                        setSelectedTaskId(id);
-                                      }}
-                                      onDelete={(task, e) => {
-                                        e.stopPropagation();
-                                        setDeleteTarget(task);
-                                      }}
-                                      onToggleToday={async (task, e) => {
-                                        e.stopPropagation();
-                                        const newVal = !task.marked_for_today;
-                                        setTasks(prev => prev.map(t => t.id === task.id ? { ...t, marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null } : t));
-                                        await supabase.from("kanban_tasks").update({ marked_for_today: newVal, marked_for_today_at: newVal ? new Date().toISOString() : null }).eq("id", task.id);
-                                      }}
-                                      onMove={handleMoveTask}
-                                      onComplete={handleCompleteTask}
-                                      onClick={() => setSelectedTaskId(task.id)}
-                                      dragHandleProps={provided.dragHandleProps}
-                                      teamMembers={teamMembers}
-                                      canDelete={canDelete(task)}
-                                    />
+                                    {renderKanbanCard(task, index, {
+                                      isDragging: draggableSnapshot.isDragging,
+                                      dragHandleProps: draggableProvided.dragHandleProps,
+                                    })}
                                   </div>
                                 )}
                               </Draggable>
                             ))}
-                            {colTasks.length === 0 && (
-                              <div className="rounded-lg border border-dashed border-border/80 bg-background/70 p-4 text-center">
-                                <p className="text-[13px] font-medium text-foreground">
-                                  Sem tarefas em {col.title}
-                                </p>
-                                <p className="text-[12px] text-muted-foreground mt-1">
-                                  {col.id === "todo"
-                                    ? "Toque em Nova para criar a próxima tarefa."
-                                    : "Quando houver movimentação, elas aparecem aqui."}
-                                </p>
-                              </div>
-                            )}
+                            {colTasks.length === 0 && renderEmptyColumnState(col.id, col.title)}
                             {provided.placeholder}
                           </div>
                         )}
@@ -655,6 +946,73 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               })}
             </div>
           </DragDropContext>
+        )}
+
+        {isPhone && (
+          <Drawer
+            open={moveSheetOpen}
+            onOpenChange={(open) => {
+              setMoveSheetOpen(open);
+              if (!open) setMoveSheetTask(null);
+            }}
+          >
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Mover tarefa</DrawerTitle>
+                <DrawerDescription>
+                  {moveSheetTask
+                    ? `Selecione a nova etapa para "${moveSheetTask.title}".`
+                    : "Selecione a etapa de destino."}
+                </DrawerDescription>
+              </DrawerHeader>
+
+              <div className="px-4 pb-2 space-y-2">
+                {moveOptions.map((option) => {
+                  const Icon = option.icon;
+                  const disabled =
+                    !moveSheetTask || normalizeStatus(moveSheetTask.status) === option.status;
+
+                  return (
+                    <button
+                      key={option.status}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        void handleMoveFromSheet(option.status);
+                      }}
+                      className={cn(
+                        "w-full rounded-xl border px-3 py-3 text-left transition-colors flex items-center gap-3",
+                        disabled
+                          ? "border-border bg-muted/40 text-muted-foreground cursor-not-allowed"
+                          : "border-border bg-background active:bg-muted/70"
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                          option.status === "todo" && "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+                          option.status === "in_progress" && "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+                          option.status === "done" && "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+                        )}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-[13px] font-semibold">{option.title}</span>
+                        <span className="block text-[11px] text-muted-foreground">{option.description}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <DrawerFooter>
+                <DrawerClose asChild>
+                  <Button variant="outline">Cancelar</Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </DrawerContent>
+          </Drawer>
         )}
 
         <TaskDetailModal
