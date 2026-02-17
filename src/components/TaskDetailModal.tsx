@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -22,6 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   CheckSquare,
   MessageSquare,
@@ -36,6 +47,8 @@ import {
   X,
   Trash2,
   FileAudio,
+  ChevronRight,
+  Search,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
@@ -45,6 +58,8 @@ import { AttachmentSection, type AttachmentItem } from "@/components/task-detail
 import { UserAvatar } from "@/components/UserAvatar";
 import { VoiceRecorder } from "@/components/ui/VoiceRecorder";
 import { CommentInput } from "@/components/ui/CommentInput";
+import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TaskComment {
   id: string;
@@ -104,6 +119,27 @@ const PRIORITY_LABELS: Record<string, { label: string; class: string }> = {
   low: { label: "Baixa", class: "bg-success/10 text-success border-success/30" },
 };
 
+const MOBILE_PRIORITY_OPTIONS = [
+  {
+    value: "high",
+    label: "Alta",
+    helper: "Maior urgência",
+    chipClass: "bg-destructive/10 text-destructive",
+  },
+  {
+    value: "medium",
+    label: "Média",
+    helper: "Padrão recomendado",
+    chipClass: "bg-warning/10 text-warning",
+  },
+  {
+    value: "low",
+    label: "Baixa",
+    helper: "Pode esperar",
+    chipClass: "bg-success/10 text-success",
+  },
+] as const;
+
 export function TaskDetailModal({
   taskId,
   open,
@@ -113,6 +149,7 @@ export function TaskDetailModal({
   const { user } = useAuth();
   const { teamMembers } = usePermissions();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [comments, setComments] = useState<TaskComment[]>([]);
@@ -127,6 +164,19 @@ export function TaskDetailModal({
   const [editingDesc, setEditingDesc] = useState(false);
   const [editDesc, setEditDesc] = useState("");
   const [descriptionVoiceNotes, setDescriptionVoiceNotes] = useState<Array<{ id: string; url: string; createdAt: string }>>([]);
+  const [mobileTitle, setMobileTitle] = useState("");
+  const [mobileDescription, setMobileDescription] = useState("");
+  const [mobileStatus, setMobileStatus] = useState("todo");
+  const [mobilePriority, setMobilePriority] = useState("medium");
+  const [mobileAssignee, setMobileAssignee] = useState("unassigned");
+  const [mobileDueDate, setMobileDueDate] = useState("");
+  const [mobileTitleError, setMobileTitleError] = useState("");
+  const [mobileSaving, setMobileSaving] = useState(false);
+  const [mobileDetailsOpen, setMobileDetailsOpen] = useState("");
+  const [mobileAssigneeSheetOpen, setMobileAssigneeSheetOpen] = useState(false);
+  const [mobilePrioritySheetOpen, setMobilePrioritySheetOpen] = useState(false);
+  const [mobileStatusSheetOpen, setMobileStatusSheetOpen] = useState(false);
+  const [mobileAssigneeSearch, setMobileAssigneeSearch] = useState("");
 
   const getMember = useCallback(
     (id: string | null) => teamMembers.find((m) => m.id === id),
@@ -221,6 +271,61 @@ export function TaskDetailModal({
     };
   }, [taskId, open, loadTaskDetails]);
 
+  useEffect(() => {
+    if (!open || !isMobile || !task) return;
+    setMobileTitle(task.title || "");
+    setMobileDescription(task.description || "");
+    setMobileStatus(task.status || "todo");
+    setMobilePriority(task.priority || "medium");
+    setMobileAssignee(task.assigned_to || "unassigned");
+    setMobileDueDate(task.due_date ? task.due_date.slice(0, 10) : "");
+    setMobileTitleError("");
+    setMobileDetailsOpen("");
+    setMobileAssigneeSearch("");
+  }, [open, isMobile, task]);
+
+  useEffect(() => {
+    if (!open) {
+      setMobileAssigneeSheetOpen(false);
+      setMobilePrioritySheetOpen(false);
+      setMobileStatusSheetOpen(false);
+      setMobileSaving(false);
+    }
+  }, [open]);
+
+  const scrollFieldIntoView = useCallback((event: React.FocusEvent<HTMLElement>) => {
+    const target = event.currentTarget;
+    window.setTimeout(() => {
+      target.scrollIntoView({ block: "center", behavior: "auto" });
+    }, 120);
+  }, []);
+
+  const selectedMobileAssignee = useMemo(
+    () => teamMembers.find((member) => member.id === mobileAssignee) || null,
+    [teamMembers, mobileAssignee]
+  );
+
+  const filteredMobileAssignees = useMemo(() => {
+    const query = mobileAssigneeSearch.trim().toLowerCase();
+    if (!query) return teamMembers;
+    return teamMembers.filter((member) => member.full_name.toLowerCase().includes(query));
+  }, [teamMembers, mobileAssigneeSearch]);
+
+  const selectedMobilePriority = useMemo(
+    () => MOBILE_PRIORITY_OPTIONS.find((option) => option.value === mobilePriority) || MOBILE_PRIORITY_OPTIONS[1],
+    [mobilePriority]
+  );
+
+  const normalizedCurrentDueDate = task?.due_date ? task.due_date.slice(0, 10) : "";
+  const hasMobileChanges = !!task && (
+    mobileTitle.trim() !== task.title ||
+    mobileDescription !== (task.description || "") ||
+    mobileStatus !== task.status ||
+    mobilePriority !== task.priority ||
+    (mobileAssignee === "unassigned" ? null : mobileAssignee) !== (task.assigned_to || null) ||
+    mobileDueDate !== normalizedCurrentDueDate
+  );
+
   const handleSaveTitle = async () => {
     if (!editTitle.trim() || !task) return;
     await supabase.from("kanban_tasks").update({ title: editTitle }).eq("id", task.id);
@@ -258,6 +363,47 @@ export function TaskDetailModal({
     setTask((prev) => prev && { ...prev, assigned_to: val });
     onUpdate?.();
     loadTaskDetails();
+  };
+
+  const handleSaveMobileForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!task) return;
+
+    if (!mobileTitle.trim()) {
+      setMobileTitleError("Informe um título para continuar.");
+      return;
+    }
+
+    setMobileTitleError("");
+    setMobileSaving(true);
+
+    const payload = {
+      title: mobileTitle.trim(),
+      description: mobileDescription.trim() || null,
+      status: mobileStatus,
+      priority: mobilePriority,
+      assigned_to: mobileAssignee === "unassigned" ? null : mobileAssignee,
+      due_date: mobileDueDate || null,
+    };
+
+    const { error } = await supabase
+      .from("kanban_tasks")
+      .update(payload)
+      .eq("id", task.id);
+
+    if (error) {
+      toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" });
+      setMobileSaving(false);
+      return;
+    }
+
+    setTask((prev) => (prev ? { ...prev, ...payload } : prev));
+    setEditTitle(payload.title);
+    setEditDesc(payload.description || "");
+    setMobileSaving(false);
+    toast({ title: "✅ Tarefa atualizada" });
+    onUpdate?.();
+    void loadTaskDetails();
   };
 
   const handleAddComment = async (content: string) => {
@@ -388,6 +534,352 @@ export function TaskDetailModal({
   };
 
   if (!open) return null;
+
+  if (isMobile) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="[&>button]:hidden w-full max-w-none h-[100dvh] p-0 gap-0 overflow-y-auto rounded-none">
+          {loading ? (
+            <div className="flex min-h-[50dvh] items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : !task ? (
+            <div className="p-6 text-center text-muted-foreground">Tarefa não encontrada</div>
+          ) : (
+            <>
+              <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
+                <div className="grid grid-cols-[40px_1fr_40px] items-center px-3 py-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => onOpenChange(false)}
+                  >
+                    <X className="w-5 h-5" />
+                    <span className="sr-only">Fechar</span>
+                  </Button>
+                  <p className="text-center text-sm font-semibold">Editar tarefa</p>
+                  <span />
+                </div>
+              </div>
+
+              <form
+                id="mobile-task-edit-form"
+                onSubmit={handleSaveMobileForm}
+                className="px-4 py-4 pb-[calc(104px+env(safe-area-inset-bottom))] space-y-5"
+              >
+                {task.processo_id ? <ProcessInfoCard processoId={task.processo_id} /> : null}
+
+                <section className="space-y-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Essencial</h3>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="mobile-edit-title">Título *</Label>
+                    <Input
+                      id="mobile-edit-title"
+                      value={mobileTitle}
+                      onFocus={scrollFieldIntoView}
+                      onChange={(event) => {
+                        setMobileTitle(event.target.value);
+                        if (mobileTitleError && event.target.value.trim()) setMobileTitleError("");
+                      }}
+                      placeholder="Ex: Revisar minuta da contestação"
+                      className="h-11"
+                    />
+                    {mobileTitleError ? <p className="text-xs text-destructive">{mobileTitleError}</p> : null}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>Responsável</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full justify-between px-3"
+                      onClick={() => setMobileAssigneeSheetOpen(true)}
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        {selectedMobileAssignee ? (
+                          <>
+                            <UserAvatar
+                              name={selectedMobileAssignee.full_name}
+                              avatarUrl={selectedMobileAssignee.avatar_url}
+                              size="sm"
+                              className="w-5 h-5 text-[9px]"
+                            />
+                            <span className="truncate text-sm">{selectedMobileAssignee.full_name}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">Não atribuído</span>
+                        )}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>Prioridade</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full justify-between px-3"
+                      onClick={() => setMobilePrioritySheetOpen(true)}
+                    >
+                      <span className="flex items-center gap-2 text-sm">
+                        <span className={cn("inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium", selectedMobilePriority.chipClass)}>
+                          {selectedMobilePriority.label}
+                        </span>
+                        <span className="text-muted-foreground">{selectedMobilePriority.helper}</span>
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label>Status</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full justify-between px-3"
+                      onClick={() => setMobileStatusSheetOpen(true)}
+                    >
+                      <span className="text-sm">{STATUS_LABELS[mobileStatus] || "Selecionar status"}</span>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="mobile-edit-due-date">Data de vencimento</Label>
+                    <Input
+                      id="mobile-edit-due-date"
+                      type="date"
+                      value={mobileDueDate}
+                      onFocus={scrollFieldIntoView}
+                      onChange={(event) => setMobileDueDate(event.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                </section>
+
+                <section className="rounded-xl border border-border/80 px-3">
+                  <Accordion type="single" collapsible value={mobileDetailsOpen} onValueChange={setMobileDetailsOpen}>
+                    <AccordionItem value="details" className="border-none">
+                      <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
+                        Detalhes (opcional)
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2 space-y-4">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="mobile-edit-description">Descrição</Label>
+                          <Textarea
+                            id="mobile-edit-description"
+                            value={mobileDescription}
+                            onFocus={scrollFieldIntoView}
+                            onChange={(event) => setMobileDescription(event.target.value)}
+                            placeholder="Contexto, objetivo e próximos passos"
+                            rows={5}
+                          />
+                        </div>
+
+                        <div className="rounded-lg border border-border/80 bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
+                          Criada em {format(new Date(task.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="w-full justify-start px-0 text-destructive hover:text-destructive hover:bg-transparent"
+                          onClick={async () => {
+                            const { error } = await supabase.from("kanban_tasks").delete().eq("id", task.id);
+                            if (error) {
+                              toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+                              return;
+                            }
+                            toast({ title: "Tarefa excluída" });
+                            onOpenChange(false);
+                            onUpdate?.();
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" /> Excluir tarefa
+                        </Button>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </section>
+              </form>
+
+              <div className="sticky bottom-0 z-20 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))]">
+                <Button
+                  type="submit"
+                  form="mobile-task-edit-form"
+                  className="h-12 w-full text-[15px] font-semibold"
+                  disabled={mobileSaving || !mobileTitle.trim() || !hasMobileChanges}
+                >
+                  {mobileSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Salvando...
+                    </>
+                  ) : (
+                    "Salvar"
+                  )}
+                </Button>
+              </div>
+
+              <Drawer open={mobileAssigneeSheetOpen} onOpenChange={setMobileAssigneeSheetOpen}>
+                <DrawerContent className="h-[78dvh] max-h-[78dvh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Selecionar responsável</DrawerTitle>
+                    <DrawerDescription>Defina quem ficará responsável pela tarefa.</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pb-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        value={mobileAssigneeSearch}
+                        onChange={(event) => setMobileAssigneeSearch(event.target.value)}
+                        placeholder="Buscar membro da equipe..."
+                        className="h-11 pl-9"
+                      />
+                    </div>
+                  </div>
+                  <div className="px-4 pb-2 overflow-y-auto space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileAssignee("unassigned");
+                        setMobileAssigneeSheetOpen(false);
+                      }}
+                      className={cn(
+                        "w-full min-h-[44px] rounded-lg border px-3 py-2 text-left transition-colors flex items-center justify-between gap-3",
+                        mobileAssignee === "unassigned" ? "border-primary/40 bg-primary/5" : "border-border bg-background"
+                      )}
+                    >
+                      <span className="text-sm">Não atribuído</span>
+                      {mobileAssignee === "unassigned" ? <Check className="w-4 h-4 text-primary" /> : null}
+                    </button>
+
+                    {filteredMobileAssignees.map((member) => {
+                      const active = mobileAssignee === member.id;
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          onClick={() => {
+                            setMobileAssignee(member.id);
+                            setMobileAssigneeSheetOpen(false);
+                          }}
+                          className={cn(
+                            "w-full min-h-[44px] rounded-lg border px-3 py-2 text-left transition-colors flex items-center justify-between gap-3",
+                            active ? "border-primary/40 bg-primary/5" : "border-border bg-background"
+                          )}
+                        >
+                          <span className="flex items-center gap-2 min-w-0">
+                            <UserAvatar
+                              name={member.full_name}
+                              avatarUrl={member.avatar_url}
+                              size="sm"
+                              className="w-6 h-6 text-[10px]"
+                            />
+                            <span className="truncate text-sm">{member.full_name}</span>
+                          </span>
+                          {active ? <Check className="w-4 h-4 text-primary" /> : null}
+                        </button>
+                      );
+                    })}
+
+                    {filteredMobileAssignees.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">Nenhum membro encontrado.</p>
+                    ) : null}
+                  </div>
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline">Fechar</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+
+              <Drawer open={mobilePrioritySheetOpen} onOpenChange={setMobilePrioritySheetOpen}>
+                <DrawerContent className="h-auto max-h-[70dvh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Selecionar prioridade</DrawerTitle>
+                    <DrawerDescription>Escolha a urgência para organizar a execução.</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pb-2 space-y-1">
+                    {MOBILE_PRIORITY_OPTIONS.map((option) => {
+                      const active = mobilePriority === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setMobilePriority(option.value);
+                            setMobilePrioritySheetOpen(false);
+                          }}
+                          className={cn(
+                            "w-full min-h-[44px] rounded-lg border px-3 py-2 text-left transition-colors flex items-center justify-between gap-3",
+                            active ? "border-primary/40 bg-primary/5" : "border-border bg-background"
+                          )}
+                        >
+                          <span className="flex items-center gap-2">
+                            <span className={cn("inline-flex rounded-full px-2 py-0.5 text-xs font-medium", option.chipClass)}>
+                              {option.label}
+                            </span>
+                            <span className="text-sm text-muted-foreground">{option.helper}</span>
+                          </span>
+                          {active ? <Check className="w-4 h-4 text-primary" /> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline">Fechar</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+
+              <Drawer open={mobileStatusSheetOpen} onOpenChange={setMobileStatusSheetOpen}>
+                <DrawerContent className="h-auto max-h-[70dvh]">
+                  <DrawerHeader>
+                    <DrawerTitle>Selecionar status</DrawerTitle>
+                    <DrawerDescription>Defina a coluna de acompanhamento da tarefa.</DrawerDescription>
+                  </DrawerHeader>
+                  <div className="px-4 pb-2 space-y-1">
+                    {Object.entries(STATUS_LABELS).map(([status, label]) => {
+                      const active = mobileStatus === status;
+                      return (
+                        <button
+                          key={status}
+                          type="button"
+                          onClick={() => {
+                            setMobileStatus(status);
+                            setMobileStatusSheetOpen(false);
+                          }}
+                          className={cn(
+                            "w-full min-h-[44px] rounded-lg border px-3 py-2 text-left transition-colors flex items-center justify-between gap-3",
+                            active ? "border-primary/40 bg-primary/5" : "border-border bg-background"
+                          )}
+                        >
+                          <span className="text-sm">{label}</span>
+                          {active ? <Check className="w-4 h-4 text-primary" /> : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <DrawerFooter>
+                    <DrawerClose asChild>
+                      <Button variant="outline">Fechar</Button>
+                    </DrawerClose>
+                  </DrawerFooter>
+                </DrawerContent>
+              </Drawer>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
