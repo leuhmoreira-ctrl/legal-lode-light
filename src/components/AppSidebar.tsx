@@ -168,25 +168,29 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
   };
 
   const linkClass = cn(
-    "flex min-h-12 items-center gap-3 rounded-lg px-4 py-3 text-[14px] transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    "flex items-center transition-all duration-200 border-l-4 border-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+    isMobile
+      ? "min-h-10 gap-2.5 rounded-md px-3 py-2 text-[13px]"
+      : "min-h-12 gap-3 rounded-lg px-4 py-3 text-[14px]",
     collapsed && "justify-center px-0"
   );
+  const iconClass = cn("shrink-0", isMobile ? "w-4 h-4" : "w-5 h-5");
 
   const activeLinkClass = "bg-sidebar-accent border-l-4 border-primary text-sidebar-accent-foreground font-medium";
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
       {/* Logo */}
-      <div className={cn("flex items-center gap-3 border-b border-sidebar-border/50 relative", isMobile ? "h-16 px-4" : "h-20 px-6")}>
-        <div className={cn("flex items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0", isMobile ? "w-9 h-9" : "w-10 h-10")}>
-          <Gavel className="w-5 h-5 text-primary-foreground" />
+      <div className={cn("flex items-center gap-3 border-b border-sidebar-border/50 relative", isMobile ? "h-14 px-3" : "h-20 px-6")}>
+        <div className={cn("flex items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 shrink-0", isMobile ? "w-8 h-8" : "w-10 h-10")}>
+          <Gavel className={cn("text-primary-foreground", isMobile ? "w-4 h-4" : "w-5 h-5")} />
         </div>
         {!collapsed && (
           <div className="animate-fade-in-scale flex-1 min-w-0">
-            <h1 className="text-[18px] font-bold text-sidebar-foreground tracking-tight">
+            <h1 className={cn("font-bold text-sidebar-foreground tracking-tight", isMobile ? "text-[16px]" : "text-[18px]")}>
               JurisControl
             </h1>
-            <p className="text-[13px] text-sidebar-foreground/60 font-medium">
+            <p className={cn("text-sidebar-foreground/60 font-medium", isMobile ? "text-[11px]" : "text-[13px]")}>
               Gestão Jurídica
             </p>
           </div>
@@ -196,19 +200,22 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
 
       {/* Search */}
       {!collapsed && (
-        <div className="px-4 py-3">
+        <div className={cn(isMobile ? "px-3 py-2" : "px-4 py-3")}>
           <div className="relative group">
-            <Search className="absolute left-3 top-3.5 h-5 w-5 text-sidebar-foreground/40 group-focus-within:text-primary transition-colors" />
+            <Search className={cn("absolute left-3 text-sidebar-foreground/40 group-focus-within:text-primary transition-colors", isMobile ? "top-3 h-4 w-4" : "top-3.5 h-5 w-5")} />
             <Input
               placeholder="Buscar..."
-              className="h-12 pl-10 text-[15px] bg-sidebar-muted/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 focus-visible:bg-sidebar-muted focus-visible:ring-primary/30"
+              className={cn(
+                "pl-10 bg-sidebar-muted/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 focus-visible:bg-sidebar-muted focus-visible:ring-primary/30",
+                isMobile ? "h-10 text-[13px]" : "h-12 text-[15px]"
+              )}
             />
           </div>
         </div>
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1.5 overflow-y-auto">
+      <nav className={cn("flex-1 overflow-y-auto", isMobile ? "px-2.5 py-1.5 space-y-1" : "px-3 py-2 space-y-1.5")}>
         {/* Main items */}
         {mainNavItems.map((item) => (
           <NavLink
@@ -219,14 +226,14 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
             activeClassName={activeLinkClass}
             onClick={handleLinkClick}
           >
-            <item.icon className="w-5 h-5 shrink-0" />
+            <item.icon className={iconClass} />
             {!collapsed && <span>{item.title}</span>}
           </NavLink>
         ))}
 
         {/* Escritório group */}
-        <div className="pt-4 mt-2 border-t border-sidebar-border/30">
-          {!collapsed && <p className="px-4 pb-2 text-[11px] font-bold uppercase tracking-wider text-sidebar-foreground/40">Gestão</p>}
+        <div className={cn("border-t border-sidebar-border/30", isMobile ? "pt-3 mt-1.5" : "pt-4 mt-2")}>
+          {!collapsed && <p className={cn("font-bold uppercase tracking-wider text-sidebar-foreground/40", isMobile ? "px-3 pb-1.5 text-[10px]" : "px-4 pb-2 text-[11px]")}>Gestão</p>}
           <button
             onClick={() => setEscritorioOpen(!escritorioOpen)}
             className={cn(
@@ -235,13 +242,13 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
               escritorioOpen && !collapsed && "text-sidebar-foreground"
             )}
           >
-            <Building2 className="w-5 h-5 shrink-0" />
+            <Building2 className={iconClass} />
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">Escritório</span>
                 <ChevronDown
                   className={cn(
-                    "w-4 h-4 transition-transform duration-200 opacity-50",
+                    isMobile ? "w-3.5 h-3.5 transition-transform duration-200 opacity-50" : "w-4 h-4 transition-transform duration-200 opacity-50",
                     escritorioOpen && "rotate-180 opacity-100"
                   )}
                 />
@@ -250,7 +257,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
           </button>
 
           {escritorioOpen && (
-            <div className={cn("space-y-1 mt-1", !collapsed && "ml-4 pl-2 border-l border-sidebar-border/30")}>
+            <div className={cn("space-y-1 mt-1", !collapsed && (isMobile ? "ml-3 pl-1.5 border-l border-sidebar-border/30" : "ml-4 pl-2 border-l border-sidebar-border/30"))}>
               {escritorioItems.map((item) => (
                 <NavLink
                   key={item.url}
@@ -259,17 +266,17 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                   activeClassName={activeLinkClass}
                   onClick={handleLinkClick}
                 >
-                  <item.icon className="w-5 h-5 shrink-0" />
+                  <item.icon className={iconClass} />
                   {!collapsed && (
                     <div className="flex items-center justify-between flex-1 min-w-0">
                       <span>{item.title}</span>
                       {item.title === "Processos" && myProcessCount > 0 && (
-                        <span className="bg-primary/20 text-primary text-[12px] font-bold px-2 py-0.5 rounded-full">
+                        <span className={cn("bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full", isMobile ? "text-[11px]" : "text-[12px]")}>
                           {myProcessCount}
                         </span>
                       )}
                       {item.title === "Notificações" && unreadNotifications > 0 && (
-                        <span className="bg-destructive text-destructive-foreground text-[12px] font-bold px-2 py-0.5 rounded-full">
+                        <span className={cn("bg-destructive text-destructive-foreground font-bold px-2 py-0.5 rounded-full", isMobile ? "text-[11px]" : "text-[12px]")}>
                           {unreadNotifications}
                         </span>
                       )}
@@ -286,7 +293,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                   activeClassName={activeLinkClass}
                   onClick={handleLinkClick}
                 >
-                  <Users className="w-5 h-5 shrink-0" />
+                  <Users className={iconClass} />
                   {!collapsed && <span>Equipe</span>}
                 </NavLink>
               )}
@@ -299,7 +306,7 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
                   activeClassName={activeLinkClass}
                   onClick={handleLinkClick}
                 >
-                  <Shield className="w-5 h-5 shrink-0" />
+                  <Shield className={iconClass} />
                   {!collapsed && <span>Auditoria</span>}
                 </NavLink>
               )}
@@ -309,12 +316,13 @@ function SidebarContent({ collapsed, setCollapsed, isMobile = false, onCloseMobi
       </nav>
 
       {/* User menu */}
-      <div className="border-t border-sidebar-border/50 p-4 bg-sidebar-muted/20">
+      <div className={cn("border-t border-sidebar-border/50 bg-sidebar-muted/20", isMobile ? "p-3" : "p-4")}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                "flex min-h-12 items-center gap-3 w-full p-2 rounded-xl hover:bg-sidebar-accent transition-all duration-200 group",
+                "flex items-center gap-3 w-full p-2 rounded-xl hover:bg-sidebar-accent transition-all duration-200 group",
+                isMobile ? "min-h-10" : "min-h-12",
                 collapsed && "justify-center p-0"
               )}
             >
@@ -413,12 +421,12 @@ export function AppSidebar() {
             <Button
               variant="ghost"
               size="icon"
-              className="fixed left-3 top-[max(12px,env(safe-area-inset-top))] z-50 h-11 w-11 bg-sidebar-background/80 backdrop-blur-sm text-sidebar-foreground shadow-md hover:bg-sidebar-background border border-sidebar-border"
+              className="fixed left-2.5 top-[max(10px,env(safe-area-inset-top))] z-50 h-10 w-10 bg-sidebar-background/80 backdrop-blur-sm text-sidebar-foreground shadow-md hover:bg-sidebar-background border border-sidebar-border"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-[80vw] max-w-[320px] border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground">
+          <SheetContent side="left" className="p-0 w-[84vw] max-w-[300px] border-r border-sidebar-border bg-sidebar-background text-sidebar-foreground">
             <SidebarContent
               collapsed={false}
               isMobile={true}

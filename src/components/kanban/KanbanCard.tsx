@@ -90,7 +90,7 @@ export function KanbanCard({
           "hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-card border-l-4",
           task.marked_for_today && "ring-2 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10",
           isDragging && "shadow-xl rotate-2 scale-105",
-          isCompact ? "p-3 min-h-[56px] flex items-center" : "p-4"
+          isCompact ? "p-2.5 sm:p-3 min-h-[50px] sm:min-h-[56px] flex items-center" : "p-4"
         )}
         style={{ borderLeftColor: priority.color }}
         onClick={onClick}
@@ -135,8 +135,8 @@ export function KanbanCard({
         )}
 
         <div className="flex items-start gap-2 w-full">
-          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing flex h-11 w-8 items-center justify-center", isCompact ? "mt-0" : "mt-0.5", dragHandleProps?.className)}>
-            <GripVertical className="w-4 h-4 text-muted-foreground/40" />
+          <div {...dragHandleProps} className={cn("cursor-grab active:cursor-grabbing flex items-center justify-center", isCompact ? "h-9 w-6 mt-0" : "h-11 w-8 mt-0.5", dragHandleProps?.className)}>
+            <GripVertical className={cn("text-muted-foreground/40", isCompact ? "w-3.5 h-3.5" : "w-4 h-4")} />
           </div>
 
           <div className="flex-1 min-w-0">
@@ -152,7 +152,7 @@ export function KanbanCard({
                     <Star className={cn("w-3.5 h-3.5", task.marked_for_today ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/40 hover:text-yellow-400")} />
                   </button>
                 )}
-                <p className="text-[14px] font-semibold text-foreground leading-tight truncate">
+                <p className="text-[13px] sm:text-[14px] font-semibold text-foreground leading-tight truncate">
                    {task.title}
                 </p>
               </div>
@@ -161,20 +161,20 @@ export function KanbanCard({
 
             {/* Compact Mode Content */}
             {isCompact && (
-               <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="unstyled" className={cn("px-1.5 py-0 text-[12px] font-bold uppercase tracking-wide border-none", priority.badgeClass)}>
+               <div className="flex items-center gap-1.5 mt-1">
+                  <Badge variant="unstyled" className={cn("px-1.5 py-0 text-[11px] font-bold uppercase tracking-wide border-none", priority.badgeClass)}>
                     {priority.label}
                   </Badge>
-                  <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground ml-auto">
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground ml-auto">
                     <UserAvatar
                       name={getMember(task.assigned_to)?.full_name}
                       avatarUrl={getMember(task.assigned_to)?.avatar_url}
                       size="sm"
-                      className="w-4 h-4 text-[8px]"
+                      className="w-3.5 h-3.5 text-[8px]"
                     />
                     {task.due_date && (
                       <span className={cn(
-                         "px-1.5 py-0.5 rounded bg-muted font-medium",
+                         "px-1 py-0.5 rounded bg-muted font-medium",
                          new Date(task.due_date) < new Date() && "text-destructive bg-destructive/10"
                       )}>
                         {format(new Date(task.due_date), "dd/MM")}
