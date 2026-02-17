@@ -48,6 +48,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<KanbanTask | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("normal");
+  const [autoCompactApplied, setAutoCompactApplied] = useState(false);
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -115,6 +116,13 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [loadTasks]);
+
+  useEffect(() => {
+    if (isMobile && !autoCompactApplied) {
+      setViewMode("compact");
+      setAutoCompactApplied(true);
+    }
+  }, [isMobile, autoCompactApplied]);
 
   // Migrate 'review' tasks to 'in_progress'
   useEffect(() => {
@@ -331,7 +339,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
+      <div className="space-y-4 sm:space-y-6 animate-fade-up">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="mobile-page-title font-bold text-foreground">
@@ -342,12 +350,12 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               {personalOnly ? " atribuídas a você" : " no total"}
             </p>
           </div>
-          <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-2.5 sm:gap-4 w-full sm:w-auto">
              <div className="flex bg-muted p-1 rounded-lg border">
                 <Button
                    variant={viewMode === 'compact' ? 'secondary' : 'ghost'}
                    size="icon"
-                   className="h-11 w-11 sm:h-9 sm:w-9"
+                   className="h-10 w-10 sm:h-9 sm:w-9"
                    onClick={() => setViewMode('compact')}
                    title="Modo Compacto"
                 >
@@ -356,7 +364,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                 <Button
                    variant={viewMode === 'normal' ? 'secondary' : 'ghost'}
                    size="icon"
-                   className="h-11 w-11 sm:h-9 sm:w-9"
+                   className="h-10 w-10 sm:h-9 sm:w-9"
                    onClick={() => setViewMode('normal')}
                    title="Modo Normal"
                 >
@@ -368,10 +376,10 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
         </div>
 
         {/* Process filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
           <Filter className="w-4 h-4 text-muted-foreground" />
           <Select value={filtroProcesso} onValueChange={setFiltroProcesso}>
-            <SelectTrigger className="w-full sm:w-72">
+            <SelectTrigger className="w-full sm:w-72 h-10">
               <SelectValue placeholder="Filtrar por processo..." />
             </SelectTrigger>
             <SelectContent>
@@ -392,21 +400,21 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
         {(() => {
           if (todayTasks.length === 0) return null;
           return (
-            <Card className="p-4 border-yellow-400/30 bg-yellow-50/20 dark:bg-yellow-900/10">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Card className="p-3 sm:p-4 border-yellow-400/30 bg-yellow-50/20 dark:bg-yellow-900/10">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-3">
+                <h3 className="text-[13px] sm:text-sm font-semibold flex items-center gap-1.5 sm:gap-2">
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                   Para Fazer Hoje ({todayTasks.length})
                 </h3>
-                <Button variant="ghost" size="sm" className="text-[13px]" onClick={async () => {
+                <Button variant="ghost" size="sm" className="text-[12px] sm:text-[13px] px-2.5" onClick={async () => {
                   await supabase.from("kanban_tasks").update({ marked_for_today: false, marked_for_today_at: null }).in("id", todayTasks.map(t => t.id));
                   loadTasks();
                 }}>Limpar lista</Button>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {todayTasks.map((t) => (
-                  <Badge key={t.id} variant="outline" className="cursor-pointer text-xs gap-1.5 py-1.5 bg-white" onClick={() => setSelectedTaskId(t.id)}>
-                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                  <Badge key={t.id} variant="outline" className="cursor-pointer text-[11px] sm:text-xs gap-1 py-1 bg-white" onClick={() => setSelectedTaskId(t.id)}>
+                    <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-yellow-400 text-yellow-400" />
                     {t.title}
                   </Badge>
                 ))}
@@ -425,7 +433,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
               className={cn(
                 "gap-4 lg:gap-6",
                 isMobile
-                  ? "grid grid-flow-col auto-cols-[85vw] overflow-x-auto snap-x snap-mandatory pb-2 min-h-[420px]"
+                  ? "grid grid-flow-col auto-cols-[88vw] overflow-x-auto snap-x snap-mandatory pb-2 min-h-[340px]"
                   : "grid grid-cols-1 lg:grid-cols-3 h-[calc(100vh-250px)] min-h-[500px]"
               )}
             >
@@ -445,7 +453,7 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                               ref={provided.innerRef}
                               {...provided.droppableProps}
                               className={cn(
-                                 "space-y-3 min-h-[100px] transition-colors rounded-lg",
+                                 "space-y-2 sm:space-y-3 min-h-[80px] transition-colors rounded-lg",
                                  snapshot.isDraggingOver && "bg-black/5"
                               )}
                            >

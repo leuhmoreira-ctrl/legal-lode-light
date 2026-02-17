@@ -465,32 +465,32 @@
   }
 
   .mobile-page-title {
-    font-size: clamp(24px, 6vw, 34px);
-    line-height: 1.2;
+    font-size: clamp(20px, 5.2vw, 30px);
+    line-height: 1.15;
     letter-spacing: -0.02em;
   }
 
   .mobile-page-subtitle {
-    font-size: clamp(14px, 3.8vw, 16px);
-    line-height: 1.55;
+    font-size: clamp(12px, 3.4vw, 14px);
+    line-height: 1.45;
   }
 }
 
 @media (max-width: 479px) {
   :root {
-    --app-container-x: 12px;
-    --app-container-top: calc(env(safe-area-inset-top, 0px) + 60px);
-    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
-    --section-gap: 28px;
+    --app-container-x: 10px;
+    --app-container-top: calc(env(safe-area-inset-top, 0px) + 54px);
+    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+    --section-gap: 20px;
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   :root {
-    --app-container-x: 16px;
-    --app-container-top: calc(env(safe-area-inset-top, 0px) + 64px);
-    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
-    --section-gap: 32px;
+    --app-container-x: 12px;
+    --app-container-top: calc(env(safe-area-inset-top, 0px) + 56px);
+    --app-container-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    --section-gap: 24px;
   }
 }
 
@@ -514,8 +514,8 @@
 
 @media (max-width: 767px) {
   .apple-card {
-    border-radius: 12px;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   }
 
   .apple-card:hover {
@@ -523,17 +523,25 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
-  .text-\[10px\],
-  .text-\[11px\],
+  .text-\[10px\] {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+
+  .text-\[11px\] {
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
   .text-\[12px\],
   .text-xs {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .text-sm {
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 13px;
+    line-height: 1.42;
   }
 }
 

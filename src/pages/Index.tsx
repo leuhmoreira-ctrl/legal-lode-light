@@ -24,7 +24,7 @@ import {
   Cell,
 } from "recharts";
 import { prazosMock, processosMock, tarefasMock } from "@/data/mockData";
-import { format, parseISO, isAfter, addDays } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -32,6 +32,7 @@ import { usePermissions } from "@/contexts/PermissionsContext";
 import { CountUp } from "@/components/ui/count-up";
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const faseData = [
   { name: "Conhecimento", value: 3 },
@@ -82,6 +83,7 @@ export default function Dashboard() {
   const { teamMembers } = usePermissions();
   const [todayTasks, setTodayTasks] = useState<any[]>([]);
   const [loadingToday, setLoadingToday] = useState(true);
+  const [mobileTimelineView, setMobileTimelineView] = useState<"deadlines" | "movements">("deadlines");
 
   useEffect(() => {
     const loadTodayTasks = async () => {
@@ -109,10 +111,11 @@ export default function Dashboard() {
   const movimentacoesRecentes = processosMock
     .sort((a, b) => b.ultimaMovimentacao.localeCompare(a.ultimaMovimentacao))
     .slice(0, 3);
+  const movimentacoesParaExibir = isMobile ? movimentacoesRecentes.slice(0, 2) : movimentacoesRecentes;
 
   return (
     <AppLayout>
-      <div className="space-y-6 md:space-y-8 animate-fade-up pb-8">
+      <div className="space-y-4 sm:space-y-6 md:space-y-8 animate-fade-up pb-6 sm:pb-8">
         {/* Header */}
         <div>
           <h1 className="mobile-page-title font-bold text-[#1D1D1F] dark:text-white">Dashboard</h1>
@@ -127,25 +130,25 @@ export default function Dashboard() {
             <Loader2 className="w-5 h-5 animate-spin text-primary mx-auto" />
           </div>
         ) : todayTasks.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             <div className="flex items-center gap-2">
               <Star className="w-5 h-5 fill-[#FF9500] text-[#FF9500]" />
-              <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">Meu Foco Hoje</h3>
+              <h3 className="text-[16px] sm:text-[20px] font-semibold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">Meu Foco Hoje</h3>
             </div>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:gap-3">
               {todayTasks.map((task) => (
                 <div
                   key={task.id}
-                  className="group flex items-center gap-3 p-4 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.08] hover:border-blue-500/20 transition-all duration-200 md:hover:translate-x-1 cursor-pointer"
+                  className="group flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4 rounded-[10px] sm:rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] border border-transparent hover:bg-black/[0.04] dark:hover:bg-white/[0.08] hover:border-blue-500/20 transition-all duration-200 md:hover:translate-x-1 cursor-pointer"
                 >
                   <Star className="w-4 h-4 text-[#FF9500]" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[16px] sm:text-[17px] font-medium tracking-[-0.3px] text-[#1D1D1F] dark:text-white truncate">{task.title}</p>
-                    <p className="text-[13px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-0.5">
+                    <p className="text-[14px] sm:text-[17px] font-medium tracking-[-0.3px] text-[#1D1D1F] dark:text-white truncate">{task.title}</p>
+                    <p className="text-[12px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-0.5">
                       {getMemberName(task.assigned_to)} <span className="text-[#86868B] mx-1">•</span> {task.due_date && format(new Date(task.due_date), "dd/MM")}
                     </p>
                   </div>
-                  <span className={`px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide transition-colors ${
+                  <span className={`px-2 py-0.5 rounded-md text-[11px] sm:text-xs font-semibold tracking-wide transition-colors ${
                     task.priority === 'high'
                       ? 'bg-[#FF3B30]/12 text-[#FF3B30] group-hover:bg-[#FF3B30]/20'
                       : task.priority === 'medium'
@@ -161,24 +164,24 @@ export default function Dashboard() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-5">
           {/* Prazos Urgentes */}
-          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
+          <div className="apple-card p-3 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-4">
+                <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Prazos Urgentes
                 </span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-urgent shadow-sm group-hover:scale-110 transition-transform duration-300">
-                  <AlertTriangle className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-urgent shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
               <div>
-                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[24px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={prazosUrgentes.length} />
                 </div>
-                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5 text-[#86868B]" />
+                <div className="text-[11px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-1.5 sm:mt-2 flex items-center gap-1">
+                  <CalendarDays className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#86868B]" />
                   Próximos 7 dias
                 </div>
               </div>
@@ -186,22 +189,22 @@ export default function Dashboard() {
           </div>
 
           {/* Processos Ativos */}
-          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
+          <div className="apple-card p-3 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-4">
+                <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Processos Ativos
                 </span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-active shadow-sm group-hover:scale-110 transition-transform duration-300">
-                  <Scale className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-active shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <Scale className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
               <div>
-                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[24px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={processosMock.length} />
                 </div>
-                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
-                  <ArrowUpRight className="w-3.5 h-3.5 text-[#34C759]" />
+                <div className="text-[11px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-1.5 sm:mt-2 flex items-center gap-1">
+                  <ArrowUpRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#34C759]" />
                   <span className="text-[#34C759]">2 novos</span> este mês
                 </div>
               </div>
@@ -209,22 +212,22 @@ export default function Dashboard() {
           </div>
 
           {/* Tarefas Pendentes */}
-          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
+          <div className="apple-card p-3 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-4">
+                <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Tarefas Pendentes
                 </span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-pending shadow-sm group-hover:scale-110 transition-transform duration-300">
-                  <ListChecks className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-pending shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <ListChecks className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
               <div>
-                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[24px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={tarefasPendentes.length} />
                 </div>
-                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#FF9500]" />
+                <div className="text-[11px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-1.5 sm:mt-2 flex items-center gap-1">
+                  <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#FF9500]" />
                   <span className="text-[#FF9500]">3 de alta</span> prioridade
                 </div>
               </div>
@@ -232,22 +235,22 @@ export default function Dashboard() {
           </div>
 
           {/* Audiências */}
-          <div className="apple-card p-4 sm:p-6 group cursor-pointer">
+          <div className="apple-card p-3 sm:p-6 group cursor-pointer">
             <div className="flex flex-col h-full justify-between">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
+              <div className="flex items-center justify-between mb-2.5 sm:mb-4">
+                <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.6px] text-[#6E6E73]">
                   Audiências
                 </span>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-audience shadow-sm group-hover:scale-110 transition-transform duration-300">
-                  <CalendarDays className="w-4 h-4 text-white" />
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center bg-gradient-audience shadow-sm group-hover:scale-110 transition-transform duration-300">
+                  <CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
                 </div>
               </div>
               <div>
-                <div className="text-[32px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
+                <div className="text-[24px] sm:text-[40px] md:text-[52px] font-bold tracking-[-1px] text-[#1D1D1F] dark:text-white leading-none animate-count-up">
                   <CountUp end={2} />
                 </div>
-                <div className="text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-2 flex items-center gap-1.5">
-                  <CalendarDays className="w-3.5 h-3.5 text-[#86868B]" />
+                <div className="text-[11px] sm:text-[14px] text-[#6E6E73] font-normal tracking-[-0.1px] mt-1.5 sm:mt-2 flex items-center gap-1">
+                  <CalendarDays className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#86868B]" />
                   Próxima em 3 dias
                 </div>
               </div>
@@ -256,12 +259,12 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          <div className="apple-card p-4 sm:p-6 lg:col-span-2">
-            <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-5 sm:mb-6 tracking-[-0.3px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5">
+          <div className="apple-card p-3 sm:p-6 lg:col-span-2">
+            <h3 className="text-[16px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-3 sm:mb-6 tracking-[-0.3px]">
               Produtividade Mensal
             </h3>
-            <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
+            <ResponsiveContainer width="100%" height={isMobile ? 150 : 240}>
               <BarChart data={produtividadeData} barGap={16}>
                 <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" strokeDasharray="0" />
                 <XAxis
@@ -280,7 +283,7 @@ export default function Dashboard() {
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
-                <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={isMobile ? 22 : 32}>
+                <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={isMobile ? 18 : 32}>
                   {produtividadeData.map((_, index) => (
                     <Cell
                       key={index}
@@ -293,11 +296,11 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          <div className="apple-card p-4 sm:p-6 flex flex-col">
-            <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-5 sm:mb-6 tracking-[-0.3px]">
+          <div className="apple-card p-3 sm:p-6 flex flex-col">
+            <h3 className="text-[16px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-3 sm:mb-6 tracking-[-0.3px]">
               Processos por Fase
             </h3>
-            <div className="flex-1 min-h-[160px] sm:min-h-[200px]">
+            <div className="flex-1 min-h-[140px] sm:min-h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -325,14 +328,14 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="flex flex-wrap gap-4 mt-6 justify-center">
+            <div className="flex flex-wrap gap-3 sm:gap-4 mt-4 sm:mt-6 justify-center">
               {faseData.map((item, i) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: ["#1D1D1F", "#007AFF", "#FF9500"][i % 3] }}
                   />
-                  <span className="text-[13px] font-medium text-[#1D1D1F] dark:text-white tracking-[-0.1px]">
+                  <span className="text-[12px] sm:text-[13px] font-medium text-[#1D1D1F] dark:text-white tracking-[-0.1px]">
                     {item.name}
                   </span>
                 </div>
@@ -341,45 +344,112 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Prazos + Movimentações side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <UpcomingDeadlines />
-
-          {/* Movimentações Recentes */}
-          <div className="apple-card p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.3px]">
-                Movimentações Recentes
-              </h3>
-              <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[13px] font-medium">
-                Últimas 3
-              </span>
+        {/* Prazos + Movimentações */}
+        {isMobile ? (
+          <div className="space-y-3">
+            <div className="inline-flex w-full rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-1">
+              <button
+                onClick={() => setMobileTimelineView("deadlines")}
+                className={cn(
+                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
+                  mobileTimelineView === "deadlines"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
+                    : "text-[#6E6E73] dark:text-white/70"
+                )}
+              >
+                Prazos
+              </button>
+              <button
+                onClick={() => setMobileTimelineView("movements")}
+                className={cn(
+                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
+                  mobileTimelineView === "movements"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
+                    : "text-[#6E6E73] dark:text-white/70"
+                )}
+              >
+                Movimentações
+              </button>
             </div>
-            <div className="space-y-3">
-              {movimentacoesRecentes.map((proc) => (
-                <div
-                  key={proc.id}
-                  className="flex items-start gap-3 p-3 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors duration-200"
-                >
-                  <div className="p-2 rounded-full bg-[#007AFF]/10">
-                    <FileText className="w-3.5 h-3.5 text-[#007AFF]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
-                      {proc.descricaoMovimentacao}
-                    </p>
-                    <p className="text-[12px] text-[#6E6E73] mt-0.5">
-                      {proc.numero} <span className="mx-1">•</span> {proc.cliente}
-                    </p>
-                  </div>
-                  <span className="text-[12px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-2 py-1 rounded-md shadow-sm border border-black/5">
-                    {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
+
+            {mobileTimelineView === "deadlines" ? (
+              <UpcomingDeadlines />
+            ) : (
+              <div className="apple-card p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[16px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.2px]">
+                    Movimentações Recentes
+                  </h3>
+                  <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2 py-0.5 rounded-full text-[11px] font-medium">
+                    Últimas {movimentacoesParaExibir.length}
                   </span>
                 </div>
-              ))}
+                <div className="space-y-2.5">
+                  {movimentacoesParaExibir.map((proc) => (
+                    <div
+                      key={proc.id}
+                      className="flex items-start gap-2.5 p-2.5 rounded-[10px] bg-black/[0.02] dark:bg-white/[0.05] transition-colors duration-200"
+                    >
+                      <div className="p-1.5 rounded-full bg-[#007AFF]/10">
+                        <FileText className="w-3 h-3 text-[#007AFF]" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
+                          {proc.descricaoMovimentacao}
+                        </p>
+                        <p className="text-[11px] text-[#6E6E73] mt-0.5 truncate">
+                          {proc.numero} <span className="mx-1">•</span> {proc.cliente}
+                        </p>
+                      </div>
+                      <span className="text-[11px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-1.5 py-0.5 rounded-md shadow-sm border border-black/5">
+                        {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <UpcomingDeadlines />
+
+            {/* Movimentações Recentes */}
+            <div className="apple-card p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-[18px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white tracking-[-0.3px]">
+                  Movimentações Recentes
+                </h3>
+                <span className="bg-[#E5E5EA] dark:bg-[#38383A] text-[#1D1D1F] dark:text-white px-2.5 py-1 rounded-full text-[13px] font-medium">
+                  Últimas {movimentacoesParaExibir.length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {movimentacoesParaExibir.map((proc) => (
+                  <div
+                    key={proc.id}
+                    className="flex items-start gap-3 p-3 rounded-[12px] bg-black/[0.02] dark:bg-white/[0.05] hover:bg-black/[0.04] dark:hover:bg-white/[0.08] transition-colors duration-200"
+                  >
+                    <div className="p-2 rounded-full bg-[#007AFF]/10">
+                      <FileText className="w-3.5 h-3.5 text-[#007AFF]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-medium text-[#1D1D1F] dark:text-white truncate tracking-[-0.1px]">
+                        {proc.descricaoMovimentacao}
+                      </p>
+                      <p className="text-[12px] text-[#6E6E73] mt-0.5">
+                        {proc.numero} <span className="mx-1">•</span> {proc.cliente}
+                      </p>
+                    </div>
+                    <span className="text-[12px] font-medium text-[#6E6E73] whitespace-nowrap bg-white dark:bg-[#2C2C2E] px-2 py-1 rounded-md shadow-sm border border-black/5">
+                      {format(parseISO(proc.ultimaMovimentacao), "dd/MM")}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );
