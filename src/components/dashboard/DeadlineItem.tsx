@@ -129,67 +129,67 @@ export function DeadlineItem({ prazo }: DeadlineItemProps) {
     <motion.div
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+      whileHover={{ y: -1, boxShadow: "0 4px 10px rgba(0,0,0,0.05)" }}
       transition={{ duration: 0.2 }}
-      className="relative flex flex-col justify-between min-h-[100px] px-4 sm:px-5 py-4 bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.06] rounded-xl mb-3 hover:border-blue-500/20 transition-all group"
+      className="relative flex flex-col justify-between min-h-[84px] sm:min-h-[88px] px-3.5 sm:px-4 py-3 sm:py-3.5 bg-white dark:bg-[#1C1C1E] border border-black/[0.06] dark:border-white/[0.06] rounded-[10px] mb-2 hover:border-blue-500/20 transition-all group"
     >
       {/* Row 1: Header Info */}
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-        <Badge className={cn("px-2.5 py-0.5 text-[13px] font-bold uppercase tracking-wide h-6 flex items-center gap-1 shrink-0", badgeVariant)}>
+      <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+        <Badge className={cn("px-2 py-0.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-wide h-5 flex items-center gap-1 shrink-0", badgeVariant)}>
           {statusIcon}
           {statusText}
         </Badge>
 
-        <span className={cn("text-[13px] font-medium flex items-center gap-1.5 shrink-0", timeColorClass)}>
-          <Clock className="w-3.5 h-3.5" />
+        <span className={cn("text-[12px] font-medium flex items-center gap-1 shrink-0", timeColorClass)}>
+          <Clock className="w-3 h-3" />
           {timeText}
         </span>
 
-        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1 hidden sm:block"></div>
+        <div className="w-px h-3.5 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block"></div>
 
         <div className="flex items-center gap-2 min-w-0">
-            <Icon className="w-4 h-4 text-[#86868B] shrink-0" />
-            <h3 className="text-[15px] sm:text-[16px] font-bold text-[#1D1D1F] dark:text-white truncate">
+            <Icon className="w-3.5 h-3.5 text-[#86868B] shrink-0" />
+            <h3 className="text-[14px] sm:text-[15px] font-bold text-[#1D1D1F] dark:text-white truncate">
             {prazo.descricao}
             </h3>
         </div>
       </div>
 
       {/* Row 2: Process Number */}
-      <div className="flex items-center gap-2 mb-3 pl-1">
-         <span className="font-mono text-[13px] text-[#86868B] tracking-tight">{prazo.processoNumero}</span>
+      <div className="flex items-center gap-2 mb-2 pl-1">
+         <span className="font-mono text-[12px] text-[#86868B] tracking-tight">{prazo.processoNumero}</span>
       </div>
 
       {/* Row 3: Footer Details */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-auto pt-2 border-t border-dashed border-gray-100 dark:border-gray-800">
-         <div className="flex items-center gap-3">
-            <Avatar className="w-8 h-8 ring-2 ring-white dark:ring-[#1C1C1E]">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mt-auto pt-1.5 border-t border-dashed border-gray-100 dark:border-gray-800">
+         <div className="flex items-center gap-2.5">
+            <Avatar className="w-7 h-7 ring-1 ring-white dark:ring-[#1C1C1E]">
                 <AvatarFallback className={cn("text-[10px] font-bold text-white", getAvatarColor(prazo.responsavel))}>
                   {getInitials(prazo.responsavel)}
                 </AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-                <span className="text-[13px] text-[#1D1D1F] dark:text-white font-medium truncate max-w-[140px] leading-tight">
+                <span className="text-[12px] text-[#1D1D1F] dark:text-white font-medium truncate max-w-[140px] leading-tight">
                 {prazo.responsavel}
                 </span>
             </div>
          </div>
 
-         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            <span className="text-[13px] text-[#6E6E73] font-medium flex items-center gap-1.5">
+         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <span className="text-[12px] text-[#6E6E73] font-medium flex items-center gap-1">
                <Calendar className="w-3.5 h-3.5 text-[#86868B]" />
                {format(dueDate, "dd/MM")}
             </span>
 
             {/* Progress Bar */}
-             <div className="flex items-center gap-2 w-full sm:w-[120px]">
-                <div className="flex-1 h-1.5 bg-[#E5E5EA] dark:bg-[#38383A] rounded-full overflow-hidden">
+             <div className="flex items-center gap-1.5 w-full sm:w-[100px]">
+                <div className="flex-1 h-1 bg-[#E5E5EA] dark:bg-[#38383A] rounded-full overflow-hidden">
                    <div
                       className={cn("h-full rounded-full transition-all duration-1000 ease-out", progressClass)}
                       style={{ width: `${progress}%` }}
                    />
                 </div>
-                <span className="text-[13px] font-medium text-[#86868B] w-9 text-right">{Math.round(progress)}%</span>
+                <span className="text-[11px] font-medium text-[#86868B] w-8 text-right">{Math.round(progress)}%</span>
              </div>
          </div>
       </div>

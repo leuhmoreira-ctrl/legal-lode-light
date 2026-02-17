@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import colors from "tailwindcss/colors";
 
 export default {
   darkMode: ["class"],
@@ -78,15 +79,34 @@ export default {
         "fill-quaternary": "var(--fill-quaternary)",
 
         blue: {
+          ...colors.blue,
           DEFAULT: "var(--blue)",
           light: "var(--blue-light)",
         },
-        green: "var(--green)",
-        orange: "var(--orange)",
-        red: "var(--red)",
-        purple: "var(--purple)",
-        pink: "var(--pink)",
-        yellow: "var(--yellow)",
+        green: {
+          ...colors.green,
+          DEFAULT: "var(--green)",
+        },
+        orange: {
+          ...colors.orange,
+          DEFAULT: "var(--orange)",
+        },
+        red: {
+          ...colors.red,
+          DEFAULT: "var(--red)",
+        },
+        purple: {
+          ...colors.purple,
+          DEFAULT: "var(--purple)",
+        },
+        pink: {
+          ...colors.pink,
+          DEFAULT: "var(--pink)",
+        },
+        yellow: {
+          ...colors.yellow,
+          DEFAULT: "var(--yellow)",
+        },
 
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
