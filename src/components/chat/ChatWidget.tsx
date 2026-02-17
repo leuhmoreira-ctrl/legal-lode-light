@@ -22,7 +22,10 @@ export function ChatWidget() {
 
   // Hide widget on process detail pages (already has integrated chat)
   const isProcessDetailPage = /^\/processos\/[^/]+$/.test(location.pathname);
-  const isTaskBoardPage = location.pathname === "/kanban" || location.pathname === "/minhas-tarefas";
+  const isTaskBoardPage =
+    location.pathname === "/kanban" ||
+    location.pathname === "/minhas-tarefas" ||
+    location.pathname === "/prazos";
 
   useEffect(() => {
     lastScrollY.current = window.scrollY;
