@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Link2, PlusCircle, X, Loader2, Scale, Briefcase, UserRound } from "lucide-react";
 import { NovoProcessoForm } from "@/components/NovoProcessoForm";
 import { UserAvatar } from "@/components/UserAvatar";
+import { cn } from "@/lib/utils";
 
 interface Processo {
   id: string;
@@ -26,9 +27,17 @@ interface Processo {
 
 interface NovaTarefaDialogProps {
   onSuccess?: () => void;
+  triggerLabel?: string;
+  triggerClassName?: string;
+  iconOnly?: boolean;
 }
 
-export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
+export function NovaTarefaDialog({
+  onSuccess,
+  triggerLabel = "Nova Tarefa",
+  triggerClassName,
+  iconOnly = false,
+}: NovaTarefaDialogProps) {
   const { user } = useAuth();
   const { teamMembers } = usePermissions();
   const { toast } = useToast();
@@ -141,8 +150,9 @@ export function NovaTarefaDialog({ onSuccess }: NovaTarefaDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2 w-full sm:w-auto">
-          <Plus className="w-4 h-4" /> Nova Tarefa
+        <Button className={cn("gap-2 w-full sm:w-auto", triggerClassName)}>
+          <Plus className="w-4 h-4" />
+          {iconOnly ? <span className="sr-only">{triggerLabel}</span> : triggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="w-full max-w-lg h-[100dvh] sm:h-[90vh] p-0 overflow-hidden flex flex-col">

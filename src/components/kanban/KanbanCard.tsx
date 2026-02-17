@@ -90,7 +90,7 @@ export function KanbanCard({
           "hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-card border-l-4",
           task.marked_for_today && "ring-2 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10",
           isDragging && "shadow-xl rotate-2 scale-105",
-          isCompact ? "p-2.5 sm:p-3 min-h-[50px] sm:min-h-[56px] flex items-center" : "p-4"
+          isCompact ? "p-2.5 sm:p-3 min-h-[50px] sm:min-h-[56px] flex items-center" : "p-3 sm:p-4"
         )}
         style={{ borderLeftColor: priority.color }}
         onClick={onClick}
@@ -189,7 +189,7 @@ export function KanbanCard({
                <>
                   {/* Time in Stage */}
                   {timeInStage && (
-                    <div className={cn("flex items-center gap-1 text-[12px] font-medium mb-2 w-fit px-1.5 py-0.5 rounded", getTimeBadgeColor(timeInStage.days))}>
+                    <div className={cn("inline-flex items-center gap-1 text-[11px] sm:text-[12px] font-medium mb-1.5 sm:mb-2 w-fit px-1.5 py-0.5 rounded", getTimeBadgeColor(timeInStage.days))}>
                       <Clock className="w-3 h-3" />
                       {timeInStage.label}
                     </div>
@@ -197,26 +197,26 @@ export function KanbanCard({
 
                   {/* Process Info */}
                   {task.processo && (
-                    <div className="text-[13px] text-primary font-medium truncate mb-1">
+                    <div className="text-[12px] sm:text-[13px] text-primary font-medium truncate mb-1">
                       {task.processo.numero}
                     </div>
                   )}
 
                   {/* Description Preview */}
                   {task.description && (
-                    <p className="text-[13px] text-muted-foreground mb-3 line-clamp-2">
+                    <p className="text-[12px] sm:text-[13px] text-muted-foreground mb-2 sm:mb-3 line-clamp-1 sm:line-clamp-2">
                        {task.description}
                     </p>
                   )}
 
                   {/* Footer: Badges, Avatar, Date */}
-                  <div className="flex items-center gap-2 flex-wrap mt-auto pt-2 border-t border-dashed">
-                    <Badge variant="unstyled" className={cn("px-1.5 py-0.5 text-[12px] font-bold uppercase tracking-wide border-none gap-1", priority.badgeClass)}>
+                  <div className="flex items-center gap-2 flex-wrap mt-auto pt-1.5 sm:pt-2 border-t border-dashed">
+                    <Badge variant="unstyled" className={cn("px-1.5 py-0.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-wide border-none gap-1", priority.badgeClass)}>
                       <PriorityIcon className="w-3 h-3" />
                       {priority.label}
                     </Badge>
 
-                    <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground ml-auto">
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] text-muted-foreground ml-auto">
                       <UserAvatar
                         name={getMember(task.assigned_to)?.full_name}
                         avatarUrl={getMember(task.assigned_to)?.avatar_url}
