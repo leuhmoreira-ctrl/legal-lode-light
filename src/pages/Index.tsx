@@ -84,6 +84,7 @@ export default function Dashboard() {
   const [todayTasks, setTodayTasks] = useState<any[]>([]);
   const [loadingToday, setLoadingToday] = useState(true);
   const [mobileTimelineView, setMobileTimelineView] = useState<"deadlines" | "movements">("deadlines");
+  const [mobileChartView, setMobileChartView] = useState<"productivity" | "phase">("productivity");
 
   useEffect(() => {
     const loadTodayTasks = async () => {
@@ -112,6 +113,93 @@ export default function Dashboard() {
     .sort((a, b) => b.ultimaMovimentacao.localeCompare(a.ultimaMovimentacao))
     .slice(0, 3);
   const movimentacoesParaExibir = isMobile ? movimentacoesRecentes.slice(0, 2) : movimentacoesRecentes;
+
+  const productivityChartCard = (extraClass = "") => (
+    <div className={cn("apple-card p-3 sm:p-6", extraClass)}>
+      <h3 className="text-[16px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-3 sm:mb-6 tracking-[-0.3px]">
+        Produtividade Mensal
+      </h3>
+      <ResponsiveContainer width="100%" height={isMobile ? 150 : 240}>
+        <BarChart data={produtividadeData} barGap={16}>
+          <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" strokeDasharray="0" />
+          <XAxis
+            dataKey="mes"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: isMobile ? 11 : 13, fill: '#6E6E73', fontWeight: 500 }}
+            dy={10}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: isMobile ? 10 : 12, fill: '#86868B', fontWeight: 500 }}
+          />
+          <Tooltip
+            cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+          />
+          <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={isMobile ? 18 : 32}>
+            {produtividadeData.map((_, index) => (
+              <Cell
+                key={index}
+                fill={["#5AC8FA", "#007AFF", "#0A84FF", "#34C759", "#30D158", "#00C7BE"][index % 6]}
+                className="transition-all duration-200 hover:brightness-110 hover:-translate-y-1"
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+
+  const phaseChartCard = (extraClass = "") => (
+    <div className={cn("apple-card p-3 sm:p-6 flex flex-col", extraClass)}>
+      <h3 className="text-[16px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-3 sm:mb-6 tracking-[-0.3px]">
+        Processos por Fase
+      </h3>
+      <div className="flex-1 min-h-[140px] sm:min-h-[200px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={faseData}
+              cx="50%"
+              cy="50%"
+              innerRadius="60%"
+              outerRadius="100%"
+              paddingAngle={0}
+              dataKey="value"
+              stroke="none"
+            >
+              {faseData.map((_, i) => (
+                <Cell
+                  key={i}
+                  fill={["#1D1D1F", "#007AFF", "#FF9500"][i % 3]}
+                  strokeWidth={0}
+                  style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.1))' }}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex flex-wrap gap-3 sm:gap-4 mt-4 sm:mt-6 justify-center">
+        {faseData.map((item, i) => (
+          <div key={item.name} className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: ["#1D1D1F", "#007AFF", "#FF9500"][i % 3] }}
+            />
+            <span className="text-[12px] sm:text-[13px] font-medium text-[#1D1D1F] dark:text-white tracking-[-0.1px]">
+              {item.name}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <AppLayout>
@@ -259,90 +347,41 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5">
-          <div className="apple-card p-3 sm:p-6 lg:col-span-2">
-            <h3 className="text-[16px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-3 sm:mb-6 tracking-[-0.3px]">
-              Produtividade Mensal
-            </h3>
-            <ResponsiveContainer width="100%" height={isMobile ? 150 : 240}>
-              <BarChart data={produtividadeData} barGap={16}>
-                <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.06)" strokeDasharray="0" />
-                <XAxis
-                  dataKey="mes"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: isMobile ? 11 : 13, fill: '#6E6E73', fontWeight: 500 }}
-                  dy={10}
-                />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: isMobile ? 10 : 12, fill: '#86868B', fontWeight: 500 }}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                />
-                <Bar dataKey="tarefas" radius={[6, 6, 0, 0]} barSize={isMobile ? 18 : 32}>
-                  {produtividadeData.map((_, index) => (
-                    <Cell
-                      key={index}
-                      fill={["#5AC8FA", "#007AFF", "#0A84FF", "#34C759", "#30D158", "#00C7BE"][index % 6]}
-                      className="transition-all duration-200 hover:brightness-110 hover:-translate-y-1"
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {isMobile ? (
+          <div className="space-y-2.5">
+            <div className="inline-flex w-full rounded-lg bg-black/[0.04] dark:bg-white/[0.06] p-1">
+              <button
+                onClick={() => setMobileChartView("productivity")}
+                className={cn(
+                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
+                  mobileChartView === "productivity"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
+                    : "text-[#6E6E73] dark:text-white/70"
+                )}
+              >
+                Produtividade
+              </button>
+              <button
+                onClick={() => setMobileChartView("phase")}
+                className={cn(
+                  "flex-1 h-8 rounded-md text-[12px] font-semibold transition-colors",
+                  mobileChartView === "phase"
+                    ? "bg-white dark:bg-[#2C2C2E] text-[#1D1D1F] dark:text-white shadow-sm"
+                    : "text-[#6E6E73] dark:text-white/70"
+                )}
+              >
+                Fases
+              </button>
+            </div>
 
-          <div className="apple-card p-3 sm:p-6 flex flex-col">
-            <h3 className="text-[16px] sm:text-[20px] font-semibold text-[#1D1D1F] dark:text-white mb-3 sm:mb-6 tracking-[-0.3px]">
-              Processos por Fase
-            </h3>
-            <div className="flex-1 min-h-[140px] sm:min-h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={faseData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="60%"
-                    outerRadius="100%"
-                    paddingAngle={0}
-                    dataKey="value"
-                    stroke="none"
-                  >
-                    {faseData.map((_, i) => (
-                      <Cell
-                        key={i}
-                        fill={["#1D1D1F", "#007AFF", "#FF9500"][i % 3]}
-                        strokeWidth={0}
-                        style={{ filter: 'drop-shadow(0px 2px 4px rgba(0,0,0,0.1))' }}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap gap-3 sm:gap-4 mt-4 sm:mt-6 justify-center">
-              {faseData.map((item, i) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: ["#1D1D1F", "#007AFF", "#FF9500"][i % 3] }}
-                  />
-                  <span className="text-[12px] sm:text-[13px] font-medium text-[#1D1D1F] dark:text-white tracking-[-0.1px]">
-                    {item.name}
-                  </span>
-                </div>
-              ))}
-            </div>
+            {mobileChartView === "productivity" ? productivityChartCard() : phaseChartCard()}
           </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-5">
+            {productivityChartCard("lg:col-span-2")}
+            {phaseChartCard()}
+          </div>
+        )}
 
         {/* Prazos + Movimentações */}
         {isMobile ? (
