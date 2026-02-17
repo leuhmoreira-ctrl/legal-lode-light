@@ -216,7 +216,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     setLoading(true);
     const [docsRes, folderRes] = await Promise.all([
       supabase.from("document_metadata").select("*").eq("process_id", processId),
-      (supabase as any)
+      supabase
         .from("drive_folders")
         .select("id, nome_pasta, estrutura_subpastas")
         .eq("processo_id", processId)
@@ -273,7 +273,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
   const persistStructure = async (nextStructure: FolderStructure) => {
     if (driveFolder?.id) {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("drive_folders")
         .update({ estrutura_subpastas: nextStructure })
         .eq("id", driveFolder.id);
@@ -282,7 +282,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       return;
     }
 
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("drive_folders")
       .insert({
         processo_id: processId,
