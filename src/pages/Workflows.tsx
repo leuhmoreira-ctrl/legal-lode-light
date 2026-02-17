@@ -451,7 +451,7 @@ function WorkflowCard({
               </Badge>
             ))}
             {isMyAction && (
-              <Badge className="bg-primary text-primary-foreground text-[10px] animate-pulse">
+              <Badge variant="unstyled" className="bg-primary text-primary-foreground text-[10px] animate-pulse">
                 🎯 Sua vez
               </Badge>
             )}

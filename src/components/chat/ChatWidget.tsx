@@ -42,7 +42,7 @@ export function ChatWidget() {
       >
         {open ? <X className="w-5 h-5" /> : <MessageCircle className="w-5 h-5" />}
         {!open && totalUnread > 0 && (
-          <Badge className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0 h-5 min-w-[20px]">
+          <Badge variant="unstyled" className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0 h-5 min-w-[20px]">
             {totalUnread}
           </Badge>
         )}

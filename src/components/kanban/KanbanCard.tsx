@@ -90,7 +90,6 @@ export function KanbanCard({
           "hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-card border-l-4",
           task.marked_for_today && "ring-2 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10",
           isDragging && "shadow-xl rotate-2 scale-105",
-          `border-l-[${priority.color}]`,
           isCompact ? "p-3 min-h-[56px] flex items-center" : "p-4"
         )}
         style={{ borderLeftColor: priority.color }}
@@ -163,7 +162,7 @@ export function KanbanCard({
             {/* Compact Mode Content */}
             {isCompact && (
                <div className="flex items-center gap-2 mt-1">
-                  <Badge className={cn("px-1.5 py-0 text-[12px] font-bold uppercase tracking-wide border-none", priority.badgeClass)}>
+                  <Badge variant="unstyled" className={cn("px-1.5 py-0 text-[12px] font-bold uppercase tracking-wide border-none", priority.badgeClass)}>
                     {priority.label}
                   </Badge>
                   <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground ml-auto">
@@ -212,7 +211,7 @@ export function KanbanCard({
 
                   {/* Footer: Badges, Avatar, Date */}
                   <div className="flex items-center gap-2 flex-wrap mt-auto pt-2 border-t border-dashed">
-                    <Badge className={cn("px-1.5 py-0.5 text-[12px] font-bold uppercase tracking-wide border-none gap-1", priority.badgeClass)}>
+                    <Badge variant="unstyled" className={cn("px-1.5 py-0.5 text-[12px] font-bold uppercase tracking-wide border-none gap-1", priority.badgeClass)}>
                       <PriorityIcon className="w-3 h-3" />
                       {priority.label}
                     </Badge>

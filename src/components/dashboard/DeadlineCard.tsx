@@ -141,7 +141,7 @@ export function DeadlineCard({ prazo }: DeadlineCardProps) {
     >
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
-        <Badge className={cn("px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider", badgeVariant)}>
+        <Badge variant="unstyled" className={cn("px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider", badgeVariant)}>
           {statusIcon}
           {statusText}
         </Badge>

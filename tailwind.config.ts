@@ -58,6 +58,12 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: "hsl(var(--success) / <alpha-value>)",
+        "success-foreground": "hsl(var(--success-foreground))",
+        warning: "hsl(var(--warning) / <alpha-value>)",
+        "warning-foreground": "hsl(var(--warning-foreground))",
+        info: "hsl(var(--info) / <alpha-value>)",
+        "info-foreground": "hsl(var(--info-foreground))",
 
         // Apple Design System Specifics
         "bg-primary": "var(--bg-primary)",
