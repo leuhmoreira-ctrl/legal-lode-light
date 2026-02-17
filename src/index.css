@@ -236,18 +236,15 @@
     background: rgba(255, 255, 255, 0.3);
   }
 
-  /* Global motion disabled for performance and visual stability */
-  *,
-  *::before,
-  *::after {
-    animation: none !important;
-    transition-property: none !important;
-    transition-duration: 0s !important;
-    transition-delay: 0s !important;
-  }
-
-  html {
-    scroll-behavior: auto;
+  button,
+  a,
+  [role="button"],
+  input,
+  textarea,
+  select {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 140ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
@@ -709,20 +706,107 @@
   }
 }
 
+@keyframes motion-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes motion-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes motion-center-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes motion-center-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.985);
+  }
+}
+
+@keyframes motion-center-in-mobile {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motion-center-out-mobile {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.995);
+  }
+}
+
+@keyframes motion-float-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes motion-float-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0) scale(0.99);
+  }
+}
+
+@keyframes motion-card-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 .apple-overlay-motion {
   will-change: opacity;
 }
 
 .apple-card-bounce {
-  animation: apple-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: motion-card-in 180ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-overlay-motion[data-state="open"] {
-  animation: apple-overlay-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: motion-overlay-in 150ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-overlay-motion[data-state="closed"] {
-  animation: apple-overlay-out 200ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: motion-overlay-out 120ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-origin-center-motion,
@@ -736,96 +820,96 @@
 }
 
 .apple-origin-center-motion[data-state="open"] {
-  animation: apple-origin-center-in 450ms cubic-bezier(0.175, 0.885, 0.32, 1.05) both;
+  animation: motion-center-in 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-origin-center-motion[data-state="closed"] {
-  animation: apple-origin-center-out 315ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: motion-center-out 160ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-origin-float-motion[data-state="open"] {
-  animation: apple-origin-float-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: motion-float-in 180ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-origin-float-motion[data-state="closed"] {
-  animation: apple-origin-float-out 210ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: motion-float-out 130ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-tooltip-motion[data-state="instant-open"],
 .apple-tooltip-motion[data-state="delayed-open"],
 .apple-tooltip-motion[data-state="open"] {
-  animation: apple-origin-float-in 210ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: motion-float-in 140ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-tooltip-motion[data-state="closed"] {
-  animation: apple-origin-float-out 150ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: motion-float-out 110ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-sheet-motion[data-side="right"][data-state="open"] {
-  animation: apple-sheet-in-right 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: apple-sheet-in-right 240ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-sheet-motion[data-side="right"][data-state="closed"] {
-  animation: apple-sheet-out-right 280ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: apple-sheet-out-right 180ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-sheet-motion[data-side="left"][data-state="open"] {
-  animation: apple-sheet-in-left 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: apple-sheet-in-left 240ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-sheet-motion[data-side="left"][data-state="closed"] {
-  animation: apple-sheet-out-left 280ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: apple-sheet-out-left 180ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-sheet-motion[data-side="top"][data-state="open"] {
-  animation: apple-sheet-in-top 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: apple-sheet-in-top 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-sheet-motion[data-side="top"][data-state="closed"] {
-  animation: apple-sheet-out-top 260ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: apple-sheet-out-top 170ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-sheet-motion[data-side="bottom"][data-state="open"] {
-  animation: apple-sheet-in-bottom 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: apple-sheet-in-bottom 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-sheet-motion[data-side="bottom"][data-state="closed"] {
-  animation: apple-sheet-out-bottom 260ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: apple-sheet-out-bottom 170ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .apple-drawer-motion[data-state="open"] {
-  animation: apple-sheet-in-bottom 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: apple-sheet-in-bottom 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .apple-drawer-motion[data-state="closed"] {
-  animation: apple-sheet-out-bottom 250ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: apple-sheet-out-bottom 170ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 @media (max-width: 767px) {
   .apple-origin-center-motion[data-state="open"] {
-    animation: apple-origin-center-in-mobile 450ms cubic-bezier(0.175, 0.885, 0.32, 1.05) both;
+    animation: motion-center-in-mobile 200ms cubic-bezier(0.2, 0, 0, 1) both;
   }
 
   .apple-origin-center-motion[data-state="closed"] {
-    animation: apple-origin-center-out-mobile 315ms cubic-bezier(0.4, 0, 1, 1) both;
+    animation: motion-center-out-mobile 150ms cubic-bezier(0.4, 0, 1, 1) both;
   }
 
   .apple-origin-float-motion[data-state="open"] {
-    animation-duration: 300ms;
+    animation-duration: 160ms;
   }
 
   .apple-origin-float-motion[data-state="closed"] {
-    animation-duration: 210ms;
+    animation-duration: 120ms;
   }
 
   .apple-sheet-motion[data-state="open"],
   .apple-drawer-motion[data-state="open"] {
-    animation-duration: 320ms;
+    animation-duration: 220ms;
   }
 
   .apple-sheet-motion[data-state="closed"],
   .apple-drawer-motion[data-state="closed"] {
-    animation-duration: 220ms;
+    animation-duration: 170ms;
   }
 }
 
