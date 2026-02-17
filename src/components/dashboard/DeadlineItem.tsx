@@ -135,7 +135,7 @@ export function DeadlineItem({ prazo }: DeadlineItemProps) {
     >
       {/* Row 1: Header Info */}
       <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-        <Badge className={cn("px-2 py-0.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-wide h-5 flex items-center gap-1 shrink-0", badgeVariant)}>
+        <Badge variant="unstyled" className={cn("px-2 py-0.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-wide h-5 flex items-center gap-1 shrink-0", badgeVariant)}>
           {statusIcon}
           {statusText}
         </Badge>

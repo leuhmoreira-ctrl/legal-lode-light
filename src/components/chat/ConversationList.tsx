@@ -134,7 +134,7 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
                       <div className="flex items-center gap-1">
                          {isPinned && <Pin className="w-3 h-3 text-muted-foreground rotate-45" />}
                          {conv.unread_count > 0 && (
-                            <Badge className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0 h-4 min-w-[16px] flex items-center justify-center">
+                            <Badge variant="unstyled" className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0 h-4 min-w-[16px] flex items-center justify-center">
                               {conv.unread_count}
                             </Badge>
                           )}

@@ -91,6 +91,14 @@
     --status-error-text: #FF3B30;
     --status-error-border: transparent;
 
+    /* Semantic status tokens (Tailwind classes: text-success, bg-warning/10, etc.) */
+    --success: 152 60% 40%;
+    --success-foreground: 152 60% 40%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 50%;
+    --info: 211 100% 50%;
+    --info-foreground: 211 100% 50%;
+
     /* Responsive spacing variables */
     --app-container-x: 16px;
     --app-container-top: calc(env(safe-area-inset-top, 0px) + 64px);
@@ -180,6 +188,14 @@
     --status-error-bg: rgba(255, 69, 58, 0.2);
     --status-error-text: #FF453A;
     --status-error-border: transparent;
+
+    /* Semantic status tokens (dark mode) */
+    --success: 152 68% 48%;
+    --success-foreground: 152 68% 60%;
+    --warning: 37 100% 53%;
+    --warning-foreground: 37 100% 63%;
+    --info: 210 100% 60%;
+    --info-foreground: 210 100% 70%;
   }
 }
 

@@ -9,15 +9,16 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "badge-blue-light dark:badge-blue-dark hover:opacity-80",
+          "bg-[#007AFF]/12 text-[#007AFF] dark:bg-[#0A84FF]/20 dark:text-[#64D2FF] hover:opacity-80",
         secondary:
           "bg-fill-tertiary text-text-secondary hover:bg-fill-secondary",
         destructive:
-          "badge-red-light dark:badge-red-dark hover:opacity-80",
+          "bg-[#FF3B30]/12 text-[#FF3B30] dark:bg-[#FF453A]/20 dark:text-[#FF7A70] hover:opacity-80",
         outline: "text-foreground border border-input",
-        success: "badge-green-light dark:badge-green-dark hover:opacity-80",
-        warning: "badge-orange-light dark:badge-orange-dark hover:opacity-80",
-        urgent: "badge-red-light dark:badge-red-dark hover:opacity-80",
+        success: "bg-[#34C759]/12 text-[#34C759] dark:bg-[#30D158]/20 dark:text-[#30D158] hover:opacity-80",
+        warning: "bg-[#FF9500]/12 text-[#FF9500] dark:bg-[#FF9F0A]/20 dark:text-[#FFB340] hover:opacity-80",
+        urgent: "bg-[#FF3B30]/12 text-[#FF3B30] dark:bg-[#FF453A]/20 dark:text-[#FF7A70] hover:opacity-80",
+        unstyled: "",
       },
     },
     defaultVariants: {
