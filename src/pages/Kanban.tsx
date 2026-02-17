@@ -494,11 +494,16 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
   const persistMove = useCallback(async (updates: MovePlan["updates"]) => {
     if (updates.length === 0) return { error: null };
-    const { error } = await supabase
-      .from("kanban_tasks")
-      // @ts-expect-error - upsert parcial com id existente
-      .upsert(updates);
-    return { error };
+    const results = await Promise.all(
+      updates.map(({ id, status, position_index }) =>
+        supabase
+          .from("kanban_tasks")
+          .update({ status, position_index })
+          .eq("id", id)
+      )
+    );
+    const firstError = results.find((r) => r.error)?.error ?? null;
+    return { error: firstError };
   }, []);
 
   const applyTaskMove = useCallback(
