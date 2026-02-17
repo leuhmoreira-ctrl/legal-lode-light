@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import {
@@ -28,6 +28,12 @@ interface KanbanCardProps {
   teamMembers: any[];
   canDelete: boolean;
   isPhone?: boolean;
+  feedback?: {
+    token: number;
+    mode: "success" | "undo" | "error";
+    celebrate?: boolean;
+  };
+  reduceMotion?: boolean;
   onOpenMoveSheet?: (task: KanbanTask, e: React.MouseEvent) => void;
 }
 
@@ -67,6 +73,8 @@ export function KanbanCard({
   teamMembers,
   canDelete,
   isPhone = false,
+  feedback,
+  reduceMotion = false,
   onOpenMoveSheet
 }: KanbanCardProps) {
   const timeInStage = useMemo(() => {
@@ -80,6 +88,20 @@ export function KanbanCard({
   const getMember = (id: string | null) => teamMembers.find((m: any) => m.id === id);
 
   const isCompact = viewMode === 'compact';
+  const [activeFeedback, setActiveFeedback] = useState<
+    { token: number; mode: "success" | "undo" | "error"; celebrate?: boolean } | null
+  >(null);
+
+  useEffect(() => {
+    if (!feedback) return;
+    setActiveFeedback(feedback);
+
+    const timeout = setTimeout(() => {
+      setActiveFeedback((current) => (current?.token === feedback.token ? null : current));
+    }, reduceMotion ? 180 : feedback.mode === "error" ? 240 : 920);
+
+    return () => clearTimeout(timeout);
+  }, [feedback, reduceMotion]);
 
   return (
     <motion.div
@@ -94,11 +116,34 @@ export function KanbanCard({
           "hover:shadow-lg transition-all duration-200 cursor-pointer bg-white dark:bg-card border-l-4",
           task.marked_for_today && "ring-2 ring-yellow-400/50 bg-yellow-50/30 dark:bg-yellow-900/10",
           isDragging && "shadow-xl rotate-2 scale-105",
+          activeFeedback?.mode === "success" &&
+            (reduceMotion ? "kanban-card-feedback-success-reduced" : "kanban-card-feedback-success"),
+          activeFeedback?.mode === "undo" &&
+            (reduceMotion ? "kanban-card-feedback-undo-reduced" : "kanban-card-feedback-undo"),
+          activeFeedback?.mode === "error" &&
+            (reduceMotion ? "kanban-card-feedback-error-reduced" : "kanban-card-feedback-error"),
           isCompact ? "p-2.5 sm:p-3 min-h-[50px] sm:min-h-[56px] flex items-center" : "p-3 sm:p-4"
         )}
         style={{ borderLeftColor: priority.color }}
         onClick={onClick}
       >
+        {activeFeedback && activeFeedback.mode !== "error" ? (
+          <div className="pointer-events-none absolute top-2 right-2 z-30">
+            <span
+              className={cn(
+                "kanban-card-feedback-tick",
+                activeFeedback.mode === "undo" && "kanban-card-feedback-tick-soft",
+                reduceMotion && "kanban-card-feedback-tick-reduced"
+              )}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            </span>
+            {activeFeedback.celebrate && !reduceMotion && activeFeedback.mode === "success" && (
+              <span className="kanban-card-feedback-halo" />
+            )}
+          </div>
+        ) : null}
+
         {/* Quick Actions Overlay (Hover) - Hide in compact to save space */}
         {!isDragging && !isCompact && task.status !== 'done' && (
            <div className="absolute top-2 right-2 hidden md:flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
