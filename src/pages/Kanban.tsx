@@ -64,6 +64,19 @@ interface MovePlan {
   record: Omit<TaskMoveRecord, "opId">;
 }
 
+type CardFeedbackMode = "success" | "undo" | "error";
+
+interface CardFeedbackState {
+  token: number;
+  mode: CardFeedbackMode;
+  celebrate?: boolean;
+}
+
+interface ColumnFeedbackState {
+  token: number;
+  mode: "success" | "undo";
+}
+
 const KANBAN_STATUS_ORDER: KanbanColumnId[] = ["todo", "in_progress", "done"];
 
 export default function Kanban({ personalOnly = false }: KanbanProps) {
@@ -85,8 +98,13 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [moveSheetTask, setMoveSheetTask] = useState<KanbanTask | null>(null);
   const [moveSheetOpen, setMoveSheetOpen] = useState(false);
+  const [cardFeedback, setCardFeedback] = useState<Record<string, CardFeedbackState>>({});
+  const [columnFeedback, setColumnFeedback] = useState<Partial<Record<KanbanColumnId, ColumnFeedbackState>>>({});
+  const [reduceMotion, setReduceMotion] = useState(false);
   const lastUndoRef = useRef<TaskMoveRecord | null>(null);
   const latestOpByTaskRef = useRef<Record<string, string>>({});
+  const cardFeedbackTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const columnFeedbackTimersRef = useRef<Partial<Record<KanbanColumnId, ReturnType<typeof setTimeout>>>>({});
 
   const loadProcessos = useCallback(async () => {
     const { data } = await supabase
@@ -170,6 +188,106 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
+  const readInternalReduceMotion = useCallback(() => {
+    if (typeof window === "undefined") return false;
+
+    const parseBoolean = (raw: unknown): boolean | null => {
+      if (typeof raw === "boolean") return raw;
+      if (typeof raw === "string") {
+        if (raw === "true") return true;
+        if (raw === "false") return false;
+      }
+      return null;
+    };
+
+    const boolKeys = [
+      "reduce_animations",
+      "reduced_motion",
+      "reduce_motion",
+      "prefers_reduced_motion",
+      "reduceAnimations",
+      "reducedMotion",
+    ];
+
+    for (const key of boolKeys) {
+      const parsed = parseBoolean(localStorage.getItem(key));
+      if (parsed !== null) return parsed;
+    }
+
+    const settingsKeys = ["settings", "user_settings", "app_settings"];
+    const settingsFlags = [
+      "reduceMotion",
+      "reducedMotion",
+      "reduceAnimations",
+      "reducedAnimations",
+      "prefersReducedMotion",
+    ];
+
+    const findFlagInObject = (value: unknown): boolean | null => {
+      if (!value || typeof value !== "object") return null;
+
+      for (const flag of settingsFlags) {
+        const parsed = parseBoolean((value as Record<string, unknown>)[flag]);
+        if (parsed !== null) return parsed;
+      }
+
+      for (const nestedKey of ["accessibility", "ui", "preferences"]) {
+        const nested = (value as Record<string, unknown>)[nestedKey];
+        if (nested && typeof nested === "object") {
+          for (const flag of settingsFlags) {
+            const parsed = parseBoolean((nested as Record<string, unknown>)[flag]);
+            if (parsed !== null) return parsed;
+          }
+        }
+      }
+
+      return null;
+    };
+
+    for (const key of settingsKeys) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const parsedJson = JSON.parse(raw);
+        const flag = findFlagInObject(parsedJson);
+        if (flag !== null) return flag;
+      } catch {
+        continue;
+      }
+    }
+
+    const dataAttr = document.documentElement.getAttribute("data-reduce-motion");
+    const parsedAttr = parseBoolean(dataAttr);
+    if (parsedAttr !== null) return parsedAttr;
+
+    return false;
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncReduceMotion = () => {
+      setReduceMotion(mediaQuery.matches || readInternalReduceMotion());
+    };
+
+    syncReduceMotion();
+    mediaQuery.addEventListener("change", syncReduceMotion);
+    window.addEventListener("storage", syncReduceMotion);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncReduceMotion);
+      window.removeEventListener("storage", syncReduceMotion);
+    };
+  }, [readInternalReduceMotion]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(cardFeedbackTimersRef.current).forEach((timer) => clearTimeout(timer));
+      Object.values(columnFeedbackTimersRef.current).forEach((timer) => {
+        if (timer) clearTimeout(timer);
+      });
+    };
+  }, []);
+
   useEffect(() => {
     if (!isPhone) setMobileFilterOpen(false);
   }, [isPhone]);
@@ -215,6 +333,66 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
 
     return () => clearTimeout(timeout);
   }, [tasks, loadTasks]);
+
+  const triggerCardFeedback = useCallback(
+    (taskId: string, mode: CardFeedbackMode, celebrate = false) => {
+      const token = Date.now() + Math.floor(Math.random() * 1000);
+      const duration = reduceMotion
+        ? mode === "error"
+          ? 150
+          : 180
+        : mode === "error"
+        ? 220
+        : mode === "undo"
+        ? 620
+        : 920;
+
+      setCardFeedback((prev) => ({
+        ...prev,
+        [taskId]: { token, mode, celebrate },
+      }));
+
+      const currentTimer = cardFeedbackTimersRef.current[taskId];
+      if (currentTimer) clearTimeout(currentTimer);
+
+      cardFeedbackTimersRef.current[taskId] = setTimeout(() => {
+        setCardFeedback((prev) => {
+          if (prev[taskId]?.token !== token) return prev;
+          const next = { ...prev };
+          delete next[taskId];
+          return next;
+        });
+        delete cardFeedbackTimersRef.current[taskId];
+      }, duration);
+    },
+    [reduceMotion]
+  );
+
+  const triggerColumnFeedback = useCallback(
+    (status: KanbanColumnId, mode: "success" | "undo") => {
+      const token = Date.now() + Math.floor(Math.random() * 1000);
+      const duration = reduceMotion ? 120 : mode === "undo" ? 220 : 280;
+
+      setColumnFeedback((prev) => ({
+        ...prev,
+        [status]: { token, mode },
+      }));
+
+      const currentTimer = columnFeedbackTimersRef.current[status];
+      if (currentTimer) clearTimeout(currentTimer);
+
+      columnFeedbackTimersRef.current[status] = setTimeout(() => {
+        setColumnFeedback((prev) => {
+          if (prev[status]?.token !== token) return prev;
+          const next = { ...prev };
+          delete next[status];
+          return next;
+        });
+        delete columnFeedbackTimersRef.current[status];
+      }, duration);
+    },
+    [reduceMotion]
+  );
 
   const normalizeStatus = useCallback((status: string): KanbanColumnId => {
     if (status === "todo" || status === "in_progress" || status === "done") return status;
@@ -403,17 +581,36 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           lastUndoRef.current = null;
         }
 
+        triggerCardFeedback(movePlan.record.taskId, "error");
         toast({ title: "Não foi possível mover. Tente novamente.", variant: "destructive" });
         return;
       }
 
       if (source === "undo") {
+        triggerCardFeedback(movePlan.record.taskId, "undo");
+        triggerColumnFeedback(movePlan.record.toStatus, "undo");
         toast({ title: successTitle || "Movimentação desfeita" });
-      } else if (source === "complete") {
+      } else {
+        triggerCardFeedback(
+          movePlan.record.taskId,
+          "success",
+          movePlan.record.toStatus === "done"
+        );
+        triggerColumnFeedback(movePlan.record.toStatus, "success");
+      }
+
+      if (source === "complete") {
         toast({ title: successTitle || "Tarefa concluída! 🎉" });
       }
     },
-    [buildMovePlan, getColumnTitle, persistMove, toast]
+    [
+      buildMovePlan,
+      getColumnTitle,
+      persistMove,
+      toast,
+      triggerCardFeedback,
+      triggerColumnFeedback,
+    ]
   );
 
   const onDragEnd = useCallback(
@@ -662,13 +859,25 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
         teamMembers={teamMembers}
         canDelete={canDelete(task)}
         isPhone={isPhone}
+        feedback={cardFeedback[task.id]}
+        reduceMotion={reduceMotion}
         onOpenMoveSheet={(entry, e) => {
           e.stopPropagation();
           openMoveSheet(entry);
         }}
       />
     ),
-    [viewMode, handleMoveTask, handleCompleteTask, teamMembers, canDelete, isPhone, openMoveSheet]
+    [
+      viewMode,
+      handleMoveTask,
+      handleCompleteTask,
+      teamMembers,
+      canDelete,
+      isPhone,
+      cardFeedback,
+      reduceMotion,
+      openMoveSheet,
+    ]
   );
 
   const onUpdate = () => { loadTasks(); loadProcessos(); };
@@ -874,6 +1083,8 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                     borderColor={col.borderColor}
                     count={colTasks.length}
                     totalTasks={tasksFilteredByProcess.length}
+                    feedback={columnFeedback[col.id]}
+                    reduceMotion={reduceMotion}
                   >
                     <div className="space-y-2 sm:space-y-3 min-h-[80px] rounded-lg">
                       {colTasks.map((task, index) => (
@@ -908,6 +1119,8 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
                       borderColor={col.borderColor}
                       count={colTasks.length}
                       totalTasks={tasksFilteredByProcess.length}
+                      feedback={columnFeedback[col.id]}
+                      reduceMotion={reduceMotion}
                     >
                       <Droppable droppableId={col.id}>
                         {(provided, snapshot) => (
