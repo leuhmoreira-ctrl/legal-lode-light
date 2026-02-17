@@ -55,35 +55,46 @@ type CustomVars = React.CSSProperties & {
 };
 
 export function useOriginMotionStyle(ref: React.RefObject<HTMLElement>): React.CSSProperties {
-  const { origin, setOrigin } = useAnimationOrigin();
+  const { origin, getLastOrigin } = useAnimationOrigin();
+  const originSnapshot = React.useRef<Point | null>(origin || getLastOrigin());
   const [style, setStyle] = React.useState<CustomVars>({
     "--origin-dx": "0px",
     "--origin-dy": "0px",
   });
 
-  React.useEffect(() => {
-    return () => setOrigin(null);
-  }, [setOrigin]);
-
   React.useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element || !origin) {
+    const recalc = () => {
+      const element = ref.current;
+      if (!originSnapshot.current) {
+        originSnapshot.current = origin || getLastOrigin();
+      }
+      const snapshot = originSnapshot.current;
+      if (!element || !snapshot) {
+        setStyle({
+          "--origin-dx": "0px",
+          "--origin-dy": "0px",
+        });
+        return;
+      }
+
+      const rect = element.getBoundingClientRect();
+      const targetX = rect.left + rect.width / 2;
+      const targetY = rect.top + rect.height / 2;
+
       setStyle({
-        "--origin-dx": "0px",
-        "--origin-dy": "0px",
+        "--origin-dx": `${snapshot.x - targetX}px`,
+        "--origin-dy": `${snapshot.y - targetY}px`,
       });
-      return;
-    }
+    };
 
-    const rect = element.getBoundingClientRect();
-    const targetX = rect.left + rect.width / 2;
-    const targetY = rect.top + rect.height / 2;
-
-    setStyle({
-      "--origin-dx": `${origin.x - targetX}px`,
-      "--origin-dy": `${origin.y - targetY}px`,
-    });
-  }, [origin, ref]);
+    recalc();
+    const raf = window.requestAnimationFrame(recalc);
+    window.addEventListener("resize", recalc, { passive: true });
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("resize", recalc);
+    };
+  }, [ref, origin, getLastOrigin]);
 
   return style;
 }
