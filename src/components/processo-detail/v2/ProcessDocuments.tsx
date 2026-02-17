@@ -303,7 +303,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     if (driveFolder?.id) {
       const { error } = await supabase
         .from("drive_folders")
-        .update({ estrutura_subpastas: nextStructure })
+        .update({ estrutura_subpastas: JSON.parse(JSON.stringify(nextStructure)) })
         .eq("id", driveFolder.id);
       if (error) throw error;
       setDriveFolder((prev) => (prev ? { ...prev, estrutura_subpastas: nextStructure } : prev));
@@ -312,12 +312,12 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
     const { data, error } = await supabase
       .from("drive_folders")
-      .insert({
+      .insert([{
         processo_id: processId,
         nome_pasta: nextStructure.raiz || "Processo",
-        estrutura_subpastas: nextStructure,
+        estrutura_subpastas: JSON.parse(JSON.stringify(nextStructure)),
         sincronizado: false,
-      })
+      }])
       .select("id, nome_pasta, estrutura_subpastas")
       .single();
     if (error) throw error;
