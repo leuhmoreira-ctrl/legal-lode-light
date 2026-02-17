@@ -60,7 +60,7 @@ interface TaskMoveRecord {
 
 interface MovePlan {
   nextTasks: KanbanTask[];
-  updates: { id: string; position_index: number; status: string; updated_at: string }[];
+  updates: { id: string; position_index: number; status: string }[];
   record: Omit<TaskMoveRecord, "opId">;
 }
 
@@ -294,7 +294,6 @@ export default function Kanban({ personalOnly = false }: KanbanProps) {
           id: entry.id,
           status: update.status,
           position_index: update.position_index,
-          updated_at: new Date().toISOString(),
         });
 
         return { ...entry, status: update.status, position_index: update.position_index };
