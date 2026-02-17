@@ -193,6 +193,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
 
   const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
   const [dragOverTargetKey, setDragOverTargetKey] = useState<string | null>(null);
+  const [dropPulseTargetKey, setDropPulseTargetKey] = useState<string | null>(null);
   const [recentlyMovedDocId, setRecentlyMovedDocId] = useState<string | null>(null);
   const [shakeDocId, setShakeDocId] = useState<string | null>(null);
   const [lastMove, setLastMove] = useState<MoveHistory | null>(null);
@@ -382,7 +383,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     setRecentlyMovedDocId(docId);
     window.setTimeout(() => {
       setRecentlyMovedDocId((prev) => (prev === docId ? null : prev));
-    }, 500);
+    }, 620);
   }, []);
 
   const markMoveError = useCallback((docId: string) => {
@@ -390,6 +391,14 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     window.setTimeout(() => {
       setShakeDocId((prev) => (prev === docId ? null : prev));
     }, 350);
+  }, []);
+
+  const pulseDropTarget = useCallback((target: FolderTarget) => {
+    const key = folderKey(target.pastaCategoria, target.subpasta);
+    setDropPulseTargetKey(key);
+    window.setTimeout(() => {
+      setDropPulseTargetKey((prev) => (prev === key ? null : prev));
+    }, 280);
   }, []);
 
   const moveDocumentToFolder = useCallback(
@@ -480,6 +489,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
         }
 
         markMoveSuccess(doc.id);
+        pulseDropTarget(target);
         const targetLabel = target.subpasta ? `${target.pastaCategoria} > ${target.subpasta}` : target.pastaCategoria;
         toast({
           title: source === "undo" ? "Movimento desfeito" : "Documento movido",
@@ -499,6 +509,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
       ensureUniqueNameForTarget,
       markMoveError,
       markMoveSuccess,
+      pulseDropTarget,
       structure.raiz,
       toast,
     ]
@@ -937,6 +948,18 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
     setDraggingDocId(doc.id);
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", doc.id);
+
+    // Custom drag preview with the same visual weight of the dragged row.
+    const dragPreview = event.currentTarget.cloneNode(true) as HTMLDivElement;
+    dragPreview.classList.add("document-drag-preview");
+    dragPreview.style.position = "fixed";
+    dragPreview.style.top = "-9999px";
+    dragPreview.style.left = "-9999px";
+    dragPreview.style.width = `${event.currentTarget.offsetWidth}px`;
+    document.body.appendChild(dragPreview);
+    event.dataTransfer.setDragImage(dragPreview, 28, 18);
+    window.setTimeout(() => dragPreview.remove(), 0);
+
     document.body.classList.add("dragging-documents-cursor");
   };
 
@@ -1076,6 +1099,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
               const selectedCat = selected.pastaCategoria === cat.nome && !selected.subpasta;
               const catTargetKey = folderKey(cat.nome, null);
               const isCategoryDropTarget = dragOverTargetKey === catTargetKey;
+              const isCategoryDropPulse = dropPulseTargetKey === catTargetKey;
 
               return (
                 <div key={cat.nome} className="space-y-1">
@@ -1089,6 +1113,8 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                     className={`w-full flex items-center justify-between p-2 rounded-lg text-left border transition-all duration-200 ${
                       isCategoryDropTarget
                         ? "folder-drag-over"
+                        : isCategoryDropPulse
+                        ? "folder-drop-success"
                         : selectedCat
                         ? "bg-blue-50 text-blue-700 border-blue-100"
                         : "hover:bg-muted/50 border-transparent"
@@ -1136,6 +1162,7 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                               selected.pastaCategoria === cat.nome && selected.subpasta === subName;
                             const subTargetKey = folderKey(cat.nome, subName);
                             const isSubDropTarget = dragOverTargetKey === subTargetKey;
+                            const isSubDropPulse = dropPulseTargetKey === subTargetKey;
 
                             return (
                               <button
@@ -1157,6 +1184,8 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                                 className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-sm border transition-all duration-200 ${
                                   isSubDropTarget
                                     ? "folder-drag-over"
+                                    : isSubDropPulse
+                                    ? "folder-drop-success"
                                     : selectedSub
                                     ? "bg-blue-50 text-blue-700 border-blue-100"
                                     : "hover:bg-muted/50 border-transparent"
@@ -1233,10 +1262,10 @@ export function ProcessDocuments({ processId }: ProcessDocumentsProps) {
                 const isMoved = recentlyMovedDocId === doc.id;
                 const isShake = shakeDocId === doc.id;
                 const rowClass = [
-                  "flex items-start sm:items-center gap-3 p-3 border border-border/50 rounded-lg transition-all duration-200",
+                  "flex items-start sm:items-center gap-3 p-3 border border-border/50 rounded-lg transition-all duration-200 select-none will-change-transform",
                   "cursor-grab active:cursor-grabbing",
-                  isDragging ? "dragging-document opacity-60 rotate-1" : "",
-                  isMoved ? "bg-blue-50/40 border-blue-200" : "",
+                  isDragging ? "dragging-document" : "",
+                  isMoved ? "document-moved bg-blue-50/40 border-blue-200" : "",
                   isShake ? "document-shake" : "",
                 ]
                   .filter(Boolean)
