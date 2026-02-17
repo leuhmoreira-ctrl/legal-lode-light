@@ -231,7 +231,7 @@ export default function ProcessoDetail() {
 
   return (
     <AppLayout>
-      <div className="space-y-8 animate-fade-up max-w-[1600px] mx-auto pb-12">
+      <div className="page-shell max-w-[1600px] mx-auto pb-12">
         {/* Sticky Header Container */}
         <ProcessHeaderUnified
           processoId={processo.id}
@@ -288,7 +288,7 @@ export default function ProcessoDetail() {
         {/* Tabs Content */}
         <div className="mt-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-transparent border-b border-border/40 w-full justify-start h-auto p-0 rounded-none gap-8">
+            <TabsList className="bg-transparent border-b border-border/40 w-full justify-start h-auto p-0 rounded-none gap-5 sm:gap-8 overflow-x-auto">
               <TabsTrigger
                 value="docs"
                 className="bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none px-0 py-3 shadow-none text-muted-foreground hover:text-foreground transition-all"

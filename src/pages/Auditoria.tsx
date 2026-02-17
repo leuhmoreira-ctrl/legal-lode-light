@@ -5,7 +5,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Search, Shield } from "lucide-react";
+import { Search, Shield } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 interface AuditLog {
   id: number;
@@ -82,13 +83,12 @@ export default function Auditoria() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Auditoria</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Histórico de alterações no sistema
-          </p>
-        </div>
+      <div className="page-shell">
+        <PageHeader
+          eyebrow="Rastreabilidade"
+          title="Auditoria"
+          subtitle="Histórico de alterações no sistema"
+        />
 
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -96,7 +96,7 @@ export default function Auditoria() {
             placeholder="Filtrar por tabela ou usuário..."
             value={filtro}
             onChange={(e) => setFiltro(e.target.value)}
-            className="pl-9"
+            className="pl-9 touch-target"
           />
         </div>
 

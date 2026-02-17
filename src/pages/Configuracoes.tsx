@@ -20,6 +20,7 @@ import { Upload, Save, Loader2, Eye, EyeOff, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { FileStructureSettings } from "@/components/configuracoes/FileStructureSettings";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 const ESTADOS_BR = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA",
@@ -206,17 +207,18 @@ export default function Configuracoes() {
 
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up max-w-3xl">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
-          <p className="text-sm text-muted-foreground mt-1">Gerencie seu perfil e segurança</p>
-        </div>
+      <div className="page-shell max-w-3xl">
+        <PageHeader
+          eyebrow="Conta e preferências"
+          title="Configurações"
+          subtitle="Gerencie seu perfil, segurança e estrutura de arquivos."
+        />
 
         <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="security">Segurança</TabsTrigger>
-            <TabsTrigger value="files">Arquivos</TabsTrigger>
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="profile" className="flex-1 sm:flex-none">Perfil</TabsTrigger>
+            <TabsTrigger value="security" className="flex-1 sm:flex-none">Segurança</TabsTrigger>
+            <TabsTrigger value="files" className="flex-1 sm:flex-none">Arquivos</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-4 space-y-6">

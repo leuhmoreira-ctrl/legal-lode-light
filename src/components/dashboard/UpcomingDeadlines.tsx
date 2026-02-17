@@ -10,7 +10,7 @@ export function UpcomingDeadlines() {
   const upcomingTasks = prazosMock.filter((p) => p.status === "proximo");
 
   // Logic to limit items to ~6 total, prioritizing urgent
-  const maxItems = isMobile ? 4 : 6;
+  const maxItems = isMobile ? 3 : 6;
   const shownUrgent = urgentTasks.slice(0, maxItems);
   const remainingSlots = Math.max(0, maxItems - shownUrgent.length);
   const shownUpcoming = upcomingTasks.slice(0, remainingSlots);
@@ -30,10 +30,10 @@ export function UpcomingDeadlines() {
     <div className="space-y-3 sm:space-y-4 animate-fade-up">
       <div className="flex flex-col gap-2 sm:gap-3 sm:flex-row sm:items-center sm:justify-between">
          <div>
-          <h2 className="text-[18px] sm:text-[20px] font-bold tracking-[-0.3px] text-[#1D1D1F] dark:text-white">
+          <h2 className="section-title">
             Próximos Prazos
           </h2>
-          <p className="text-[12px] sm:text-[14px] text-[#6E6E73] mt-0.5 sm:mt-1">
+          <p className="section-subtitle mt-0.5 sm:mt-1">
             Visão geral das prioridades da semana
           </p>
         </div>

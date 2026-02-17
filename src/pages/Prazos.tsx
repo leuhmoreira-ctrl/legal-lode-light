@@ -33,6 +33,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/contexts/PermissionsContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { PageHeader } from "@/components/layout/PageHeader";
 
 type ViewMode = "personal" | "office";
 
@@ -109,8 +111,10 @@ function loadFilterPrefs(): Record<EventCategory, boolean> {
 }
 
 export default function Prazos() {
+  const isMobile = useIsMobile();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>("personal");
+  const [calendarTab, setCalendarTab] = useState<"calendario" | "lista">(isMobile ? "lista" : "calendario");
   const [dbTasks, setDbTasks] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<EventCategory, boolean>>(loadFilterPrefs);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -236,50 +240,55 @@ export default function Prazos() {
     };
   }, [filteredEvents]);
 
+  useEffect(() => {
+    if (!isMobile && calendarTab === "lista") {
+      setCalendarTab("calendario");
+    }
+  }, [isMobile, calendarTab]);
+
   return (
     <AppLayout>
-      <div className="space-y-6 animate-fade-up">
+      <div className="page-shell">
         {/* Header with segmented control */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="mobile-page-title font-bold text-foreground">Prazos</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Calendário e controle de prazos processuais
-            </p>
-          </div>
-
-          <div className="flex items-center rounded-lg bg-muted p-1 gap-1 w-full sm:w-auto">
-            <button
-              onClick={() => setViewMode("personal")}
-              className={cn(
-                "min-h-[44px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-[14px] font-medium transition-all",
-                viewMode === "personal"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <User className="w-4 h-4" />
-              Meus Prazos
-            </button>
-            {canViewOffice && (
+        <PageHeader
+          eyebrow="Agenda jurídica"
+          title="Prazos"
+          subtitle="Calendário e controle de prazos processuais"
+          actions={
+            <div className="flex items-center rounded-lg bg-muted p-1 gap-1 w-full sm:w-auto">
               <button
-                onClick={() => setViewMode("office")}
+                onClick={() => setViewMode("personal")}
                 className={cn(
-                  "min-h-[44px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-[14px] font-medium transition-all",
-                  viewMode === "office"
+                  "min-h-[40px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-all",
+                  viewMode === "personal"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Building2 className="w-4 h-4" />
-                Escritório
+                <User className="w-4 h-4" />
+                Meus Prazos
               </button>
-            )}
-          </div>
-        </div>
+              {canViewOffice && (
+                <button
+                  onClick={() => setViewMode("office")}
+                  className={cn(
+                    "min-h-[40px] flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-all",
+                    viewMode === "office"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Building2 className="w-4 h-4" />
+                  Escritório
+                </button>
+              )}
+            </div>
+          }
+        />
 
         {/* Category Filters */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="page-surface">
+          <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
           {(Object.entries(CATEGORY_CONFIG) as [EventCategory, typeof CATEGORY_CONFIG[EventCategory]][]).map(
             ([key, cfg]) => {
               const Icon = cfg.icon;
@@ -288,7 +297,7 @@ export default function Prazos() {
                 <label
                   key={key}
                   className={cn(
-                    "flex min-h-[44px] items-center gap-2 px-3 py-2 rounded-full border text-[14px] cursor-pointer transition-all select-none",
+                    "flex min-h-[38px] items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-[12px] cursor-pointer transition-all select-none whitespace-nowrap",
                     filters[key]
                       ? cfg.badgeClass
                       : "bg-muted/50 text-muted-foreground border-border opacity-60"
@@ -297,38 +306,39 @@ export default function Prazos() {
                   <Checkbox
                     checked={filters[key]}
                     onCheckedChange={() => toggleFilter(key)}
-                    className="h-4 w-4"
+                    className="h-3.5 w-3.5"
                   />
                   <Icon className="w-3.5 h-3.5" />
                   <span className="font-medium">{cfg.label}</span>
-                  <span className="text-[13px] opacity-70">({count})</span>
+                  <span className="text-[11px] opacity-70">({count})</span>
                 </label>
               );
             }
           )}
+          </div>
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Card className="p-4">
-            <p className="text-[13px] text-muted-foreground">Total</p>
-            <p className="text-[28px] font-bold text-foreground">{stats.total}</p>
+        <div className="page-grid-4">
+          <Card className="p-3 sm:p-4">
+            <p className="text-[12px] text-muted-foreground">Total</p>
+            <p className="text-[24px] sm:text-[28px] font-bold text-foreground">{stats.total}</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-[13px] text-muted-foreground">Hoje</p>
-            <p className="text-[28px] font-bold text-primary">{stats.today}</p>
+          <Card className="p-3 sm:p-4">
+            <p className="text-[12px] text-muted-foreground">Hoje</p>
+            <p className="text-[24px] sm:text-[28px] font-bold text-primary">{stats.today}</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-[13px] text-muted-foreground">Atrasados</p>
-            <p className="text-[28px] font-bold text-destructive">{stats.overdue}</p>
+          <Card className="p-3 sm:p-4">
+            <p className="text-[12px] text-muted-foreground">Atrasados</p>
+            <p className="text-[24px] sm:text-[28px] font-bold text-destructive">{stats.overdue}</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-[13px] text-muted-foreground">Próximos</p>
-            <p className="text-[28px] font-bold text-foreground">{stats.upcoming}</p>
+          <Card className="p-3 sm:p-4">
+            <p className="text-[12px] text-muted-foreground">Próximos</p>
+            <p className="text-[24px] sm:text-[28px] font-bold text-foreground">{stats.upcoming}</p>
           </Card>
         </div>
 
-        <Tabs defaultValue="calendario">
+        <Tabs value={calendarTab} onValueChange={(v) => setCalendarTab(v as "calendario" | "lista")}>
           <TabsList className="w-full sm:w-auto">
             <TabsTrigger value="calendario" className="flex-1 sm:flex-none">Calendário</TabsTrigger>
             <TabsTrigger value="lista" className="flex-1 sm:flex-none">Lista</TabsTrigger>
@@ -370,7 +380,7 @@ export default function Prazos() {
               {/* Calendar grid */}
               <div className="grid grid-cols-7 gap-1">
                 {Array.from({ length: startDayOfWeek }).map((_, i) => (
-                  <div key={`empty-${i}`} className="h-24" />
+                  <div key={`empty-${i}`} className={cn(isMobile ? "h-20" : "h-24")} />
                 ))}
                 {days.map((day) => {
                   const dayEvents = getEventsForDay(day);
@@ -379,7 +389,7 @@ export default function Prazos() {
                     <div
                       key={day.toISOString()}
                       className={cn(
-                        "h-24 min-w-0 overflow-hidden rounded-lg p-1.5 text-[13px] border transition-colors",
+                        isMobile ? "h-20 min-w-0 overflow-hidden rounded-lg p-1 text-[12px] border transition-colors" : "h-24 min-w-0 overflow-hidden rounded-lg p-1.5 text-[13px] border transition-colors",
                         isToday
                           ? "border-primary bg-primary/5"
                           : "border-transparent hover:bg-muted/50"
@@ -424,7 +434,7 @@ export default function Prazos() {
               </div>
 
               {/* Legend */}
-              <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border">
+              <div className={cn("items-center gap-4 mt-4 pt-3 border-t border-border", isMobile ? "hidden" : "flex")}>
                 {(Object.entries(CATEGORY_CONFIG) as [EventCategory, typeof CATEGORY_CONFIG[EventCategory]][]).map(
                   ([key, cfg]) => {
                     const Icon = cfg.icon;

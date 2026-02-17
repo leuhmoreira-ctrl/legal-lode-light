@@ -214,7 +214,7 @@ export default function WorkflowDetailPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col h-[calc(100vh-6rem)] animate-fade-up">
+      <div className="flex flex-col min-h-[calc(100dvh-5.5rem)] lg:h-[calc(100vh-6rem)] animate-fade-up">
         {/* Header */}
         <div className="flex items-start gap-4 mb-4 shrink-0">
           <Button variant="ghost" size="icon" onClick={() => navigate("/workflows")}>
@@ -253,7 +253,7 @@ export default function WorkflowDetailPage() {
             <div className="h-full flex flex-col min-h-0 bg-background border rounded-lg overflow-hidden">
                 <Tabs defaultValue="etapas" className="flex-1 flex flex-col min-h-0">
                     <div className="border-b px-2 bg-muted/20">
-                        <TabsList className="grid w-full grid-cols-3 bg-transparent">
+                        <TabsList className="grid w-full grid-cols-3 bg-transparent min-h-[44px]">
                             <TabsTrigger value="etapas">Etapas</TabsTrigger>
                             <TabsTrigger value="comentarios">Comentários</TabsTrigger>
                             <TabsTrigger value="detalhes">Detalhes</TabsTrigger>
