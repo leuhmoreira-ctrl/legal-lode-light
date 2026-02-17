@@ -3,22 +3,28 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { useAnimationOrigin } from "@/contexts/AnimationOriginContext"
+import { composeRefs, useOriginCapture, useOriginMotionStyle } from "@/lib/originMotion"
 
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Trigger>
->(({ className, onClick, ...props }, ref) => {
-  const { setOrigin } = useAnimationOrigin();
+>(({ className, onClick, onPointerDown, ...props }, ref) => {
+  const { captureOrigin } = useOriginCapture();
 
   return (
     <DialogPrimitive.Trigger
       ref={ref}
       className={className}
+      onPointerDown={(e) => {
+        captureOrigin(e);
+        onPointerDown?.(e);
+      }}
       onClick={(e) => {
-        setOrigin({ x: e.clientX, y: e.clientY });
+        if (e.detail === 0) {
+          captureOrigin(e);
+        }
         onClick?.(e);
       }}
       {...props}
@@ -38,7 +44,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "apple-overlay-motion fixed inset-0 z-50 bg-black/30 backdrop-blur-sm",
       className
     )}
     {...props}
@@ -50,37 +56,17 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, style, ...props }, ref) => {
-  const { origin, setOrigin } = useAnimationOrigin();
-  const [styles, setStyles] = React.useState<React.CSSProperties>({});
-
-  React.useEffect(() => {
-    return () => setOrigin(null);
-  }, [setOrigin]);
-
-  React.useLayoutEffect(() => {
-    if (origin) {
-      setStyles({
-        "--origin-x": `${origin.x - window.innerWidth / 2}px`,
-        "--origin-y": `${origin.y - window.innerHeight / 2}px`,
-      } as React.CSSProperties);
-    } else {
-      setStyles({});
-    }
-  }, [origin]);
-
-  const animationClasses = origin
-    ? "data-[state=open]:animate-origin-expand data-[state=closed]:animate-origin-collapse"
-    : "data-[state=open]:animate-fade-in-scale data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95";
+  const localRef = React.useRef<React.ElementRef<typeof DialogPrimitive.Content>>(null);
+  const motionStyle = useOriginMotionStyle(localRef as React.RefObject<HTMLElement>);
 
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
-        ref={ref}
-        style={{ ...style, ...styles }}
+        ref={composeRefs(ref, localRef)}
+        style={{ ...style, ...motionStyle }}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 modal-glass-light dark:modal-glass-dark p-6 shadow-2xl duration-300 ease-apple-ease sm:rounded-[20px] max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:p-5",
-          animationClasses,
+          "apple-origin-center-motion fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 modal-glass-light dark:modal-glass-dark p-6 shadow-2xl sm:rounded-[20px] max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:p-5",
           className
         )}
         {...props}

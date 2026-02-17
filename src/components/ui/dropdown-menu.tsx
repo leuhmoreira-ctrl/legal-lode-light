@@ -3,10 +3,34 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { composeRefs, useOriginCapture, useOriginMotionStyle } from "@/lib/originMotion";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
-const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
+const DropdownMenuTrigger = React.forwardRef<
+  React.ElementRef<typeof DropdownMenuPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Trigger>
+>(({ onPointerDown, onClick, ...props }, ref) => {
+  const { captureOrigin } = useOriginCapture();
+
+  return (
+    <DropdownMenuPrimitive.Trigger
+      ref={ref}
+      onPointerDown={(e) => {
+        captureOrigin(e);
+        onPointerDown?.(e);
+      }}
+      onClick={(e) => {
+        if (e.detail === 0) {
+          captureOrigin(e);
+        }
+        onClick?.(e);
+      }}
+      {...props}
+    />
+  );
+});
+DropdownMenuTrigger.displayName = DropdownMenuPrimitive.Trigger.displayName;
 
 const DropdownMenuGroup = DropdownMenuPrimitive.Group;
 
@@ -44,7 +68,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
+      "apple-origin-float-motion z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
       className,
     )}
     {...props}
@@ -55,23 +79,29 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, style, ...props }, ref) => (
-  <DropdownMenuPrimitive.Portal>
-    <DropdownMenuPrimitive.Content
-      ref={ref}
-      sideOffset={sideOffset}
-      style={{
-        transformOrigin: "var(--radix-dropdown-menu-content-transform-origin)",
-        ...style,
-      }}
-      className={cn(
-        "z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-scale-in data-[state=closed]:animate-scale-out",
-        className,
-      )}
-      {...props}
-    />
-  </DropdownMenuPrimitive.Portal>
-));
+>(({ className, sideOffset = 4, style, ...props }, ref) => {
+  const localRef = React.useRef<React.ElementRef<typeof DropdownMenuPrimitive.Content>>(null);
+  const motionStyle = useOriginMotionStyle(localRef as React.RefObject<HTMLElement>);
+
+  return (
+    <DropdownMenuPrimitive.Portal>
+      <DropdownMenuPrimitive.Content
+        ref={composeRefs(ref, localRef)}
+        sideOffset={sideOffset}
+        style={{
+          transformOrigin: "var(--radix-dropdown-menu-content-transform-origin)",
+          ...style,
+          ...motionStyle,
+        }}
+        className={cn(
+          "apple-origin-float-motion z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+          className,
+        )}
+        {...props}
+      />
+    </DropdownMenuPrimitive.Portal>
+  );
+});
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const DropdownMenuItem = React.forwardRef<

@@ -364,6 +364,7 @@
   .apple-card {
     @apply bg-white dark:bg-[#1C1C1E] rounded-[16px] border-[0.5px] border-black/5 dark:border-white/10 transition-all duration-200 ease-apple-ease active:scale-[0.98];
     box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+    animation: apple-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .apple-card:hover {
@@ -512,4 +513,274 @@
   60% { transform: translateX(-3px); }
   80% { transform: translateX(3px); }
   100% { transform: translateX(0); }
+}
+
+@keyframes apple-overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes apple-overlay-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes apple-origin-center-in {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--origin-dx, 0px)), calc(-50% + var(--origin-dy, 0px))) scale(0.8);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes apple-origin-center-out {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--origin-dx, 0px)), calc(-50% + var(--origin-dy, 0px))) scale(0.8);
+  }
+}
+
+@keyframes apple-origin-float-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--origin-dx, 0px), var(--origin-dy, 0px), 0) scale(0.84);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes apple-origin-float-out {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--origin-dx, 0px), var(--origin-dy, 0px), 0) scale(0.84);
+  }
+}
+
+@keyframes apple-sheet-in-right {
+  0% { transform: translate3d(100%, 0, 0); opacity: 0; }
+  72% { transform: translate3d(-2%, 0, 0); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes apple-sheet-out-right {
+  0% { transform: translate3d(0, 0, 0); opacity: 1; }
+  100% { transform: translate3d(100%, 0, 0); opacity: 0; }
+}
+
+@keyframes apple-sheet-in-left {
+  0% { transform: translate3d(-100%, 0, 0); opacity: 0; }
+  72% { transform: translate3d(2%, 0, 0); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes apple-sheet-out-left {
+  0% { transform: translate3d(0, 0, 0); opacity: 1; }
+  100% { transform: translate3d(-100%, 0, 0); opacity: 0; }
+}
+
+@keyframes apple-sheet-in-top {
+  0% { transform: translate3d(0, -100%, 0); opacity: 0; }
+  72% { transform: translate3d(0, 2%, 0); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes apple-sheet-out-top {
+  0% { transform: translate3d(0, 0, 0); opacity: 1; }
+  100% { transform: translate3d(0, -100%, 0); opacity: 0; }
+}
+
+@keyframes apple-sheet-in-bottom {
+  0% { transform: translate3d(0, 100%, 0); opacity: 0; }
+  72% { transform: translate3d(0, -2%, 0); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+
+@keyframes apple-sheet-out-bottom {
+  0% { transform: translate3d(0, 0, 0); opacity: 1; }
+  100% { transform: translate3d(0, 100%, 0); opacity: 0; }
+}
+
+@keyframes apple-card-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0) scale(0.98);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(0, -2px, 0) scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.apple-overlay-motion {
+  will-change: opacity;
+}
+
+.apple-card-bounce {
+  animation: apple-card-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-overlay-motion[data-state="open"] {
+  animation: apple-overlay-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.apple-overlay-motion[data-state="closed"] {
+  animation: apple-overlay-out 170ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-origin-center-motion,
+.apple-origin-float-motion,
+.apple-tooltip-motion,
+.apple-sheet-motion,
+.apple-drawer-motion {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.apple-origin-center-motion[data-state="open"] {
+  animation: apple-origin-center-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-origin-center-motion[data-state="closed"] {
+  animation: apple-origin-center-out 290ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-origin-float-motion[data-state="open"] {
+  animation: apple-origin-float-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-origin-float-motion[data-state="closed"] {
+  animation: apple-origin-float-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-tooltip-motion[data-state="instant-open"],
+.apple-tooltip-motion[data-state="delayed-open"],
+.apple-tooltip-motion[data-state="open"] {
+  animation: apple-origin-float-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-tooltip-motion[data-state="closed"] {
+  animation: apple-origin-float-out 150ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-sheet-motion[data-side="right"][data-state="open"] {
+  animation: apple-sheet-in-right 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-sheet-motion[data-side="right"][data-state="closed"] {
+  animation: apple-sheet-out-right 280ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-sheet-motion[data-side="left"][data-state="open"] {
+  animation: apple-sheet-in-left 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-sheet-motion[data-side="left"][data-state="closed"] {
+  animation: apple-sheet-out-left 280ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-sheet-motion[data-side="top"][data-state="open"] {
+  animation: apple-sheet-in-top 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-sheet-motion[data-side="top"][data-state="closed"] {
+  animation: apple-sheet-out-top 260ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-sheet-motion[data-side="bottom"][data-state="open"] {
+  animation: apple-sheet-in-bottom 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-sheet-motion[data-side="bottom"][data-state="closed"] {
+  animation: apple-sheet-out-bottom 260ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+.apple-drawer-motion[data-state="open"] {
+  animation: apple-sheet-in-bottom 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.apple-drawer-motion[data-state="closed"] {
+  animation: apple-sheet-out-bottom 250ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@media (max-width: 767px) {
+  .apple-origin-center-motion[data-state="open"] {
+    animation-duration: 340ms;
+  }
+
+  .apple-origin-center-motion[data-state="closed"] {
+    animation-duration: 230ms;
+  }
+
+  .apple-origin-float-motion[data-state="open"] {
+    animation-duration: 260ms;
+  }
+
+  .apple-origin-float-motion[data-state="closed"] {
+    animation-duration: 180ms;
+  }
+
+  .apple-sheet-motion[data-state="open"],
+  .apple-drawer-motion[data-state="open"] {
+    animation-duration: 320ms;
+  }
+
+  .apple-sheet-motion[data-state="closed"],
+  .apple-drawer-motion[data-state="closed"] {
+    animation-duration: 220ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apple-origin-center-motion[data-state="open"],
+  .apple-origin-float-motion[data-state="open"],
+  .apple-tooltip-motion[data-state="open"],
+  .apple-tooltip-motion[data-state="instant-open"],
+  .apple-tooltip-motion[data-state="delayed-open"],
+  .apple-sheet-motion[data-state="open"],
+  .apple-drawer-motion[data-state="open"] {
+    animation: apple-overlay-in 120ms linear both !important;
+    transform: none !important;
+  }
+
+  .apple-origin-center-motion[data-state="closed"],
+  .apple-origin-float-motion[data-state="closed"],
+  .apple-tooltip-motion[data-state="closed"],
+  .apple-sheet-motion[data-state="closed"],
+  .apple-drawer-motion[data-state="closed"] {
+    animation: apple-overlay-out 100ms linear both !important;
+    transform: none !important;
+  }
+
+  .apple-overlay-motion[data-state="open"] {
+    animation: apple-overlay-in 120ms linear both !important;
+  }
+
+  .apple-overlay-motion[data-state="closed"] {
+    animation: apple-overlay-out 100ms linear both !important;
+  }
 }

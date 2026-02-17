@@ -3,22 +3,28 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
-import { useAnimationOrigin } from "@/contexts/AnimationOriginContext"
+import { composeRefs, useOriginCapture, useOriginMotionStyle } from "@/lib/originMotion"
 
 const AlertDialog = AlertDialogPrimitive.Root
 
 const AlertDialogTrigger = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Trigger>
->(({ className, onClick, ...props }, ref) => {
-  const { setOrigin } = useAnimationOrigin();
+>(({ className, onClick, onPointerDown, ...props }, ref) => {
+  const { captureOrigin } = useOriginCapture();
 
   return (
     <AlertDialogPrimitive.Trigger
       ref={ref}
       className={className}
+      onPointerDown={(e) => {
+        captureOrigin(e);
+        onPointerDown?.(e);
+      }}
       onClick={(e) => {
-        setOrigin({ x: e.clientX, y: e.clientY });
+        if (e.detail === 0) {
+          captureOrigin(e);
+        }
         onClick?.(e);
       }}
       {...props}
@@ -35,7 +41,7 @@ const AlertDialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "apple-overlay-motion fixed inset-0 z-50 bg-black/80",
       className,
     )}
     {...props}
@@ -48,37 +54,17 @@ const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
 >(({ className, style, ...props }, ref) => {
-  const { origin, setOrigin } = useAnimationOrigin();
-  const [styles, setStyles] = React.useState<React.CSSProperties>({});
-
-  React.useEffect(() => {
-    return () => setOrigin(null);
-  }, [setOrigin]);
-
-  React.useLayoutEffect(() => {
-    if (origin) {
-      setStyles({
-        "--origin-x": `${origin.x - window.innerWidth / 2}px`,
-        "--origin-y": `${origin.y - window.innerHeight / 2}px`,
-      } as React.CSSProperties);
-    } else {
-      setStyles({});
-    }
-  }, [origin]);
-
-  const animationClasses = origin
-    ? "data-[state=open]:animate-origin-expand data-[state=closed]:animate-origin-collapse"
-    : "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]";
+  const localRef = React.useRef<React.ElementRef<typeof AlertDialogPrimitive.Content>>(null);
+  const motionStyle = useOriginMotionStyle(localRef as React.RefObject<HTMLElement>);
 
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
-        ref={ref}
-        style={{ ...style, ...styles }}
+        ref={composeRefs(ref, localRef)}
+        style={{ ...style, ...motionStyle }}
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-5 shadow-lg duration-200 sm:rounded-lg max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none",
-          animationClasses,
+          "apple-origin-center-motion fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-5 shadow-lg sm:rounded-lg max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:h-[100dvh] max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none",
           className,
         )}
         {...props}
